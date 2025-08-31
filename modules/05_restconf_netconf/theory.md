@@ -1,4 +1,4 @@
-# Module 5 — Using APIs to Retrieve Data on Cisco Network Devices
+# Module 5 — Using APIs to Manage Cisco Network Devices
 
 ---
 
