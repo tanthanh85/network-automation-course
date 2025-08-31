@@ -198,7 +198,3 @@ Paramiko empowers network engineers with direct SSH control for:
 
 It is a must-have in your toolkit when working with SSH-based devices or when you need fine-grained CLI access.
 
-👉 In the next lab, learners will implement these concepts in a hands-on way.
-
-Would you like me to proceed with **Lab 4: Automating Backups and Diagnostics with Paramiko** next?
-

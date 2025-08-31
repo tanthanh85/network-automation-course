@@ -195,5 +195,3 @@ with open(f"backups/{hostname}_bgp.txt", 'w') as f:
 
 ---
 
-Would you like to continue with **Module 5: Automating APIs with RESTCONF/NETCONF** next?
-
