@@ -187,5 +187,4 @@ These exercises reinforce concurrency by challenging learners to create real-wor
 - You practiced both **multithreading** and **asyncio** for real use cases
 - You learned how to manage device access, simulate logs, and improve script execution speed
 
-➡️ Next Step: Prepare for **Module 3: Using Netmiko for Real Device Automation**
 

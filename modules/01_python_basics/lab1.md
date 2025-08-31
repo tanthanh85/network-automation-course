@@ -322,5 +322,4 @@ R1 - 10.0.0.1
 
 ✅ Takeaway Notes and extended home assignments are in the next section.
 
-Would you like me to expand the Git collaboration and module packaging sections next?
 

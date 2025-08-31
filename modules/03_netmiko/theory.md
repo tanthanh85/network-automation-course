@@ -262,5 +262,4 @@ By completing this module, you should be able to:
 - Use Jinja2 + YAML for scalable CLI generation
 - Iterate over inventories and handle exceptions
 
-➡️ You are now ready to proceed with **Lab 3**, where you will automate device connections, configuration changes, CLI parsing, and backup tasks using Netmiko, Jinja2, and NTC templates.
 
