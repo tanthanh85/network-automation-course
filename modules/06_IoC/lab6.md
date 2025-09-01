@@ -1,42 +1,34 @@
-
-# Lab 6 – Infrastructure as Code with NETCONF, YAML, Jinja2, pyATS and Git
+# Lab 6 – Infrastructure as Code with NETCONF, YAML, Jinja2, Git, and pyATS
 
 ## 🎯 Objective
 
-In this advanced lab, learners will automate OSPF configuration on Cisco IOS XE devices using NETCONF. Instead of static XML, learners will use **YAML + Jinja2** to dynamically generate the XML payload. The lab includes:
+In this advanced lab, learners will automate OSPF configuration on Cisco IOS XE devices using NETCONF. Instead of static XML, learners will use YAML + Jinja2 to dynamically generate the XML payload. The lab concludes with **pyATS** to validate the OSPF neighbor state and includes Git-based version control and **a rollback script** to remove the OSPF configuration if necessary.
 
-- Using **Git** to version-control automation code and templates.
-- Applying **NETCONF** to push config to devices.
-- Validating the results using **pyATS**.
-- Using **Git-based rollback** in case post-deployment validation fails.
-
-> 🕒 Estimated Time: 3–4 hours
+⏱ Estimated Time: 2–3 hours
 
 ---
 
-## 🔧 Prerequisites
+## 📋 Prerequisites
 
-- Cisco DevNet Sandbox: IOS XE on CSR1000v Always-On
-- Python 3.9+
-- VSCode
-- Installed Python packages:
-  ```bash
-  pip install ncclient pyats jinja2 pyyaml
-  ```
+- Cisco DevNet Sandbox: IOS XE on CSR1000v Always-On sandbox
+- Tools installed:
+  - Python 3.9+
+  - `ncclient`, `pyats`, `pyats.topology`, `pyats.aetest`, `jinja2`, `pyyaml`
+  - Git CLI
+  - VSCode
 
-- IOS XE Credentials:
-  ```text
-  Host: sandbox-iosxe-latest-1.cisco.com
-  Port: 830 (NETCONF), 22 (SSH)
-  Username: developer
-  Password: C1sco12345
-  ```
+🔑 IOS XE Sandbox credentials:
+
+- Hostname: `sandbox-iosxe-latest-1.cisco.com`
+- NETCONF Port: `830`
+- Username: `developer`
+- Password: `C1sco12345`
 
 ---
 
-## 🧪 Step-by-Step Guide
+## Step-by-Step Guide
 
-### Step 1: Git Project Setup
+### 🧱 Step 1: Setup Project Environment
 
 ```bash
 git clone https://gitlab.com/<your-username>/netconf-iac-lab.git
@@ -44,20 +36,14 @@ cd netconf-iac-lab
 python3 -m venv .venv
 source .venv/bin/activate
 pip install ncclient pyats jinja2 pyyaml
-
-git init
-echo ".venv/
-__pycache__/
-*.log" > .gitignore
-git add .
-git commit -m "Initial OSPF automation project"
 ```
 
-> ✅ Expected: Clean Git repo with only necessary files tracked.
+Create a `.gitignore` file to ignore unnecessary files:
+```bash
+echo -e ".venv/\n__pycache__/\n*.log\n*.pyc\noutput/" > .gitignore
+```
 
----
-
-### Step 2: Define OSPF Data in YAML
+### 📄 Step 2: Define OSPF Data in YAML
 
 Create `data/ospf_data.yaml`:
 
@@ -74,22 +60,11 @@ ospf:
       area: 1
 ```
 
-> ✅ Expected: Structured OSPF input data
-
-Commit changes:
-
-```bash
-git add data/ospf_data.yaml
-git commit -m "Add initial OSPF YAML config"
-```
-
----
-
-### Step 3: Jinja2 Template for NETCONF Payload
+### 🧩 Step 3: Create Jinja2 Template for XML
 
 Create `templates/ospf_template.xml.j2`:
 
-```jinja2
+```
 <config>
   <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
     <router>
@@ -109,18 +84,9 @@ Create `templates/ospf_template.xml.j2`:
 </config>
 ```
 
-Commit:
+### ⚙️ Step 4: Render XML and Push via NETCONF
 
-```bash
-git add templates/
-git commit -m "Add Jinja2 template for OSPF XML"
-```
-
----
-
-### Step 4: Render and Deploy via NETCONF
-
-Create `scripts/deploy_ospf.py`:
+Create `scripts/deploy_ospf_jinja.py`:
 
 ```python
 import yaml
@@ -146,24 +112,21 @@ with manager.connect(
     print(response)
 ```
 
-Run:
+Run the script:
 
 ```bash
-python3 scripts/deploy_ospf.py
+python3 scripts/deploy_ospf_jinja.py
 ```
 
-> ✅ Expected: `<ok/>` NETCONF success response
+✅ **Expected Output**:
 
-Commit:
-
-```bash
-git add scripts/
-git commit -m "Deploy OSPF with dynamic NETCONF payload"
+```xml
+<ok/>
 ```
 
 ---
 
-### Step 5: Validate with pyATS
+### 🧪 Step 5: Validate OSPF with pyATS
 
 Create `testbed.yaml`:
 
@@ -183,57 +146,90 @@ devices:
         password: C1sco12345
 ```
 
-Run:
+Run validation:
 
 ```bash
 genie learn ospf --testbed-file testbed.yaml --output ospf_state
 cat ospf_state/ospf/ops/ospf/ospf.txt
 ```
 
-> ✅ Expected Output:
-```
-Process ID: 1
-Router ID: 1.1.1.1
-Neighbors: 1 or more established
-```
+✅ **Expected Output**:
+
+- OSPF process ID
+- Router ID: `1.1.1.1`
+- Neighbor information from each area
 
 ---
 
-### Step 6: Git Rollback if Validation Fails
+### 🔄 Step 6: Rollback OSPF Configuration
 
-Simulate validation failure. Then rollback:
+Create `scripts/rollback_ospf_jinja.py`:
+
+```python
+from ncclient import manager
+
+rollback_xml = """
+<config>
+  <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
+    <router>
+      <ospf operation="delete"/>
+    </router>
+  </native>
+</config>
+"""
+
+with manager.connect(
+    host="sandbox-iosxe-latest-1.cisco.com",
+    port=830,
+    username="developer",
+    password="C1sco12345",
+    hostkey_verify=False,
+    device_params={"name": "csr"},
+) as m:
+    response = m.edit_config(target="running", config=rollback_xml)
+    print(response)
+```
+
+Run the rollback:
 
 ```bash
-git log  # Get previous commit hash
-git revert <commit-hash>  # OR
-git checkout <previous-commit> -- data/ospf_data.yaml
+python3 scripts/rollback_ospf_jinja.py
 ```
 
-Re-run deployment:
+✅ **Expected Output**:
+
+```xml
+<ok/>
+```
+
+Verify OSPF is removed:
 
 ```bash
-python3 scripts/deploy_ospf.py
+show ip ospf
 ```
 
-> ✅ Expected: Device reverts to previous config.
+Should return:
+
+```txt
+% OSPF not running
+```
 
 ---
 
-## 🏡 Homework Challenges
+## 📚 Homework Challenges
 
-1. Add a 3rd area to the YAML and push config.
-2. Introduce a deliberate error in YAML and practice rollback.
-3. Use `git branch` to create staging/prod branches.
-4. Use `genie diff` to compare `ospf_state` with previous state.
-5. Write `scripts/rollback.py` to revert via NETCONF.
+1. ✅ Add another OSPF area with 2 more networks
+2. ✅ Include `passive-interface` config via Jinja2
+3. ✅ Write a script to **rollback OSPF config** (already done!)
+4. ✅ Use `genie diff` to compare pre and post state
+5. ✅ Try configuring **BGP** using new YAML + Jinja2
 
 ---
 
-## ✅ Takeaway Summary
+## 🧠 Takeaway Summary
 
-- Learned Git workflow in automation projects
-- Used YAML + Jinja2 to build NETCONF payload
-- Deployed dynamic config via NETCONF
-- Validated via pyATS Genie
-- Practiced rollback and change tracking via Git
-
+- YAML + Jinja2 enables dynamic NETCONF payload generation
+- Git stores your IaC code for collaboration and rollback
+- NETCONF allows precise network config control
+- pyATS verifies post-deploy network behavior
+- You’ve practiced **real IaC DevOps flow for networking**
