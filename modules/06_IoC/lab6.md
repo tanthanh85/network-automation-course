@@ -1,26 +1,24 @@
-# Lab 6 – Infrastructure as Code with NETCONF, YAML, Jinja2, Git, and pyATS
+# Lab 6 – Infrastructure as Code with Netmiko, YAML, Jinja2, Git and pyATS
 
-## 🎯 Objective
-
-In this advanced lab, learners will automate OSPF configuration on Cisco IOS XE devices using NETCONF. Instead of static XML, learners will use YAML + Jinja2 to dynamically generate the XML payload. The lab concludes with **pyATS** to validate the OSPF neighbor state and includes Git-based version control and **a rollback script** to remove the OSPF configuration if necessary.
-
-⏱ Estimated Time: 2–3 hours
+## Objective
+In this advanced lab, learners will automate OSPF configuration on Cisco IOS XE devices using **Netmiko** instead of NETCONF. Configuration will be dynamically generated using **YAML** and **Jinja2**. Learners will also use **Git** for version control and **pyATS** for validation. In case of error or rollback scenario, a script will be provided to remove the OSPF configuration.
 
 ---
 
-## 📋 Prerequisites
+## Estimated Time: 2–3 hours
+
+### Prerequisites
 
 - Cisco DevNet Sandbox: IOS XE on CSR1000v Always-On sandbox
-- Tools installed:
+- Installed tools:
   - Python 3.9+
-  - `ncclient`, `pyats`, `pyats.topology`, `pyats.aetest`, `jinja2`, `pyyaml`
-  - Git CLI
-  - VSCode
+  - netmiko, pyats, jinja2, pyyaml
+- VSCode
 
 🔑 IOS XE Sandbox credentials:
 
 - Hostname: `sandbox-iosxe-latest-1.cisco.com`
-- NETCONF Port: `830`
+- SSH Port: `22`
 - Username: `developer`
 - Password: `C1sco12345`
 
@@ -28,22 +26,17 @@ In this advanced lab, learners will automate OSPF configuration on Cisco IOS XE 
 
 ## Step-by-Step Guide
 
-### 🧱 Step 1: Setup Project Environment
+### Step 1: Setup Project Environment
 
 ```bash
-git clone https://gitlab.com/<your-username>/netconf-iac-lab.git
-cd netconf-iac-lab
+git clone https://gitlab.com/<your-username>/netmiko-iac-lab.git
+cd netmiko-iac-lab
 python3 -m venv .venv
 source .venv/bin/activate
-pip install ncclient pyats jinja2 pyyaml
+pip install netmiko jinja2 pyyaml pyats
 ```
 
-Create a `.gitignore` file to ignore unnecessary files:
-```bash
-echo -e ".venv/\n__pycache__/\n*.log\n*.pyc\noutput/" > .gitignore
-```
-
-### 📄 Step 2: Define OSPF Data in YAML
+### Step 2: Define OSPF Data in YAML
 
 Create `data/ospf_data.yaml`:
 
@@ -52,81 +45,56 @@ ospf:
   process_id: 1
   router_id: 1.1.1.1
   networks:
-    - ip: 192.168.0.0
-      wildcard: 0.0.255.255
-      area: 0
-    - ip: 10.10.10.0
-      wildcard: 0.0.0.255
-      area: 1
+    - ip: 192.168.0.0 0.0.255.255 area 0
+    - ip: 10.10.10.0 0.0.0.255 area 1
 ```
 
-### 🧩 Step 3: Create Jinja2 Template for XML
+### Step 3: Create Jinja2 Template for CLI
 
-Create `templates/ospf_template.xml.j2`:
+Create `templates/ospf_template.j2`:
 
-```
-<config>
-  <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
-    <router>
-      <ospf>
-        <id>{{ ospf.process_id }}</id>
-        <router-id>{{ ospf.router_id }}</router-id>
-        {% for net in ospf.networks %}
-        <network>
-          <ip>{{ net.ip }}</ip>
-          <wildcard>{{ net.wildcard }}</wildcard>
-          <area>{{ net.area }}</area>
-        </network>
-        {% endfor %}
-      </ospf>
-    </router>
-  </native>
-</config>
+```jinja2
+router ospf {{ ospf.process_id }}
+ router-id {{ ospf.router_id }}
+{% for net in ospf.networks %}
+ network {{ net }}
+{% endfor %}
 ```
 
-### ⚙️ Step 4: Render XML and Push via NETCONF
+### Step 4: Render Template and Send via Netmiko
 
-Create `scripts/deploy_ospf_jinja.py`:
+Create `scripts/deploy_ospf_netmiko.py`:
 
 ```python
 import yaml
 from jinja2 import Environment, FileSystemLoader
-from ncclient import manager
+from netmiko import ConnectHandler
 
+# Load YAML
 with open('data/ospf_data.yaml') as f:
     ospf_data = yaml.safe_load(f)
 
+# Render template
 env = Environment(loader=FileSystemLoader('templates'))
-template = env.get_template('ospf_template.xml.j2')
-rendered_xml = template.render(ospf=ospf_data['ospf'])
+template = env.get_template('ospf_template.j2')
+config = template.render(ospf=ospf_data['ospf']).splitlines()
 
-with manager.connect(
-    host="sandbox-iosxe-latest-1.cisco.com",
-    port=830,
-    username="developer",
-    password="C1sco12345",
-    hostkey_verify=False,
-    device_params={'name': 'csr'}
-) as m:
-    response = m.edit_config(target="running", config=rendered_xml)
-    print(response)
+# Connect to device
+device = {
+    'device_type': 'cisco_ios',
+    'host': 'sandbox-iosxe-latest-1.cisco.com',
+    'username': 'developer',
+    'password': 'C1sco12345',
+}
+
+with ConnectHandler(**device) as conn:
+    output = conn.send_config_set(config)
+    print(output)
 ```
 
-Run the script:
+✅ **Expected Result**: Output of `send_config_set()` with successful OSPF commands applied
 
-```bash
-python3 scripts/deploy_ospf_jinja.py
-```
-
-✅ **Expected Output**:
-
-```xml
-<ok/>
-```
-
----
-
-### 🧪 Step 5: Validate OSPF with pyATS
+### Step 5: Validate OSPF with pyATS
 
 Create `testbed.yaml`:
 
@@ -146,130 +114,93 @@ devices:
         password: C1sco12345
 ```
 
-Run validation:
+Run:
 
 ```bash
 genie learn ospf --testbed-file testbed.yaml --output ospf_state
 cat ospf_state/ospf/ops/ospf/ospf.txt
 ```
 
-✅ **Expected Output**:
+✅ **Expected Result**: OSPF process, router ID, and neighbor info
 
-- OSPF process ID
-- Router ID: `1.1.1.1`
-- Neighbor information from each area
+### Step 6: Rollback Script
 
----
-
-### 🔄 Step 6: Rollback OSPF Configuration
-
-Create `scripts/rollback_ospf_jinja.py`:
+Create `scripts/rollback_ospf_netmiko.py`:
 
 ```python
-from ncclient import manager
+from netmiko import ConnectHandler
 
-rollback_xml = """
-<config>
-  <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
-    <router>
-      <ospf operation="delete"/>
-    </router>
-  </native>
-</config>
-"""
+device = {
+    'device_type': 'cisco_ios',
+    'host': 'sandbox-iosxe-latest-1.cisco.com',
+    'username': 'developer',
+    'password': 'C1sco12345',
+}
 
-with manager.connect(
-    host="sandbox-iosxe-latest-1.cisco.com",
-    port=830,
-    username="developer",
-    password="C1sco12345",
-    hostkey_verify=False,
-    device_params={"name": "csr"},
-) as m:
-    response = m.edit_config(target="running", config=rollback_xml)
-    print(response)
+commands = [
+    'no router ospf 1'
+]
+
+with ConnectHandler(**device) as conn:
+    output = conn.send_config_set(commands)
+    print(output)
 ```
 
-Run the rollback:
-
-```bash
-python3 scripts/rollback_ospf_jinja.py
-```
-
-✅ **Expected Output**:
-
-```xml
-<ok/>
-```
-
-Verify OSPF is removed:
-
-```bash
-show ip ospf
-```
-
-Should return:
-
-```txt
-% OSPF not running
-```
+✅ **Expected Result**: `no router ospf 1` successfully executed
 
 ---
 
-## 📚 Homework Challenges
+## Homework Challenges
 
-1. ✅ Add another OSPF area with 2 more networks
-2. ✅ Include `passive-interface` config via Jinja2
-3. ✅ Write a script to **rollback OSPF config** (already done!)
-4. ✅ Use `genie diff` to compare pre and post state
-5. ✅ Try configuring **BGP** using new YAML + Jinja2
-
----
-
-## 🧠 Takeaway Summary
-
-- YAML + Jinja2 enables dynamic NETCONF payload generation
-- Git stores your IaC code for collaboration and rollback
-- NETCONF allows precise network config control
-- pyATS verifies post-deploy network behavior
-- You’ve practiced **real IaC DevOps flow for networking**
+- Add 2 more networks in a new OSPF area in the YAML file
+- Extend Jinja2 to include passive-interface command
+- Test BGP deployment using same IaC pattern
+- Use pyATS `genie diff` to compare `pre` and `post` OSPF
 
 ---
 
-## 🚀 CI/CD with GitLab (Optional Advanced Task)
+## GitLab CI/CD (Optional)
 
-You can automate this entire process (YAML → Jinja2 → NETCONF push → pyATS validation → rollback on failure) using GitLab CI/CD.
+You can use GitLab CI/CD pipeline to:
 
-### Example `.gitlab-ci.yml`
+- Validate YAML and Jinja2 templates
+- Render configuration files
+- Push OSPF config using Netmiko
+- Run pyATS verification
+
+Example `.gitlab-ci.yml`:
 
 ```yaml
 stages:
   - validate
   - deploy
   - test
-  - rollback
 
 validate:
   stage: validate
   script:
     - yamllint data/
-    - pylint scripts/*.py
+    - python3 -m py_compile scripts/*.py
 
 deploy:
   stage: deploy
   script:
-    - python3 scripts/deploy_ospf_jinja.py
+    - python3 scripts/deploy_ospf_netmiko.py
 
 test:
   stage: test
   script:
     - genie learn ospf --testbed-file testbed.yaml --output ospf_state
-
-rollback:
-  stage: rollback
-  when: on_failure
-  script:
-    - python3 scripts/rollback_ospf.py
 ```
 
-You can host your own GitLab Runner or use GitLab.com’s Shared Runners. This allows you to achieve fully automated configuration management with rollback and testing in a DevOps-style workflow.
+---
+
+## Takeaway Summary
+
+✅ You have learned:
+
+- Netmiko-based CLI automation for IOS XE
+- YAML + Jinja2 for structured configuration
+- Version control integration with Git
+- Post-deployment validation using pyATS
+- GitLab CI/CD overview for network automation workflows
