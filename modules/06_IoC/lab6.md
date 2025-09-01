@@ -1,44 +1,66 @@
-# Lab 6 – Infrastructure as Code with NETCONF, YAML, Jinja2 and pyATS
 
-## Objective
-In this advanced lab, learners will automate OSPF configuration on Cisco IOS XE devices using NETCONF. Instead of static XML, learners will use YAML + Jinja2 to dynamically generate the XML payload. The lab concludes with pyATS to validate the OSPF neighbor state.
+# Lab 6 – Infrastructure as Code with NETCONF, YAML, Jinja2, pyATS and Git
 
-> **Estimated Time**: 2–3 hours
+## 🎯 Objective
 
----
+In this advanced lab, learners will automate OSPF configuration on Cisco IOS XE devices using NETCONF. Instead of static XML, learners will use **YAML + Jinja2** to dynamically generate the XML payload. The lab includes:
 
-## Prerequisites
-- Cisco DevNet Sandbox: IOS XE on CSR1000v Always-On [sandbox](https://developer.cisco.com/site/sandbox/)
-- Installed tools:
-  - Python 3.9+
-  - `ncclient`, `pyats`, `pyats.topology`, `pyats.aetest`, `jinja2`, `pyyaml`
-  - VSCode
+- Using **Git** to version-control automation code and templates.
+- Applying **NETCONF** to push config to devices.
+- Validating the results using **pyATS**.
+- Using **Git-based rollback** in case post-deployment validation fails.
 
-> 🔑 IOS XE Sandbox credentials:
-```
-Hostname: sandbox-iosxe-latest-1.cisco.com
-NETCONF Port: 830
-Username: developer
-Password: C1sco12345
-```
+> 🕒 Estimated Time: 3–4 hours
 
 ---
 
-## Step-by-Step Guide
+## 🔧 Prerequisites
 
-### Step 1: Setup Project Environment
+- Cisco DevNet Sandbox: IOS XE on CSR1000v Always-On
+- Python 3.9+
+- VSCode
+- Installed Python packages:
+  ```bash
+  pip install ncclient pyats jinja2 pyyaml
+  ```
+
+- IOS XE Credentials:
+  ```text
+  Host: sandbox-iosxe-latest-1.cisco.com
+  Port: 830 (NETCONF), 22 (SSH)
+  Username: developer
+  Password: C1sco12345
+  ```
+
+---
+
+## 🧪 Step-by-Step Guide
+
+### Step 1: Git Project Setup
+
 ```bash
 git clone https://gitlab.com/<your-username>/netconf-iac-lab.git
 cd netconf-iac-lab
 python3 -m venv .venv
 source .venv/bin/activate
 pip install ncclient pyats jinja2 pyyaml
+
+git init
+echo ".venv/
+__pycache__/
+*.log" > .gitignore
+git add .
+git commit -m "Initial OSPF automation project"
 ```
+
+> ✅ Expected: Clean Git repo with only necessary files tracked.
 
 ---
 
 ### Step 2: Define OSPF Data in YAML
-Create a file `data/ospf_data.yaml`:
+
+Create `data/ospf_data.yaml`:
+
 ```yaml
 ospf:
   process_id: 1
@@ -52,11 +74,22 @@ ospf:
       area: 1
 ```
 
+> ✅ Expected: Structured OSPF input data
+
+Commit changes:
+
+```bash
+git add data/ospf_data.yaml
+git commit -m "Add initial OSPF YAML config"
+```
+
 ---
 
-### Step 3: Create Jinja2 Template for XML
+### Step 3: Jinja2 Template for NETCONF Payload
+
 Create `templates/ospf_template.xml.j2`:
-```jinja
+
+```jinja2
 <config>
   <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native">
     <router>
@@ -76,25 +109,31 @@ Create `templates/ospf_template.xml.j2`:
 </config>
 ```
 
+Commit:
+
+```bash
+git add templates/
+git commit -m "Add Jinja2 template for OSPF XML"
+```
+
 ---
 
-### Step 4: Render XML and Push via NETCONF
-Create `scripts/deploy_ospf_jinja.py`:
+### Step 4: Render and Deploy via NETCONF
+
+Create `scripts/deploy_ospf.py`:
+
 ```python
 import yaml
 from jinja2 import Environment, FileSystemLoader
 from ncclient import manager
 
-# Load YAML
 with open('data/ospf_data.yaml') as f:
     ospf_data = yaml.safe_load(f)
 
-# Render XML from Jinja2
 env = Environment(loader=FileSystemLoader('templates'))
 template = env.get_template('ospf_template.xml.j2')
 rendered_xml = template.render(ospf=ospf_data['ospf'])
 
-# Connect via NETCONF
 with manager.connect(
     host="sandbox-iosxe-latest-1.cisco.com",
     port=830,
@@ -107,17 +146,27 @@ with manager.connect(
     print(response)
 ```
 
-Run it:
+Run:
+
 ```bash
-python3 scripts/deploy_ospf_jinja.py
+python3 scripts/deploy_ospf.py
 ```
 
-✅ **Expected Output**: NETCONF `<ok/>` response
+> ✅ Expected: `<ok/>` NETCONF success response
+
+Commit:
+
+```bash
+git add scripts/
+git commit -m "Deploy OSPF with dynamic NETCONF payload"
+```
 
 ---
 
-### Step 5: Validate OSPF with pyATS
+### Step 5: Validate with pyATS
+
 Create `testbed.yaml`:
+
 ```yaml
 devices:
   iosxe:
@@ -134,28 +183,57 @@ devices:
         password: C1sco12345
 ```
 
-Run pyATS:
+Run:
+
 ```bash
 genie learn ospf --testbed-file testbed.yaml --output ospf_state
 cat ospf_state/ospf/ops/ospf/ospf.txt
 ```
-✅ **Expected Output**: OSPF process, router ID, and neighbor info
+
+> ✅ Expected Output:
+```
+Process ID: 1
+Router ID: 1.1.1.1
+Neighbors: 1 or more established
+```
 
 ---
 
-## Homework Challenges
-1. Add another OSPF area with 2 more networks
-2. Include passive-interface config via Jinja2
-3. Write a script to rollback OSPF config
-4. Use `genie diff` to compare pre and post config
-5. Try the same logic for BGP configuration using new YAML/template
+### Step 6: Git Rollback if Validation Fails
+
+Simulate validation failure. Then rollback:
+
+```bash
+git log  # Get previous commit hash
+git revert <commit-hash>  # OR
+git checkout <previous-commit> -- data/ospf_data.yaml
+```
+
+Re-run deployment:
+
+```bash
+python3 scripts/deploy_ospf.py
+```
+
+> ✅ Expected: Device reverts to previous config.
 
 ---
 
-## Takeaway Summary
-✅ In this lab you learned:
-- Using **YAML + Jinja2** to generate structured NETCONF payloads
-- Configuring OSPF via **ncclient** to IOS XE
-- Verifying neighbor state using **pyATS Genie**
-- How data, templates, and testing integrate in an IaC workflow
+## 🏡 Homework Challenges
+
+1. Add a 3rd area to the YAML and push config.
+2. Introduce a deliberate error in YAML and practice rollback.
+3. Use `git branch` to create staging/prod branches.
+4. Use `genie diff` to compare `ospf_state` with previous state.
+5. Write `scripts/rollback.py` to revert via NETCONF.
+
+---
+
+## ✅ Takeaway Summary
+
+- Learned Git workflow in automation projects
+- Used YAML + Jinja2 to build NETCONF payload
+- Deployed dynamic config via NETCONF
+- Validated via pyATS Genie
+- Practiced rollback and change tracking via Git
 
