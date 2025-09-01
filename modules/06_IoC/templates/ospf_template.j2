@@ -1,3 +1,4 @@
+no router ospf {{ ospf.process_id }}
 router ospf {{ ospf.process_id }}
  router-id {{ ospf.router_id }}
 {% for net in ospf.networks %}
