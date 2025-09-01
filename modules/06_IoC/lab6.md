@@ -233,3 +233,43 @@ Should return:
 - NETCONF allows precise network config control
 - pyATS verifies post-deploy network behavior
 - You’ve practiced **real IaC DevOps flow for networking**
+
+---
+
+## 🚀 CI/CD with GitLab (Optional Advanced Task)
+
+You can automate this entire process (YAML → Jinja2 → NETCONF push → pyATS validation → rollback on failure) using GitLab CI/CD.
+
+### Example `.gitlab-ci.yml`
+
+```yaml
+stages:
+  - validate
+  - deploy
+  - test
+  - rollback
+
+validate:
+  stage: validate
+  script:
+    - yamllint data/
+    - pylint scripts/*.py
+
+deploy:
+  stage: deploy
+  script:
+    - python3 scripts/deploy_ospf_jinja.py
+
+test:
+  stage: test
+  script:
+    - genie learn ospf --testbed-file testbed.yaml --output ospf_state
+
+rollback:
+  stage: rollback
+  when: on_failure
+  script:
+    - python3 scripts/rollback_ospf.py
+```
+
+You can host your own GitLab Runner or use GitLab.com’s Shared Runners. This allows you to achieve fully automated configuration management with rollback and testing in a DevOps-style workflow.
