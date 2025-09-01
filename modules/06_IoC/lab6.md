@@ -1,206 +1,184 @@
-# Lab 6 – Infrastructure as Code with Netmiko, YAML, Jinja2, Git and pyATS
+
+# Lab 6 – Infrastructure as Code with Netmiko, YAML, Jinja2, pyATS and Git Version Control
 
 ## Objective
-In this advanced lab, learners will automate OSPF configuration on Cisco IOS XE devices using **Netmiko** instead of NETCONF. Configuration will be dynamically generated using **YAML** and **Jinja2**. Learners will also use **Git** for version control and **pyATS** for validation. In case of error or rollback scenario, a script will be provided to remove the OSPF configuration.
+
+In this lab, learners will manage **OSPF configuration** on a Cisco IOS XE router using **YAML + Jinja2 + Netmiko**. The configuration is version-controlled with **Git**, and learners will simulate a typical IaC process: update config, push to device, test with pyATS, and rollback on failure.
+
+## Estimated Time
+2–3 hours
 
 ---
 
-## Estimated Time: 2–3 hours
+## Prerequisites
 
-### Prerequisites
-
-- Cisco DevNet Sandbox: IOS XE on CSR1000v Always-On sandbox
-- Installed tools:
+- DevNet Sandbox: IOS XE on CSR1000v Always-On
+- Tools installed:
   - Python 3.9+
-  - netmiko, pyats, jinja2, pyyaml
+  - `netmiko`, `pyats`, `jinja2`, `pyyaml`
+- Git + GitHub or GitLab
 - VSCode
 
-🔑 IOS XE Sandbox credentials:
-
-- Hostname: `sandbox-iosxe-latest-1.cisco.com`
-- SSH Port: `22`
-- Username: `developer`
-- Password: `C1sco12345`
+🔐 **IOS XE Sandbox Info**  
+- Hostname: `sandbox-iosxe-latest-1.cisco.com`  
+- SSH Port: `22`  
+- Username: `developer`  
+- Password: `C1sco12345`  
 
 ---
 
-## Step-by-Step Guide
+## Lab Scenario Overview
 
-### Step 1: Setup Project Environment
+You are provided with a working Git-based IaC repository containing:
+
+- `ospf_base.yaml` – the original OSPF config
+- `ospf_template.j2` – Jinja2 template to render OSPF config
+- `deploy_ospf.py` – deploy script (Netmiko)
+- `test_ospf.py` – verify script (pyATS)
+- `rollback_ospf.py` – rollback script to remove OSPF
+- `.gitignore` – to exclude `.venv`, log files
+
+Your task: **add new networks to OSPF**, commit the change, deploy, test, and rollback if needed.
+
+---
+
+## Step-by-Step Instructions
+
+### Step 1 – Clone the Lab Repo and Setup
 
 ```bash
-git clone https://gitlab.com/<your-username>/netmiko-iac-lab.git
-cd netmiko-iac-lab
+git clone https://gitlab.com/<your-username>/ospf-netmiko-lab.git
+cd ospf-netmiko-lab
 python3 -m venv .venv
 source .venv/bin/activate
-pip install netmiko jinja2 pyyaml pyats
+pip install -r requirements.txt
 ```
 
-### Step 2: Define OSPF Data in YAML
+✅ **Git Check**
 
-Create `data/ospf_data.yaml`:
+```bash
+git status
+git log --oneline
+```
+
+---
+
+### Step 2 – Add New OSPF Networks
+
+Open the file: `data/ospf_base.yaml`
 
 ```yaml
 ospf:
   process_id: 1
   router_id: 1.1.1.1
   networks:
-    - ip: 192.168.0.0 0.0.255.255 area 0
-    - ip: 10.10.10.0 0.0.0.255 area 1
+    - ip: 192.168.0.0
+      wildcard: 0.0.255.255
+      area: 0
+    - ip: 10.10.10.0
+      wildcard: 0.0.0.255
+      area: 1
+    - ip: 172.16.0.0
+      wildcard: 0.0.255.255
+      area: 2    # <--- YOU ADD THIS NEW NETWORK
 ```
 
-### Step 3: Create Jinja2 Template for CLI
+✅ Git Commit
 
-Create `templates/ospf_template.j2`:
-
-```jinja2
-router ospf {{ ospf.process_id }}
- router-id {{ ospf.router_id }}
-{% for net in ospf.networks %}
- network {{ net }}
-{% endfor %}
+```bash
+git checkout -b feature/add-area2
+git status
+git add data/ospf_base.yaml
+git commit -m "Added OSPF area 2 with 172.16.0.0 network"
 ```
 
-### Step 4: Render Template and Send via Netmiko
+---
 
-Create `scripts/deploy_ospf_netmiko.py`:
-
-```python
-import yaml
-from jinja2 import Environment, FileSystemLoader
-from netmiko import ConnectHandler
-
-# Load YAML
-with open('data/ospf_data.yaml') as f:
-    ospf_data = yaml.safe_load(f)
-
-# Render template
-env = Environment(loader=FileSystemLoader('templates'))
-template = env.get_template('ospf_template.j2')
-config = template.render(ospf=ospf_data['ospf']).splitlines()
-
-# Connect to device
-device = {
-    'device_type': 'cisco_ios',
-    'host': 'sandbox-iosxe-latest-1.cisco.com',
-    'username': 'developer',
-    'password': 'C1sco12345',
-}
-
-with ConnectHandler(**device) as conn:
-    output = conn.send_config_set(config)
-    print(output)
-```
-
-✅ **Expected Result**: Output of `send_config_set()` with successful OSPF commands applied
-
-### Step 5: Validate OSPF with pyATS
-
-Create `testbed.yaml`:
-
-```yaml
-devices:
-  iosxe:
-    os: iosxe
-    type: router
-    connections:
-      cli:
-        protocol: ssh
-        ip: sandbox-iosxe-latest-1.cisco.com
-        port: 22
-    credentials:
-      default:
-        username: developer
-        password: C1sco12345
-```
+### Step 3 – Deploy to Device
 
 Run:
 
 ```bash
-genie learn ospf --testbed-file testbed.yaml --output ospf_state
-cat ospf_state/ospf/ops/ospf/ospf.txt
+python3 scripts/deploy_ospf.py
 ```
 
-✅ **Expected Result**: OSPF process, router ID, and neighbor info
+✅ **Expected Output**
 
-### Step 6: Rollback Script
-
-Create `scripts/rollback_ospf_netmiko.py`:
-
-```python
-from netmiko import ConnectHandler
-
-device = {
-    'device_type': 'cisco_ios',
-    'host': 'sandbox-iosxe-latest-1.cisco.com',
-    'username': 'developer',
-    'password': 'C1sco12345',
-}
-
-commands = [
-    'no router ospf 1'
-]
-
-with ConnectHandler(**device) as conn:
-    output = conn.send_config_set(commands)
-    print(output)
+```bash
+[INFO] Connecting to sandbox-iosxe-latest-1.cisco.com
+[INFO] Sending OSPF config via SSH...
+[OK] Configuration applied successfully!
 ```
 
-✅ **Expected Result**: `no router ospf 1` successfully executed
+✅ Git Commit:
+
+```bash
+git add scripts/deploy_ospf.py
+git commit -m "Deployed updated OSPF config with area 2"
+```
+
+---
+
+### Step 4 – Validate with pyATS
+
+Run:
+
+```bash
+genie learn ospf --testbed-file testbed.yaml --output ospf_validation
+cat ospf_validation/ospf/ops/ospf/ospf.txt
+```
+
+✅ **Expected Output:** OSPF neighbor up, area 2 is active
+
+If the new config causes an issue (e.g., neighbor down), continue to rollback.
+
+---
+
+### Step 5 – Rollback Configuration
+
+Run rollback script:
+
+```bash
+python3 scripts/rollback_ospf.py
+```
+
+✅ **Expected Output**
+
+```bash
+[INFO] Removed OSPF networks in area 2
+[OK] Rollback successful
+```
+
+✅ Git Commit:
+
+```bash
+git revert HEAD
+# OR
+git checkout main
+git merge --no-ff feature/add-area2
+# Then:
+git revert <commit-id-of-bad-change>
+```
 
 ---
 
 ## Homework Challenges
 
-- Add 2 more networks in a new OSPF area in the YAML file
-- Extend Jinja2 to include passive-interface command
-- Test BGP deployment using same IaC pattern
-- Use pyATS `genie diff` to compare `pre` and `post` OSPF
-
----
-
-## GitLab CI/CD (Optional)
-
-You can use GitLab CI/CD pipeline to:
-
-- Validate YAML and Jinja2 templates
-- Render configuration files
-- Push OSPF config using Netmiko
-- Run pyATS verification
-
-Example `.gitlab-ci.yml`:
-
-```yaml
-stages:
-  - validate
-  - deploy
-  - test
-
-validate:
-  stage: validate
-  script:
-    - yamllint data/
-    - python3 -m py_compile scripts/*.py
-
-deploy:
-  stage: deploy
-  script:
-    - python3 scripts/deploy_ospf_netmiko.py
-
-test:
-  stage: test
-  script:
-    - genie learn ospf --testbed-file testbed.yaml --output ospf_state
-```
+1. Add two more OSPF areas (area 3, 4)
+2. Write a function to backup current config before pushing
+3. Create a GitLab CI/CD pipeline to validate YAML, deploy via Netmiko, test with pyATS
+4. Practice using Git:
+   - `git fetch`, `git pull`, `git merge`, `git revert`
+   - Branch naming: `feature/`, `fix/`, `rollback/`
+   - Add a `README.md` describing this lab
 
 ---
 
 ## Takeaway Summary
 
-✅ You have learned:
+✅ This lab reinforces:
 
-- Netmiko-based CLI automation for IOS XE
-- YAML + Jinja2 for structured configuration
-- Version control integration with Git
-- Post-deployment validation using pyATS
-- GitLab CI/CD overview for network automation workflows
+- IaC with YAML + Jinja2 + Netmiko + pyATS
+- Git for change tracking, rollback, branching
+- Real-world process: modify → commit → deploy → test → rollback
+
