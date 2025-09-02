@@ -1,6 +1,6 @@
 ---
 
-## Document 2: Python Basics for Network Automation - Module 5 Lab Guide
+## Document 2: Python Basics for Network Automation - Module 5 Lab Guide (Complete Markdown Block)
 
 ```markdown
 # Python Basics for Network Automation: Module 5 Lab Guide
@@ -14,7 +14,7 @@
 
 ## Introduction
 
-Welcome to Module 5 of the Python Basics for Network Automation Lab Guide! In this module, you will gain hands-on experience with using APIs to retrieve data. We will focus on **REST APIs** and the `requests` Python library.
+Welcome to Module 5 of the Python Basics for Network Automation Lab Guide! You will gain hands-on experience with **REST APIs** and the `requests` Python library.
 
 We will use **dummy API information** for Cisco DNA Center/Catalyst Center and Cisco IOS XE RESTCONF. **It is crucial that you replace these dummy values with the actual URLs, usernames, and passwords of your lab environment (e.g., Cisco DevNet Sandbox) to make the code functional.**
 
@@ -162,6 +162,75 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
     Lab 1.2 complete.
     ```
 
+### Task 1.3: Fetch and Process a List of Items
+
+APIs often return lists of objects. We'll fetch a list of users and iterate through them.
+
+1.  Open `api_lab.py` in your code editor.
+2.  Add the following code below the previous task:
+    ```python
+    # ... (previous code) ...
+
+    print("\n--- Lab 1.3: Fetch and Process a List of Items ---")
+
+    # The URL for a list of users from JSONPlaceholder API
+    api_url_users = "https://jsonplaceholder.typicode.com/users"
+
+    try:
+        print(f"Attempting to fetch user data from: {api_url_users}")
+        response = requests.get(api_url_users)
+        response.raise_for_status() 
+
+        # This time, data will be a list of dictionaries
+        users_data = response.json()
+
+        print(f"\nSuccessfully fetched {len(users_data)} users.")
+        print("\n--- First 3 Users' Details ---")
+        for i, user in enumerate(users_data[:3]): # Iterate through the first 3 users
+            print(f"User {i+1}:")
+            print(f"  Name: {user['name']}")
+            print(f"  Email: {user['email']}")
+            print(f"  City: {user['address']['city']}") # Access nested data
+            print("-" * 20) # Separator
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error making API request: {e}")
+    except json.JSONDecodeError:
+        print("Error: Could not decode JSON response from API.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    print("\nLab 1.3 complete.")
+    ```
+3.  Save `api_lab.py`.
+4.  **Run the script** from your `network_automation_labs` directory.
+    *Expected Output (content from live API, will vary slightly):*
+    ```
+    --- Lab 1.3: Fetch and Process a List of Items ---
+    Attempting to fetch user data from: https://jsonplaceholder.typicode.com/users
+
+    Successfully fetched 10 users.
+
+    --- First 3 Users' Details ---
+    User 1:
+      Name: Leanne Graham
+      Email: Sincere@april.biz
+      City: Gwenborough
+    --------------------
+    User 2:
+      Name: Ervin Howell
+      Email: Shanna@melissa.tv
+      City: Wisokyburgh
+    --------------------
+    User 3:
+      Name: Clementine Bauch
+      Email: Nathan@yesenia.net
+      City: McKenziehaven
+    --------------------
+
+    Lab 1.3 complete.
+    ```
+
 ---
 
 ## Lab 2: Querying Cisco DNA Center / Catalyst Center
@@ -177,9 +246,12 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
 
     print("\n--- Lab 2.1: Get Authentication Token from DNAC/Catalyst Center ---")
 
-    dnac_token = None
+    dnac_token = None # Initialize token variable
     try:
+        # Check if the user has updated the dummy URL
         if not API_INFO["dnac_url"].startswith("https://YOUR_DNAC_IP"):
+            print("Skipping DNAC token acquisition: Please update API_INFO['dnac_url'] with your actual lab URL.")
+        else:
             auth_url = f"{API_INFO['dnac_url']}/dna/system/api/v1/auth/token"
             headers = {"Content-Type": "application/json"}
             
@@ -190,12 +262,10 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
                 headers=headers,
                 verify=API_INFO['verify_ssl'] # Use verify_ssl from API_INFO
             )
-            response.raise_for_status()
-            dnac_token = response.json()["Token"]
+            response.raise_for_status() # Check for HTTP errors
+            dnac_token = response.json()["Token"] # Extract the token from the JSON response
             print("Successfully obtained DNAC token.")
             print(f"Token (first 10 chars): {dnac_token[:10]}...")
-        else:
-            print("Skipping DNAC token acquisition: Please update API_INFO['dnac_url'] with your actual lab URL.")
     except requests.exceptions.RequestException as e:
         print(f"Error getting DNAC token: {e}")
         print("Please ensure DNAC/Catalyst Center is reachable and credentials are correct.")
@@ -232,7 +302,9 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
 
     print("\n--- Lab 2.2: Query Network Device List from DNAC/Catalyst Center ---")
 
-    if dnac_token: # Only proceed if token was successfully obtained
+    # Only proceed if token was successfully obtained in the previous task
+    # We check if 'dnac_token' is defined in the local scope and is not None
+    if 'dnac_token' in locals() and dnac_token: 
         try:
             devices_url = f"{API_INFO['dnac_url']}/dna/intent/api/v1/network-device"
             headers = {
@@ -263,7 +335,7 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
         except Exception as e:
             print(f"An unexpected error occurred during DNAC device query: {e}")
     else:
-        print("Skipping DNAC device query: No valid token available.")
+        print("Skipping DNAC device query: No valid token available from previous task.")
 
     print("\nLab 2.2 complete.")
     ```
@@ -272,7 +344,7 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
     *Expected Output (if dummy URL/credentials are not replaced or token acquisition failed):*
     ```
     --- Lab 2.2: Query Network Device List from DNAC/Catalyst Center ---
-    Skipping DNAC device query: No valid token available.
+    Skipping DNAC device query: No valid token available from previous task.
 
     Lab 2.2 complete.
     ```
@@ -319,6 +391,7 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
     print("\n--- Lab 3.1: Get CPU Utilization via RESTCONF ---")
 
     try:
+        # Check if the user has updated the dummy URL
         if not API_INFO["iosxe_restconf_url"].startswith("https://YOUR_IOSXE_IP"):
             print("Skipping IOS XE RESTCONF CPU query: Please update API_INFO['iosxe_restconf_url'] with your actual lab URL.")
         else:
@@ -342,8 +415,14 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
             cpu_data = response.json()
 
             # Extract CPU total utilization (5-second average)
-            cpu_total = cpu_data['Cisco-IOS-XE-process-cpu-oper:cpu-usage']['cpu-utilization']['cpu-total-utilization']
-            print(f"\nIOS XE CPU Utilization (5-sec average): {cpu_total}%")
+            # Note: The structure might vary slightly based on IOS XE version and exact model.
+            # Using .get() with default empty dict/list for safer access.
+            cpu_total = cpu_data.get('Cisco-IOS-XE-process-cpu-oper:cpu-usage', {}).get('cpu-utilization', [{}])[0].get('cpu-total-utilization')
+            
+            if cpu_total is not None:
+                print(f"\nIOS XE CPU Utilization (5-sec average): {cpu_total}%")
+            else:
+                print("\nCould not find 'cpu-total-utilization' in response.")
             print(json.dumps(cpu_data, indent=2)) # Print full CPU data for inspection
 
     except requests.exceptions.RequestException as e:
@@ -401,7 +480,7 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
             # Path to operational status of a specific interface (e.g., GigabitEthernet1)
             # This uses the ietf-interfaces YANG model
             interface_name = "GigabitEthernet1" # Replace with an actual interface name on your device
-            interface_path = f"ietf-interfaces:interfaces/interface={interface_name}/oper-status"
+            interface_path = f"ietf-interfaces:interfaces/interface={interface_name}" # Get full interface details
             full_url = f"{API_INFO['iosxe_restconf_url']}/{interface_path}"
             
             headers = {
@@ -419,8 +498,15 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
             response.raise_for_status()
             interface_data = response.json()
 
-            status = interface_data['ietf-interfaces:oper-status']
-            print(f"\nInterface {interface_name} Operational Status: {status}")
+            # Extract operational status
+            # Note: The structure might vary slightly based on IOS XE version and exact model
+            interface_list = interface_data.get('ietf-interfaces:interfaces', {}).get('interface', [])
+            
+            if interface_list:
+                status = interface_list[0].get('oper-status')
+                print(f"\nInterface {interface_name} Operational Status: {status}")
+            else:
+                print(f"\nInterface {interface_name} not found or no data.")
             print(json.dumps(interface_data, indent=2)) # Print full interface data for inspection
 
     except requests.exceptions.RequestException as e:
@@ -443,11 +529,21 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
     *Expected Output (if you replace with real, reachable IOS XE info):*
     ```
     --- Lab 3.2: Get Interface Operational Status via RESTCONF ---
-    Attempting to fetch interface status from: https://YOUR_IOSXE_IP/restconf/data/ietf-interfaces:interfaces/interface=GigabitEthernet1/oper-status
+    Attempting to fetch interface status from: https://YOUR_IOSXE_IP/restconf/data/ietf-interfaces:interfaces/interface=GigabitEthernet1
 
     Interface GigabitEthernet1 Operational Status: up
     {
-      "ietf-interfaces:oper-status": "up"
+      "ietf-interfaces:interfaces": {
+        "interface": [
+          {
+            "name": "GigabitEthernet1",
+            "type": "iana-if-type:ethernetCsmacd",
+            "enabled": true,
+            "oper-status": "up",
+            "phys-address": "00:11:22:33:44:55"
+          }
+        ]
+      }
     }
 
     Lab 3.2 complete.
