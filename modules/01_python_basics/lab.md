@@ -1016,12 +1016,11 @@ This task is for understanding how packages are structured. You don't need to wr
     # file_io_lab.py
     print("--- Writing Configuration to File ---")
     device_config_to_save = """
-version 15.6
-hostname My-Lab-Router
-interface Loopback0
- ip address 1.1.1.1 255.255.255.255
-end
-"""
+        version 15.6
+        hostname My-Lab-Router
+        interface Loopback0
+        ip address 1.1.1.1 255.255.255.255
+        end"""
     output_config_filename = "router_config_backup.txt"
 
     try:
