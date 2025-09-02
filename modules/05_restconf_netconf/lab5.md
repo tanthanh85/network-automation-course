@@ -1,6 +1,8 @@
+
+
 ## Document 2: Python Basics for Network Automation - Module 5 Lab Guide (Complete Markdown Block)
 
-```markdown
+
 # Python Basics for Network Automation: Module 5 Lab Guide
 
 ## Using APIs to Retrieve Data on Cisco Network Devices - Hands-on Exercises
