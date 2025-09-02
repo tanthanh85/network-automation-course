@@ -67,12 +67,4 @@ For this module, we will structure our project for better organization.
 
 Your directory structure should now look like this:
 network_automation_labs/
-└── module5_api_lab/
-├── init.py
-├── config.py
-├── iosxe_api_functions.py
-├── app.py
-├── templates/
-│ └── index.html
-└── static/
-└── style.css
+network\_automation\_labs/ └── module5\_api\_lab/ ├── init.py ├── config.py ├── iosxe\_api\_functions.py ├── app.py ├── templates/ │ └── index.html └── static/ └── style.css
