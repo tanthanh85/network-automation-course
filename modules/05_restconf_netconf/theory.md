@@ -96,7 +96,8 @@ The router would respond with JSON data similar to this:
       }
     ]
   }
-}```
+}
+```
 
 Your Python script would then easily access `data['Cisco-IOS-XE-process-cpu-oper:cpu-usage']['cpu-utilization'][0]['cpu-total-utilization']`.
 
