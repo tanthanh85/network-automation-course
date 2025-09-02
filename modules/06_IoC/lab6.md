@@ -9,9 +9,7 @@
 
 ## Introduction
 
-Welcome to Module 6 of the Python Basics for Network Automation Lab Guide! In this module, you will get hands-on with Infrastructure as Code (IaC) principles. You will learn to define network configurations in YAML, generate device commands using Jinja2, push them via Netmiko, use Git for version control, and verify changes with PyATS.
-
-We will simulate a full IaC workflow, including a rollback scenario, focusing on changing a router's hostname.
+Welcome to Module 6 of the Python Basics for Network Automation Lab Guide! In this module, you will get hands-on with Infrastructure as Code (IaC) principles. You will learn to define network configurations in YAML, generate device commands using Jinja2, and push them via Netmiko. We will then use Git for version control to simulate a full IaC workflow, including a rollback scenario.
 
 **It is crucial that you replace the dummy values for your IOS XE router with its actual IP address, username, and password to make the code functional.**
 
@@ -20,8 +18,7 @@ We will simulate a full IaC workflow, including a rollback scenario, focusing on
 *   Use a Jinja2 template to generate configuration.
 *   Use Netmiko to push configuration to a Cisco IOS XE router.
 *   Use Git for version control of your configuration data.
-*   Use PyATS to check the network status (hostname verification).
-*   Simulate a complete IaC workflow: branch, modify data, push config, verify, and rollback.
+*   Simulate a complete IaC workflow: branch, modify data, push config, and rollback.
 
 **Prerequisites:**
 *   Completion of Module 1, Module 2, Module 3, Module 4, and Module 5 Labs.
@@ -53,8 +50,7 @@ For this module, we will create a dedicated project structure.
     ```bash
     touch __init__.py
     touch config.py
-    touch netmiko_ops.py
-    touch pyats_checks.py
+    touch netmiko_iac_ops.py
     touch main_iac_workflow.py
     ```
 5.  **Inside `module6_iac_lab`, create the following data and template files:**
@@ -64,18 +60,17 @@ For this module, we will create a dedicated project structure.
     ```
 
 Your directory structure should now look like this:
-    ```
-    network_automation_labs/
-    └── module6_iac_lab/
-    ├── init.py
-    ├── config.py
-    ├── netmiko_ops.py
-    ├── pyats_checks.py
-    ├── main_iac_workflow.py
-    ├── network_data.yaml
-    └── templates/
-    └── hostname.j2
-    ```
+```
+network_automation_labs/
+└── module6_iac_lab/
+├── init.py
+├── config.py
+├── netmiko_iac_ops.py
+├── main_iac_workflow.py
+├── network_data.yaml
+└── templates/
+└── hostname.j2
+```
 ### Task 0.1: Populate `config.py`
 
 This file will store your IOS XE Netmiko connection details.
@@ -121,9 +116,9 @@ This Jinja2 template will generate the CLI commands to change the hostname.
     ```
 3.  Save `templates/hostname.j2`.
 
-### Task 0.4: Populate `netmiko_ops.py`
+### Task 0.4: Populate `netmiko_iac_ops.py`
 
-This file will contain functions for Netmiko operations (connect and push config, get hostname).
+This file will contain functions for Netmiko operations (push config and get hostname).
 
 1.  Ensure your `na_env` virtual environment is active (from `network_automation_labs` directory).
 2.  Navigate into your `module6_iac_lab` directory:
@@ -134,10 +129,10 @@ This file will contain functions for Netmiko operations (connect and push config
     ```bash
     pip install netmiko PyYAML Jinja2
     ```
-4.  Open `netmiko_ops.py` in your code editor.
+4.  Open `netmiko_iac_ops.py` in your code editor.
 5.  Add the following Python code:
     ```python
-    # netmiko_ops.py
+    # netmiko_iac_ops.py
     from netmiko import ConnectHandler
     from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException
     import logging
@@ -199,173 +194,9 @@ This file will contain functions for Netmiko operations (connect and push config
             logging.error(f"Unexpected Error connecting or getting hostname from {host}: {e}")
             return None
     ```
-6.  Save `netmiko_ops.py`.
+6.  Save `netmiko_iac_ops.py`.
 
-### Task 0.5: Populate `pyats_checks.py`
-
-This file will contain functions for PyATS verification.
-
-1.  Open `pyats_checks.py` in your code editor.
-2.  Add the following Python code:
-    ```python
-    # pyats_checks.py
-    import logging
-    import os
-    import yaml
-    from pyats.topology import loader
-    from pyats import aetest
-
-    # Configure logging for better visibility
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-    # --- PyATS Testbed Definition (Simplified for Lab) ---
-    # Load device info from config.py
-    from .config import IOSXE_NETMIKO_INFO
-
-    testbed_yaml_content = f"""
-    devices:
-      {IOSXE_NETMIKO_INFO['host']}:
-        type: iosxe
-        os: iosxe
-        connections:
-          cli:
-            protocol: ssh
-            ip: {IOSXE_NETMIKO_INFO['host']}
-            port: {IOSXE_NETMIKO_INFO['port']}
-        credentials:
-          default:
-            username: {IOSXE_NETMIKO_INFO['username']}
-            password: {IOSXE_NETMIKO_INFO['password']}
-    """
-
-    # --- PyATS Test Script (Simplified) ---
-    # This is a basic PyATS AETEST script.
-    # We'll run it programmatically.
-
-    class HostnameCheck(aetest.Testcase):
-        """
-        PyATS Testcase to check the router's hostname.
-        """
-        @aetest.setup
-        def setup(self, testbed):
-            logging.info("PyATS Setup: Connecting to device...")
-            # Get the device object from the testbed
-            self.device = testbed.devices[IOSXE_NETMIKO_INFO['host']]
-            # Connect to the device via CLI (SSH)
-            self.device.connect(init_exec_commands=[], init_config_commands=[]) 
-            logging.info(f"PyATS Setup: Connected to {self.device.name}.")
-
-        @aetest.test
-        def check_hostname(self, expected_hostname):
-            logging.info(f"PyATS Test: Checking hostname. Expected: {expected_hostname}")
-            try:
-                # Execute CLI command to get hostname
-                output = self.device.execute("show hostname")
-                # PyATS can parse CLI output. For simple hostname, string check is fine.
-                actual_hostname = output.strip()
-                
-                logging.info(f"PyATS Test: Actual hostname: {actual_hostname}")
-                
-                if actual_hostname == expected_hostname:
-                    self.passed(f"Hostname matches. Actual: {actual_hostname}, Expected: {expected_hostname}")
-                else:
-                    self.failed(f"Hostname MISMATCH! Actual: {actual_hostname}, Expected: {expected_hostname}")
-            except Exception as e:
-                self.errored(f"Error during hostname check: {e}")
-
-        @aetest.cleanup
-        def cleanup(self):
-            if self.device.is_connected():
-                self.device.disconnect()
-                logging.info("PyATS Cleanup: Disconnected from device.")
-
-    def run_pyats_hostname_check(expected_hostname):
-        """
-        Programmatically runs the PyATS hostname check.
-        Returns True if hostname matches, False otherwise.
-        """
-        logging.info(f"Running PyATS hostname check for: {expected_hostname}")
-        
-        # Create a temporary testbed file for PyATS
-        temp_testbed_path = "temp_testbed.yaml"
-        with open(temp_testbed_path, "w") as f:
-            f.write(testbed_yaml_content)
-        
-        try:
-            # Load the testbed
-            testbed = loader.load(temp_testbed_path)
-
-            # Define the PyATS test script (this current file)
-            # PyATS needs a file path to the test script.
-            # We'll create a dummy file to point PyATS to.
-            temp_test_script_path = "temp_pyats_test.py"
-            with open(temp_test_script_path, "w") as f:
-                f.write(f"""
-import logging
-from pyats import aetest
-from pyats.topology import loader
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# This class is defined in the outer pyats_checks.py
-# We're just making it accessible for aetest.main()
-class HostnameCheck(aetest.Testcase):
-    @aetest.setup
-    def setup(self, testbed):
-        logging.info("PyATS Setup: Connecting to device...")
-        self.device = testbed.devices['{IOSXE_NETMIKO_INFO['host']}']
-        self.device.connect(init_exec_commands=[], init_config_commands=[])
-        logging.info(f"PyATS Setup: Connected to {{self.device.name}}.")
-
-    @aetest.test
-    def check_hostname(self, expected_hostname):
-        logging.info(f"PyATS Test: Checking hostname. Expected: {{expected_hostname}}")
-        try:
-            output = self.device.execute("show hostname")
-            actual_hostname = output.strip()
-            logging.info(f"PyATS Test: Actual hostname: {{actual_hostname}}")
-            if actual_hostname == expected_hostname:
-                self.passed(f"Hostname matches. Actual: {{actual_hostname}}, Expected: {{expected_hostname}}")
-            else:
-                self.failed(f"Hostname MISMATCH! Actual: {{actual_hostname}}, Expected: {{expected_hostname}}")
-        except Exception as e:
-            self.errored(f"Error during hostname check: {{e}}")
-
-    @aetest.cleanup
-    def cleanup(self):
-        if self.device.is_connected():
-            self.device.disconnect()
-            logging.info("PyATS Cleanup: Disconnected from device.")
-                """)
-
-            # Run the AETEST script
-            # aetest.main() returns True if all tests passed, False otherwise
-            results = aetest.main(testbed=testbed, expected_hostname=expected_hostname, testscript=temp_test_script_path)
-            
-            return results
-
-        except Exception as e:
-            logging.error(f"Error running PyATS check: {e}")
-            return False
-        finally:
-            # Clean up temporary files
-            if os.path.exists(temp_testbed_path):
-                os.remove(temp_testbed_path)
-            if os.path.exists(temp_test_script_path):
-                os.remove(temp_test_script_path)
-
-    # Standalone test for functions (only runs when this file is executed directly)
-    if __name__ == '__main__':
-        print("--- Testing PyATS Hostname Check ---")
-        # This will try to connect to your router and get its current hostname.
-        # It will likely fail if your router's hostname doesn't match "YOUR_IOSXE_IP"
-        # or if PyATS cannot connect.
-        success = run_pyats_hostname_check(IOSXE_NETMIKO_INFO['host'])
-        print(f"\nPyATS Hostname Check Result: {'PASSED' if success else 'FAILED'}")
-    ```
-3.  Save `pyats_checks.py`.
-
-### Task 0.6: Populate `main_iac_workflow.py`
+### Task 0.5: Populate `main_iac_workflow.py`
 
 This is the main orchestration script that ties everything together.
 
@@ -379,8 +210,7 @@ This is the main orchestration script that ties everything together.
     import os
     import time
 
-    from .netmiko_ops import push_config_netmiko, get_hostname_netmiko
-    from .pyats_checks import run_pyats_hostname_check
+    from .netmiko_iac_ops import push_config_netmiko, get_hostname_netmiko
 
     # Configure logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -417,7 +247,7 @@ This is the main orchestration script that ties everything together.
         1. Load network data.
         2. Generate configuration.
         3. Push configuration via Netmiko.
-        4. Verify status using PyATS.
+        4. Verify status (by getting hostname).
         """
         logging.info(f"\n--- Starting IaC Workflow for {data_file} ---")
 
@@ -453,15 +283,17 @@ This is the main orchestration script that ties everything together.
         # Give router some time to apply config and update state
         time.sleep(5) 
 
-        # 4. Verify status using PyATS
-        logging.info("Running PyATS verification checks...")
-        pyats_success = run_pyats_hostname_check(expected_hostname)
+        # 4. Verify status (get hostname and compare)
+        logging.info("Verifying current hostname on device...")
+        actual_hostname = get_hostname_netmiko()
         
-        if pyats_success:
+        if actual_hostname == expected_hostname:
             logging.info(f"--- IaC Workflow for {data_file} COMPLETED SUCCESSFULLY ---")
+            logging.info(f"Verification: Hostname matches. Actual: '{actual_hostname}', Expected: '{expected_hostname}'")
             return True
         else:
             logging.error(f"--- IaC Workflow for {data_file} FAILED VERIFICATION ---")
+            logging.error(f"Verification: Hostname MISMATCH! Actual: '{actual_hostname}', Expected: '{expected_hostname}'")
             return False
 
     if __name__ == '__main__':
@@ -469,7 +301,7 @@ This is the main orchestration script that ties everything together.
         print("\n=== Phase 1: Initial Deployment ===")
         success = run_iac_workflow("network_data.yaml")
         if success:
-            print("\nInitial deployment successful. Check your router's hostname.")
+            print("\nInitial deployment successful. Router hostname should now be 'MyRouter-Initial'.")
         else:
             print("\nInitial deployment failed. Check logs for errors.")
         
@@ -488,7 +320,7 @@ This is the main orchestration script that ties everything together.
         print("\n=== Phase 3: Deploy New Hostname ===")
         success_new = run_iac_workflow("network_data.yaml")
         if success_new:
-            print("\nNew hostname deployment successful. Verify router hostname is 'MyRouter-New'.")
+            print("\nNew hostname deployment successful. Router hostname should now be 'MyRouter-New'.")
         else:
             print("\nNew hostname deployment failed. Check logs.")
         
@@ -541,7 +373,7 @@ You've now completed Module 6 and gained practical experience with Infrastructur
 *   Generate network configurations using Jinja2 templates.
 *   Push configurations to Cisco IOS XE routers using Netmiko.
 *   Utilize Git for version control of your network configurations.
-*   Perform basic network status verification using PyATS.
+*   Perform basic network status verification.
 *   Understand and simulate a complete IaC workflow, including rollback.
 
 IaC is a foundational practice for modern, scalable, and reliable network automation. This module has provided you with the core tools and concepts to start implementing IaC in your own environment.
