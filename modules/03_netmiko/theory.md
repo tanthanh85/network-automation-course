@@ -1,265 +1,291 @@
-# Module 3 – Network Device Automation using Netmiko
+# Python Basics for Network Automation: Module 3 Theory Guide
+
+## Programming Automation using Netmiko Library
+
+**[Your Organization/Name]**
+**September 01, 2025**
 
 ---
 
-## 🧠 Why Use Netmiko for Network Automation?
-In the world of network automation, most engineers face a common challenge: how to interact with legacy devices that still rely heavily on CLI-based configuration. Python’s built-in `paramiko` library supports raw SSH, but managing device prompts, interactive sessions, and vendor-specific quirks is extremely time-consuming and error-prone.
+## 1. Introduction to Netmiko
 
-This is where **Netmiko** becomes a powerful tool. Netmiko is a high-level SSH library tailored specifically for **network engineers**. It simplifies interactions with CLI-based network devices from vendors like:
+In Module 1, you learned Python basics and how data is represented. In Module 2, you explored how to make your scripts faster using concurrency. Now, it's time to apply these skills to a real-world network automation tool: **Netmiko**.
 
-- Cisco IOS, NX-OS
-- Juniper JunOS
-- Arista EOS
-- HP ProCurve
-- Palo Alto, Fortinet, Mikrotik, Huawei, and more
+**What is Netmiko?**
+Netmiko is a powerful Python library that makes it easy to connect to network devices (like routers, switches, and firewalls) and send commands to them. It supports many different vendors, including Cisco (IOS, IOS-XE, NX-OS), Juniper, Arista, and more.
 
-Netmiko abstracts the complexity of CLI session handling and gives you a **clean, Pythonic interface** to send commands and retrieve output.
-
----
-
-## 🚀 Key Features of Netmiko
-
-| Feature | Description |
-|--------|-------------|
-| `send_command()` | Send show/exec-level commands |
-| `send_config_set()` | Send global config/line-by-line changes |
-| Prompt detection | Automatically manages `enable` and `config` modes |
-| Output buffering | Handles output sizes properly without hanging |
-| Delay tuning | Uses `delay_factor`, `read_timeout` for slow devices |
-| Secure connection | Based on `paramiko`, supports SSH only |
-| Multivendor support | Automatically adapts to different platforms |
+**Why use Netmiko?**
+*   **Simplifies SSH/Telnet:** It handles the complexities of connecting to devices over SSH (Secure Shell) or Telnet, including authentication, command prompts, and pagination (when a command output is too long and requires pressing "Space" or "Enter").
+*   **Cross-Vendor Support:** You can use a similar approach to interact with devices from different manufacturers.
+*   **Automation Power:** It's a foundational tool for automating tasks like:
+    *   Collecting `show` command outputs (e.g., `show version`, `show ip interface brief`).
+    *   Pushing configuration changes (e.g., creating VLANs, configuring interfaces).
+    *   Performing configuration backups.
+    *   Checking device status.
 
 ---
 
-## 🔍 Netmiko Connection Workflow
+## 2. Netmiko Basics: Getting Started
 
-### 1. Define the Device Dictionary
-```python
-cisco_ios = {
-    'device_type': 'cisco_ios',
-    'ip': '192.168.100.1',
-    'username': 'admin',
-    'password': 'cisco123',
-    'secret': 'enablepass',   # Optional: for entering enable mode
-}
-```
+Before you can use Netmiko, you need to install it and understand how to tell it about the device you want to connect to.
 
-### 2. Establish SSH Connection
-```python
-from netmiko import ConnectHandler
+*   **2.1 Installation:**
+    *   Always install Netmiko within your project's virtual environment (as learned in Module 1).
+    *   Open your terminal (with your virtual environment activated) and run:
+        ```bash
+        pip install netmiko
+        ```
 
-net_connect = ConnectHandler(**cisco_ios)
-net_connect.enable()  # Enter privileged EXEC mode (if needed)
-```
+*   **2.2 Device Dictionary (Connection Parameters):**
+    *   Netmiko needs to know details about the device it's connecting to. You provide this information in a Python dictionary.
+    *   **Common Parameters:**
+        *   `device_type`: (Required) Specifies the vendor and OS type (e.g., `"cisco_ios"`, `"cisco_nxos"`, `"juniper_junos"`). This tells Netmiko how to interact with the device's command line.
+        *   `host`: (Required) The IP address or hostname of the device.
+        *   `username`: (Required) The username for logging in.
+        *   `password`: (Required) The password for logging in.
+        *   `port`: (Optional) The port number (default is 22 for SSH, 23 for Telnet).
+        *   `secret`: (Optional) The enable password (for Cisco devices, to enter privileged EXEC mode).
+        *   `session_log`: (Optional) Path to a file where Netmiko will log the entire SSH session (useful for debugging).
 
-### 3. Run Show Commands
-```python
-output = net_connect.send_command("show ip interface brief")
-print(output)
-```
+    **Example Device Dictionary:**
+    ```python
+    cisco_router = {
+        "device_type": "cisco_ios",
+        "host": "192.168.1.1",
+        "username": "admin",
+        "password": "mysecretpassword",
+        "secret": "myenablepassword", # Used for 'enable' command
+        "port": 22,
+        "session_log": "router_session.log"
+    }
+    ```
+    *Note: In real scripts, avoid hardcoding passwords directly. Use environment variables, secure password managers, or prompt for input (e.g., using `getpass.getpass()`). For this module's labs, we'll use simulated hardcoded values for simplicity.*
 
-### 4. Run Configuration Changes
-```python
-config = [
-    "hostname Core-R1",
-    "interface loopback0",
-    "ip address 10.0.0.1 255.255.255.255"
-]
-net_connect.send_config_set(config)
-```
+*   **2.3 `ConnectHandler`: Establishing the Connection**
+    *   `ConnectHandler` is the main class in Netmiko used to establish and manage the connection to a network device.
+    *   It takes the device dictionary as input.
+    *   **Best Practice:** Use `ConnectHandler` with a `with` statement. This ensures the connection is properly opened and automatically closed when you're done, even if errors occur.
+    ```python
+    from netmiko import ConnectHandler
 
-### 5. Save the Configuration
-```python
-net_connect.send_command("write memory")
-```
+    device = {
+        "device_type": "cisco_ios",
+        "host": "192.168.1.1",
+        "username": "admin",
+        "password": "cisco",
+    }
 
-### 6. Disconnect
-```python
-net_connect.disconnect()
-```
-
----
-
-## 🧪 Use Cases for Netmiko in the Field
-
-| Scenario | Application |
-|----------|-------------|
-| Bulk configuration | Apply VLANs, banners, or ACLs to all edge switches |
-| Configuration backup | Retrieve `show run` and store in versioned text files |
-| Health check | Automate `show version`, `show interfaces`, etc. for NOC scripts |
-| Troubleshooting toolkit | Build CLI-driven tool to check interface, BGP, OSPF status |
-| Compliance auditing | Check for non-compliant hostname, NTP, SNMP configs |
-| Credential rotation | Automate change of local admin passwords monthly |
-
----
-
-## 📊 Parsing Return Output: Regex vs TextFSM vs NTC Templates
-
-### ❗ The Problem
-Most CLI output is **unstructured** text. If you run:
-```python
-net_connect.send_command("show ip interface brief")
-```
-you get back a multiline string. It's hard to work with this in Python unless it's parsed into structured data (lists, dicts).
+    try:
+        with ConnectHandler(**device) as net_connect: # **device unpacks the dictionary
+            print(f"Successfully connected to {device['host']}")
+            # Perform operations here
+        print(f"Connection to {device['host']} closed.")
+    except Exception as e:
+        print(f"Failed to connect to {device['host']}: {e}")
+    ```
+    **Expected Output (if connection is simulated successfully):**
+    ```
+    Successfully connected to 192.168.1.1
+    Connection to 192.168.1.1 closed.
+    ```
 
 ---
 
-### ✅ Option 1: Manual Regex Parsing
-You can use Python's built-in `re` module:
-```python
-import re
-output = net_connect.send_command("show ip interface brief")
+## 3. Performing Operations: Commands and Configurations
 
-interfaces = re.findall(r"(\S+)\s+(\S+)\s+YES.*?(up|down|administratively down)\s+(up|down)", output)
-print(interfaces)
-```
+Once connected, Netmiko provides methods to send commands and push configurations.
 
-✅ Pros:
-- Flexible and works with any vendor CLI
+*   **3.1 `send_command()`: Executing `show` Commands**
+    *   Used to send a single command to the device and capture its output. This is perfect for collecting information (e.g., `show version`, `show ip interface brief`).
+    *   It returns the command output as a string.
+    *   **Arguments:**
+        *   `command_string`: The command to send.
+        *   `use_textfsm`: (Optional) If `True` (and `textfsm` is installed: `pip install textfsm`), Netmiko will try to parse the output into structured data (a list of dictionaries), which is much easier to work with than raw text.
+        *   `delay_factor`: (Optional) Multiplier for default delays (useful for slow devices).
+        *   `strip_prompt`: (Optional) Removes the command prompt from the output (default: `True`).
+        *   `strip_command`: (Optional) Removes the command itself from the output (default: `True`).
 
-❌ Cons:
-- Hard to maintain
-- Fragile if output format changes
-- Requires deep regex knowledge
+    **Example:**
+    ```python
+    # Assuming net_connect is an active connection
+    output = net_connect.send_command("show ip interface brief")
+    print(output)
 
----
+    # Example with TextFSM (requires 'pip install textfsm')
+    # output_parsed = net_connect.send_command("show version", use_textfsm=True)
+    # print(output_parsed['hostname']) # Access parsed data
+    ```
+    **Expected Output (example):**
+    ```
+    Interface              IP-Address      OK? Method Status        Protocol
+    GigabitEthernet0/0     192.168.1.1     YES manual up            up
+    Loopback0              1.1.1.1         YES manual up            up
+    Vlan1                  unassigned      YES unset  down          down
+    ```
 
-### ✅ Option 2: TextFSM (Recommended)
-Netmiko supports **TextFSM parsing** out of the box:
-```python
-output = net_connect.send_command("show ip interface brief", use_textfsm=True)
-print(output)
-```
-Returns:
-```python
-[
-  {'intf': 'GigabitEthernet0/0', 'ipaddr': '192.168.1.1', 'status': 'up', 'protocol': 'up'},
-  {'intf': 'Loopback0', 'ipaddr': '10.1.1.1', 'status': 'up', 'protocol': 'up'}
-]
-```
+*   **3.2 `send_config_set()`: Pushing Configuration Changes**
+    *   Used to send a list of configuration commands to the device. Netmiko handles entering and exiting configuration mode.
+    *   It returns the output of the configuration commands.
+    *   **Arguments:**
+        *   `config_commands`: A list of strings, where each string is a configuration command.
+        *   `cmd_verify`: (Optional) If `True`, Netmiko will verify each command was successfully applied (default: `True`).
+        *   `exit_config_mode`: (Optional) If `True`, Netmiko will exit configuration mode after sending commands (default: `True`).
 
-✅ Pros:
-- Clean JSON-like output
-- Easy to loop through, convert to CSV, JSON, etc.
+    **Example:**
+    ```python
+    # Assuming net_connect is an active connection
+    config_commands = [
+        "interface Loopback100",
+        "description Configured_by_Netmiko",
+        "ip address 10.0.0.1 255.255.255.255",
+        "no shutdown"
+    ]
+    output_config = net_connect.send_config_set(config_commands)
+    print(output_config)
+    ```
+    **Expected Output (example):**
+    ```
+    config terminal
+    Enter configuration commands, one per line.  End with CNTL/Z.
+    Router(config)#interface Loopback100
+    Router(config-if)#description Configured_by_Netmiko
+    Router(config-if)#ip address 10.0.0.1 255.255.255.255
+    Router(config-if)#no shutdown
+    Router(config-if)#exit
+    Router(config)#end
+    Router#
+    ```
 
-❌ Cons:
-- Relies on correct TextFSM template
-- May not support every command
+*   **3.3 Automating Backup Tasks**
+    *   To back up a device's configuration, you typically send a `show running-config` command and save the output to a file.
+    *   **Steps:**
+        1.  Connect to the device.
+        2.  Execute `net_connect.send_command("show running-config")`.
+        3.  Save the returned string to a text file.
 
----
+    **Example (saving to file):**
+    ```python
+    # Assuming net_connect is an active connection and config_output is the result
+    import datetime
 
-### ✅ Option 3: NTC Templates (TextFSM-powered)
-NTC Templates is a community-driven repo of prebuilt TextFSM templates.
-
-**Installation:**
-```bash
-git clone https://github.com/networktocode/ntc-templates.git
-export NET_TEXTFSM=/path/to/ntc-templates/templates
-```
-
-**In Python:**
-```python
-import os
-os.environ['NET_TEXTFSM'] = '/path/to/ntc-templates/templates'
-output = net_connect.send_command("show version", use_textfsm=True)
-```
-
----
-
-## 🧱 Script Structuring and Modular Design
-
-### Recommended Project Layout
-```bash
-nasp-project/
-├── main.py                # Entrypoint to call functions from tasks
-├── devices.yaml           # Structured device inventory
-├── .env                   # Store credentials (via python-dotenv)
-├── tasks/
-│   ├── backup.py
-│   ├── vlan.py
-│   ├── banner.py
-│   └── config_push.py
-└── lib/
-    └── netmiko_helper.py
-```
-
----
-
-## 📦 Introduction to Jinja2 Templates for CLI Automation
-
-Jinja2 is a powerful templating engine for Python, commonly used in automation to generate device configurations from structured data. Instead of hardcoding interface and protocol configurations, you use **templates + YAML** to dynamically generate CLI.
-
-### 🔧 Example: Automating OSPF Configuration
-
-#### Step 1: Inventory - `devices.yaml`
-```yaml
-- hostname: R1
-  ip: 192.168.10.1
-  username: admin
-  password: cisco123
-  secret: enablepass
-  loopbacks:
-    - { id: 1, ip: 10.1.1.1, mask: 255.255.255.255 }
-    - { id: 2, ip: 10.2.2.2, mask: 255.255.255.255 }
-  ospf:
-    process_id: 1
-    networks:
-      - { network: 10.0.0.0, wildcard: 0.255.255.255, area: 0 }
-```
-
-#### Step 2: OSPF Jinja Template - `templates/ospf.j2`
-```jinja
-hostname {{ hostname }}
-router ospf {{ ospf.process_id }}
-{% for net in ospf.networks %}
- network {{ net.network }} {{ net.wildcard }} area {{ net.area }}
-{% endfor %}
-{% for lo in loopbacks %}
-interface Loopback{{ lo.id }}
- ip address {{ lo.ip }} {{ lo.mask }}
-{% endfor %}
-```
-
-#### Step 3: Python Script to Render and Push
-```python
-from jinja2 import Environment, FileSystemLoader
-import yaml
-from netmiko import ConnectHandler
-
-# Load data
-with open('devices.yaml') as f:
-    devices = yaml.safe_load(f)
-
-# Jinja2 environment
-env = Environment(loader=FileSystemLoader('templates'))
-template = env.get_template('ospf.j2')
-
-for dev in devices:
-    config = template.render(**dev).splitlines()
-    conn = ConnectHandler(
-        device_type='cisco_ios',
-        ip=dev['ip'],
-        username=dev['username'],
-        password=dev['password'],
-        secret=dev['secret']
-    )
-    conn.enable()
-    conn.send_config_set(config)
-    conn.save_config()
-    conn.disconnect()
-```
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_filename = f"{net_connect.base_prompt}_running_config_{timestamp}.txt"
+    
+    with open(backup_filename, "w") as f:
+        f.write(config_output)
+    print(f"Configuration backup saved to {backup_filename}")
+    ```
 
 ---
 
-## ✅ Summary: What You Should Know Now
-By completing this module, you should be able to:
+## 4. Managing Multiple Network Devices at Scale
 
-- Understand the role of Netmiko in network CLI automation
-- Connect securely to Cisco/Arista/Juniper devices
-- Send commands, retrieve output, and save configs
-- Parse CLI output using regex or TextFSM/NTC Templates
-- Build reusable Python scripts and organize projects
-- Use Jinja2 + YAML for scalable CLI generation
-- Iterate over inventories and handle exceptions
+Connecting to one device is easy, but network automation often involves managing dozens, hundreds, or even thousands of devices. This is where the concurrency concepts from Module 2 become essential.
 
+*   **Why Concurrency?**
+    *   Network operations (SSH connections, sending commands, waiting for replies) are primarily **I/O-bound** tasks. Your script spends most of its time waiting for the device to respond.
+    *   If you process devices one by one (sequentially), your script will be very slow.
+    *   Using concurrency (multithreading or asynchronous programming) allows your script to initiate connections and send commands to multiple devices *at the same time*, effectively utilizing the waiting periods.
 
+*   **Using `concurrent.futures.ThreadPoolExecutor` for Scale:**
+    *   From Module 2, you know about `threading`. For managing a pool of threads to execute tasks concurrently, Python's `concurrent.futures` module provides `ThreadPoolExecutor`.
+    *   It's simpler than managing individual `threading.Thread` objects, as it handles thread creation and management for you. You just give it tasks, and it runs them in available threads.
+    *   **Steps:**
+        1.  Define a function that handles all Netmiko operations for a *single* device.
+        2.  Create a list of all device dictionaries.
+        3.  Use `ThreadPoolExecutor` to execute your single-device function for each device in the list concurrently.
+
+    **Conceptual Example:**
+    ```python
+    from concurrent.futures import ThreadPoolExecutor
+    from netmiko import ConnectHandler
+    # ... other imports (time, etc.)
+
+    # List of all your devices
+    all_devices = [
+        {"device_type": "cisco_ios", "host": "192.168.1.1", ...},
+        {"device_type": "cisco_ios", "host": "192.168.1.2", ...},
+        # ... many more devices
+    ]
+
+    def process_single_device(device_info):
+        """
+        Function to be executed by each thread for a single device.
+        Contains all Netmiko logic.
+        """
+        hostname = device_info['host']
+        try:
+            with ConnectHandler(**device_info) as net_connect:
+                print(f"Connected to {hostname}. Collecting data...")
+                output = net_connect.send_command("show version")
+                return f"Successfully processed {hostname}. Version: {output.splitlines()}"
+        except Exception as e:
+            return f"Failed to process {hostname}: {e}"
+
+    # Main execution
+    if __name__ == "__main__":
+        max_workers = 5 # Number of concurrent threads (adjust based on device capacity)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # map() applies process_single_device to each item in all_devices
+            # and returns results as they complete.
+            results = executor.map(process_single_device, all_devices)
+            
+            for res in results:
+                print(res)
+        print("All devices processed.")
+    ```
+    *Note: For very large-scale automation (hundreds to thousands of devices), `asyncio` (from Module 2) combined with async-compatible network libraries (like `asyncssh` or `httpx` for APIs) often offers even better performance and scalability than `ThreadPoolExecutor` due to its lower overhead.*
+
+---
+
+## 5. Error Handling
+
+Network automation scripts frequently encounter errors (e.g., device unreachable, wrong credentials, command not found). Robust scripts include `try-except` blocks to gracefully handle these issues.
+
+*   **Common Netmiko Exceptions:**
+    *   `NetmikoTimeoutException`: Device did not respond within the expected time.
+    *   `NetmikoAuthenticationException`: Incorrect username or password.
+    *   `NetmikoValueError`: Invalid `device_type` or other parameter.
+
+    **Example:**
+    ```python
+    from netmiko import ConnectHandler
+    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
+
+    device = {
+        "device_type": "cisco_ios",
+        "host": "192.168.1.99", # Non-existent IP
+        "username": "baduser",
+        "password": "badpassword",
+    }
+
+    try:
+        with ConnectHandler(**device) as net_connect:
+            print(f"Connected to {device['host']}")
+    except NetmikoTimeoutException:
+        print(f"Error: Connection to {device['host']} timed out. Device might be unreachable.")
+    except NetmikoAuthenticationException:
+        print(f"Error: Authentication failed for {device['host']}. Check username/password.")
+    except Exception as e: # Catch any other unexpected errors
+        print(f"An unexpected error occurred connecting to {device['host']}: {e}")
+    ```
+    **Expected Output (if device is unreachable):**
+    ```
+    Error: Connection to 192.168.1.99 timed out. Device might be unreachable.
+    ```
+
+---
+
+## 6. Summary
+
+Netmiko is your essential tool for interacting with network devices at the command-line level. By combining Netmiko with Python's concurrency features, you can build powerful and efficient automation scripts to manage your network infrastructure at scale.
+
+**Key Takeaways:**
+*   Netmiko simplifies SSH/Telnet connections.
+*   Device parameters are passed via a dictionary to `ConnectHandler`.
+*   `send_command()` retrieves information.
+*   `send_config_set()` pushes configurations.
+*   `ThreadPoolExecutor` helps run Netmiko tasks concurrently on multiple devices.
+*   Always include error handling (`try-except`) for robust scripts.
+
+---
