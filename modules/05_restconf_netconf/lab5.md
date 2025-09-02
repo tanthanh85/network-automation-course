@@ -446,61 +446,8 @@ This is the main Flask application file that will bring everything together.
     ```
 4.  **Open your web browser** and navigate to `http://127.0.0.1:5000` (or `http://localhost:5000`). If you are running this on a remote server, use that server's IP address.
 
-    *Expected Web Browser Output (content will reflect your router's actual data and update every 5 seconds):*
-    ```html
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>IOS XE Router Monitor</title>
-        <meta http-equiv="refresh" content="5"> <!-- Auto-refresh page every 5 seconds -->
-        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    </head>
-    <body>
-        <div class="container">
-            <h1>Cisco IOS XE Router Monitor</h1>
-            <p>Last updated: YYYY-MM-DD HH:MM:SS (current time)</p>
-            
-            <div class="metric">
-                <strong>CPU Utilization (5-sec):</strong> <span id="cpu_util">{{ cpu_util }}%</span>
-                {% if cpu_util != 'N/A' and cpu_util > 75 %} <span class="alert">(HIGH)</span> {% endif %}
-            </div>
-            
-            <div class="metric">
-                <strong>Memory Used:</strong> <span id="memory_used">{{ memory_used }}</span> bytes
-                <strong>Total Memory:</strong> <span id="memory_total">{{ memory_total }}</span> bytes
-            </div>
-
-            <h2>Interfaces</h2>
-            <table id="interfaces_table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>GigabitEthernet1</td>
-                        <td class="status-up">up</td>
-                    </tr>
-                    <tr>
-                        <td>Loopback0</td>
-                        <td class="status-up">up</td>
-                    </tr>
-                    <tr>
-                        <td>Vlan1</td>
-                        <td class="status-up">up</td>
-                    </tr>
-                    <!-- ... (other interfaces from your router) ... -->
-                </tbody>
-            </table>
-        </div>
-    </body>
-    </html>
-    ```
-    *Observation:* The web page will display the current metrics from your router and automatically refresh every 5 seconds, fetching new data. If your router's CPU goes above 75%, you will see a "(HIGH)" alert next to the CPU utilization.
+    *Observation:* 
+    The web page will display the current metrics from your router and automatically refresh every 5 seconds, fetching new data. If your router's CPU goes above 75%, you will see a "(HIGH)" alert next to the CPU utilization.
 
 ---
 
