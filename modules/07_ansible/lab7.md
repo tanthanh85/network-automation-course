@@ -9,7 +9,7 @@
 
 ## Introduction
 
-Welcome to Module 7 of the Python Basics for Network Automation Lab Guide! In this module, you will get hands-on with **Ansible** for network automation. You will learn to use Ansible playbooks for configuration management and see how Python scripts can integrate with Ansible. We will also compare a simple task done with Netmiko versus Ansible.
+Welcome to Module 7 of the Python Basics for Network Automation Lab Guide! In this module, you will get hands-on with **Ansible** for network automation. You will learn to use Ansible playbooks for configuration management and see how Python scripts can integrate with Ansible.
 
 **It is crucial that you replace the dummy values for your IOS XE router with its actual IP address, username, and password to make the code functional.**
 
@@ -19,7 +19,7 @@ Welcome to Module 7 of the Python Basics for Network Automation Lab Guide! In th
 *   Write a basic Ansible playbook to configure a Cisco IOS XE router.
 *   Run an Ansible playbook.
 *   Integrate Python with Ansible by calling a playbook from a Python script.
-*   Compare a configuration task using Netmiko vs. Ansible.
+*   Configure several services (hostname, NTP, OSPF) using Ansible.
 
 **Prerequisites:**
 *   Completion of Module 1 through Module 6 Labs.
@@ -47,10 +47,8 @@ For this module, we will create a dedicated project structure.
     touch config.py
     touch inventory.yaml
     touch playbook_hostname.yaml
-    touch playbook_loopback.yaml
     touch playbook_full_config.yaml
     touch python_ansible_deploy.py
-    touch python_netmiko_workflow.py
     ```
 
 Your directory structure should now look like this:
@@ -60,10 +58,8 @@ network_automation_labs/
 ├── config.py
 ├── inventory.yaml
 ├── playbook_hostname.yaml
-├── playbook_loopback.yaml
 ├── playbook_full_config.yaml
-├── python_ansible_deploy.py
-└── python_netmiko_workflow.py
+└── python_ansible_deploy.py
 ```
 ### Task 0.1: Install Ansible and Netmiko
 
@@ -289,7 +285,7 @@ This file will define your network devices for Ansible.
 
 ### Task 2.2: Run the Python Integration Script
 
-1.  **Ensure you have updated `config.py` with your real device details.**
+1.  **Ensure you have updated `config.py` with your real device details and set environment variables for credentials.**
 2.  **Run the Python script** from your `module7_ansible_lab` directory:
     ```bash
     python python_ansible_deploy.py
@@ -407,7 +403,7 @@ You've now completed Module 7 and gained valuable experience with Ansible! You c
 *   Understand Ansible's core components (inventory, playbooks, modules).
 *   Automate basic device configuration using Ansible playbooks.
 *   Integrate Ansible playbooks into your Python scripts.
-*   Compare and contrast Netmiko-based and Ansible-based automation workflows.
+*   Configure multiple services on a Cisco IOS XE router using Ansible.
 
 Ansible is an indispensable tool in the network automation landscape, complementing your Python scripting skills for scalable and declarative infrastructure management.
 
