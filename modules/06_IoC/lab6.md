@@ -1,3 +1,76 @@
+# Python Basics for Network Automation: Module 6 Lab Guide
+
+## Infrastructure as Code (IaC) Automation with Python - Hands-on Exercises
+
+**[Your Organization/Name]**
+**September 01, 2025**
+
+---
+
+## Introduction
+
+Welcome to Module 6 of the Python Basics for Network Automation Lab Guide! In this module, you will get hands-on with Infrastructure as Code (IaC) principles. You will learn to define network configurations in YAML, generate device commands using Jinja2, and push them via Netmiko. We will then use Git for version control to simulate a full IaC workflow, including a rollback scenario.
+
+**It is crucial that you replace the dummy values for your IOS XE router with its actual IP address, username, and password to make the code functional.**
+
+**Lab Objectives:**
+*   Describe configuration data using a YAML file.
+*   Use a Jinja2 template to generate configuration.
+*   Use Netmiko to push configuration to a Cisco IOS XE router.
+*   Use Git for version control of your configuration data.
+*   Simulate a complete IaC workflow: branch, modify data, push config, and rollback.
+
+**Prerequisites:**
+*   Completion of Module 1, Module 2, Module 3, Module 4, and Module 5 Labs.
+*   Your `na_env` virtual environment activated.
+*   A code editor (VS Code recommended).
+*   An active internet connection.
+*   **Access to a Cisco IOS XE router with SSH enabled (e.g., Cisco DevNet Sandboxes).** You will need its IP, username, and password.
+*   **Git installed** on your local machine.
+
+Let's build some IaC!
+
+---
+
+## Lab Setup: Initial IaC Components
+
+This section focuses on setting up the core IaC components (YAML data, Jinja2 template, and a Python script to deploy the configuration) and verifying they work.
+
+1.  **Navigate** to your main `network_automation_labs` directory.
+2.  **Create a new directory** for this module's labs:
+    ```bash
+    mkdir module6_iac_lab
+    cd module6_iac_lab
+    ```
+3.  **Inside `module6_iac_lab`, create the following directories:**
+    ```bash
+    mkdir templates
+    ```
+4.  **Inside `module6_iac_lab`, create the following empty Python files:**
+    ```bash
+    touch __init__.py
+    touch config.py
+    touch netmiko_iac_ops.py
+    touch deploy_config.py
+    ```
+5.  **Inside `module6_iac_lab`, create the following data and template files:**
+    ```bash
+    touch network_data.yaml
+    touch templates/hostname.j2
+    ```
+
+Your directory structure should now look like this:
+```
+network_automation_labs/
+└── module6_iac_lab/
+├── init.py
+├── config.py
+├── netmiko_iac_ops.py
+├── deploy_config.py
+├── network_data.yaml
+└── templates/
+└── hostname.j2
+```
 ### Task 0.1: Populate `config.py`
 
 This file will store your IOS XE Netmiko connection details.
