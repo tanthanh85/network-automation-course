@@ -147,13 +147,15 @@ YANG filtering allows you to retrieve only the specific data you need, reducing 
 *   For NETCONF Payloads (XML Filters): NETCONF uses an XML `` element within a `` or `` RPC (Remote Procedure Call) to specify the desired data. This filter can use XPath-like expressions.
     
     Example NETCONF `` Payload (XML): To get CPU utilization:
-
+```xml
 <filter type="subtree">
   <cpu-usage xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-process-cpu-oper">
     <cpu-utilization/>
   </cpu-usage>
 </filter>
+```
 To get a specific interface's operational status:
+```xml
 <filter type="subtree">
   <interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces">
     <interface>
@@ -162,6 +164,7 @@ To get a specific interface's operational status:
     </interface>
   </interfaces>
 </filter>
+```
 ### 3.3 Querying Performance Data Examples
 
 Here are common YANG paths and their corresponding RESTCONF URIs for Cisco IOS XE performance data:
