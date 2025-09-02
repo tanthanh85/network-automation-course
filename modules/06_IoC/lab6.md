@@ -1,76 +1,3 @@
-# Python Basics for Network Automation: Module 6 Lab Guide
-
-## Infrastructure as Code (IaC) Automation with Python - Hands-on Exercises
-
-**[Your Organization/Name]**
-**September 01, 2025**
-
----
-
-## Introduction
-
-Welcome to Module 6 of the Python Basics for Network Automation Lab Guide! In this module, you will get hands-on with Infrastructure as Code (IaC) principles. You will learn to define network configurations in YAML, generate device commands using Jinja2, and push them via Netmiko. We will then use Git for version control to simulate a full IaC workflow, including a rollback scenario.
-
-**It is crucial that you replace the dummy values for your IOS XE router with its actual IP address, username, and password to make the code functional.**
-
-**Lab Objectives:**
-*   Describe configuration data using a YAML file.
-*   Use a Jinja2 template to generate configuration.
-*   Use Netmiko to push configuration to a Cisco IOS XE router.
-*   Use Git for version control of your configuration data.
-*   Simulate a complete IaC workflow: branch, modify data, push config, and rollback.
-
-**Prerequisites:**
-*   Completion of Module 1, Module 2, Module 3, Module 4, and Module 5 Labs.
-*   Your `na_env` virtual environment activated.
-*   A code editor (VS Code recommended).
-*   An active internet connection.
-*   **Access to a Cisco IOS XE router with SSH enabled (e.g., Cisco DevNet Sandboxes).** You will need its IP, username, and password.
-*   **Git installed** on your local machine.
-
-Let's build some IaC!
-
----
-
-## Lab Setup: Project Structure
-
-For this module, we will create a dedicated project structure.
-
-1.  **Navigate** to your main `network_automation_labs` directory.
-2.  **Create a new directory** for this module's labs:
-    ```bash
-    mkdir module6_iac_lab
-    cd module6_iac_lab
-    ```
-3.  **Inside `module6_iac_lab`, create the following directories:**
-    ```bash
-    mkdir templates
-    ```
-4.  **Inside `module6_iac_lab`, create the following empty Python files:**
-    ```bash
-    touch __init__.py
-    touch config.py
-    touch netmiko_iac_ops.py
-    touch main_iac_workflow.py
-    ```
-5.  **Inside `module6_iac_lab`, create the following data and template files:**
-    ```bash
-    touch network_data.yaml
-    touch templates/hostname.j2
-    ```
-
-Your directory structure should now look like this:
-```
-network_automation_labs/
-└── module6_iac_lab/
-├── init.py
-├── config.py
-├── netmiko_iac_ops.py
-├── main_iac_workflow.py
-├── network_data.yaml
-└── templates/
-└── hostname.j2
-```
 ### Task 0.1: Populate `config.py`
 
 This file will store your IOS XE Netmiko connection details.
@@ -95,7 +22,7 @@ This file will store your IOS XE Netmiko connection details.
 
 ### Task 0.2: Populate `network_data.yaml`
 
-This file will define the desired hostname for your router.
+This file will define the initial desired hostname for your router.
 
 1.  Open `network_data.yaml` in your code editor.
 2.  Add the following YAML content:
@@ -125,7 +52,7 @@ This file will contain functions for Netmiko operations (push config and get hos
     ```bash
     cd module6_iac_lab
     ```
-3.  Install `netmiko` and `PyYAML` (if not already installed from previous modules):
+3.  Install `netmiko`, `PyYAML`, `Jinja2` (if not already installed from previous modules):
     ```bash
     pip install netmiko PyYAML Jinja2
     ```
@@ -196,14 +123,14 @@ This file will contain functions for Netmiko operations (push config and get hos
     ```
 6.  Save `netmiko_iac_ops.py`.
 
-### Task 0.5: Populate `main_iac_workflow.py`
+### Task 0.5: Populate `deploy_config.py`
 
-This is the main orchestration script that ties everything together.
+This is the script that will load data, generate config, and push it to the router. This script will be run multiple times during the Git workflow.
 
-1.  Open `main_iac_workflow.py` in your code editor.
+1.  Open `deploy_config.py` in your code editor.
 2.  Add the following Python code:
     ```python
-    # main_iac_workflow.py
+    # deploy_config.py
     import yaml
     from jinja2 import Environment, FileSystemLoader
     import logging
@@ -241,25 +168,22 @@ This is the main orchestration script that ties everything together.
             logging.error(f"Error generating config from template {template_file}: {e}")
             return None
 
-    def run_iac_workflow(data_file="network_data.yaml"):
+    def deploy_current_config():
         """
-        Executes the IaC workflow:
-        1. Load network data.
-        2. Generate configuration.
-        3. Push configuration via Netmiko.
-        4. Verify status (by getting hostname).
+        Loads network data, generates config, and pushes it via Netmiko.
+        Also performs a basic hostname verification.
         """
-        logging.info(f"\n--- Starting IaC Workflow for {data_file} ---")
+        logging.info(f"\n--- Starting Deployment Workflow ---")
 
         # 1. Load network data
-        network_data = load_network_data(data_file)
+        network_data = load_network_data("network_data.yaml")
         if not network_data:
-            logging.error("Workflow aborted: Could not load network data.")
+            logging.error("Deployment aborted: Could not load network data.")
             return False
 
         expected_hostname = network_data.get('router_hostname')
         if not expected_hostname:
-            logging.error("Workflow aborted: 'router_hostname' not found in network data.")
+            logging.error("Deployment aborted: 'router_hostname' not found in network data.")
             return False
 
         # 2. Generate configuration
@@ -269,7 +193,7 @@ This is the main orchestration script that ties everything together.
         config_payload_cli = [line for line in config_payload_cli if line.strip()]
 
         if not config_payload_cli:
-            logging.error("Workflow aborted: Generated configuration is empty.")
+            logging.error("Deployment aborted: Generated configuration is empty.")
             return False
         
         logging.info(f"Generated config payload (CLI):\n{config_payload_cli}")
@@ -277,7 +201,7 @@ This is the main orchestration script that ties everything together.
         # 3. Push configuration via Netmiko
         push_success = push_config_netmiko(config_payload_cli)
         if not push_success:
-            logging.error("Workflow aborted: Failed to push configuration via Netmiko.")
+            logging.error("Deployment aborted: Failed to push configuration via Netmiko.")
             return False
 
         # Give router some time to apply config and update state
@@ -288,80 +212,211 @@ This is the main orchestration script that ties everything together.
         actual_hostname = get_hostname_netmiko()
         
         if actual_hostname == expected_hostname:
-            logging.info(f"--- IaC Workflow for {data_file} COMPLETED SUCCESSFULLY ---")
+            logging.info(f"--- Deployment COMPLETED SUCCESSFULLY ---")
             logging.info(f"Verification: Hostname matches. Actual: '{actual_hostname}', Expected: '{expected_hostname}'")
             return True
         else:
-            logging.error(f"--- IaC Workflow for {data_file} FAILED VERIFICATION ---")
+            logging.error(f"--- Deployment FAILED VERIFICATION ---")
             logging.error(f"Verification: Hostname MISMATCH! Actual: '{actual_hostname}', Expected: '{expected_hostname}'")
             return False
 
     if __name__ == '__main__':
-        # --- Initial Run ---
-        print("\n=== Phase 1: Initial Deployment ===")
-        success = run_iac_workflow("network_data.yaml")
-        if success:
-            print("\nInitial deployment successful. Router hostname should now be 'MyRouter-Initial'.")
-        else:
-            print("\nInitial deployment failed. Check logs for errors.")
-        
-        # --- Git Simulation Steps (Manual) ---
-        print("\n\n=== Phase 2: Simulate Git Workflow and Change ===")
-        print("Please perform the following manual Git steps in your terminal inside 'module6_iac_lab':")
-        print("1. Initialize Git:           git init")
-        print("2. Add and commit initial:   git add . && git commit -m 'Initial hostname config'")
-        print("3. Create new branch:        git checkout -b feature/new-hostname")
-        print("4. >>> Now, MANUALLY EDIT 'network_data.yaml' and change 'MyRouter-Initial' to 'MyRouter-New' <<<")
-        print("5. Add and commit change:    git add . && git commit -m 'Feature: Change hostname to new'")
-        print("6. Merge to main:            git checkout main && git merge feature/new-hostname")
-        print("7. >>> After completing these steps, press Enter to continue Python script... <<<")
-        input() # Wait for user to complete Git steps
-
-        print("\n=== Phase 3: Deploy New Hostname ===")
-        success_new = run_iac_workflow("network_data.yaml")
-        if success_new:
-            print("\nNew hostname deployment successful. Router hostname should now be 'MyRouter-New'.")
-        else:
-            print("\nNew hostname deployment failed. Check logs.")
-        
-        # --- Simulate Rollback ---
-        print("\n\n=== Phase 4: Simulate Rollback ===")
-        print("Simulating an issue and reverting to previous working state.")
-        print("Please perform the following manual Git steps in your terminal inside 'module6_iac_lab':")
-        print("1. Find the commit hash for 'Initial hostname config': git log --oneline")
-        print("   (It will be the first commit, copy its 7-char hash, e.g., 'a1b2c3d')")
-        print("2. Revert to that commit:    git revert <paste-commit-hash-here>")
-        print("   (Git will open an editor for commit message, save and close it.)")
-        print("3. >>> After completing these steps, press Enter to continue Python script... <<<")
-        input() # Wait for user to complete Git steps
-
-        print("\n=== Phase 5: Re-deploy Rolled Back Configuration ===")
-        print("This will push the hostname from the reverted commit back to the router.")
-        success_rollback = run_iac_workflow("network_data.yaml")
-        if success_rollback:
-            print("\nRollback deployment successful. Router hostname should now be 'MyRouter-Initial' again.")
-        else:
-            print("\nRollback deployment failed. Check logs.")
-        
-        print("\n--- IaC Lab Workflow Complete ---")
+        deploy_current_config()
     ```
-3.  Save `main_iac_workflow.py`.
+3.  Save `deploy_config.py`.
 
 ---
 
 ## Lab Workflow Execution
 
-Now, let's run the entire IaC workflow. You will be interacting with both your terminal (for Git commands) and the Python script.
+This section guides you through the actual IaC workflow using Git and your Python script.
+
+### Task 1.1: Initial Deployment
 
 1.  **Ensure your `na_env` virtual environment is active.**
 2.  **Navigate to your `module6_iac_lab` directory.**
-3.  **Start the main workflow script:**
+3.  **Run the deployment script:**
     ```bash
-    python main_iac_workflow.py
+    python deploy_config.py
     ```
-4.  **Follow the on-screen instructions** in your terminal. The Python script will pause and wait for you to execute Git commands and press Enter to proceed.
+    *Expected Output (console):*
+    ```
+    --- Starting Deployment Workflow ---
+    Successfully loaded data from network_data.yaml.
+    Configuration generated from template hostname.j2.
+    Generated config payload (CLI):
+    ['hostname MyRouter-Initial']
+    Connecting to YOUR_IOSXE_IP via Netmiko...
+    Connected to YOUR_IOSXE_IP. Pushing configuration...
+    Configuration push output:
+    config terminal
+    Enter configuration commands, one per line.  End with CNTL/Z.
+    YOUR_IOSXE_PROMPT(config)#hostname MyRouter-Initial
+    YOUR_IOSXE_PROMPT(config)#end
+    YOUR_IOSXE_PROMPT#
+    Configuration successfully pushed to YOUR_IOSXE_IP.
+    Verifying current hostname on device...
+    Connecting to YOUR_IOSXE_IP via Netmiko to get hostname...
+    Connected to YOUR_IOSXE_IP. Getting hostname...
+    Retrieved hostname: MyRouter-Initial
+    --- Deployment COMPLETED SUCCESSFULLY ---
+    Verification: Hostname matches. Actual: 'MyRouter-Initial', Expected: 'MyRouter-Initial'
+    ```
+4.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify that its hostname is now `MyRouter-Initial`.
+    ```
+    Router# show hostname
+    MyRouter-Initial
+    ```
 
-This comprehensive lab will give you a hands-on feel for the entire IaC pipeline, from data definition and templating to deployment, verification, and rollback using Git and network automation tools.
+### Task 1.2: Git Initialization and Initial Commit
+
+1.  **Initialize a Git repository** in your `module6_iac_lab` directory:
+    ```bash
+    git init
+    ```
+2.  **Add all current files** to the Git staging area:
+    ```bash
+    git add .
+    ```
+3.  **Commit the initial state** of your IaC project:
+    ```bash
+    git commit -m "Initial deployment of router hostname: MyRouter-Initial"
+    ```
+    *Expected Output:* Git will report that it created a new commit and list the files added.
+
+### Task 1.3: Create a New Feature Branch
+
+It's good practice to make changes in a separate branch.
+
+1.  **Create and switch to a new branch:**
+    ```bash
+    git checkout -b feature/change-hostname
+    ```
+    *Expected Output:* `Switched to a new branch 'feature/change-hostname'`
+
+### Task 1.4: Modify Configuration Data
+
+Now, let's change the desired hostname in your `network_data.yaml`.
+
+1.  Open `network_data.yaml` in your code editor.
+2.  **Change the hostname** from `MyRouter-Initial` to `MyRouter-New`:
+    ```yaml
+    # network_data.yaml
+    router_hostname: MyRouter-New
+    ```
+3.  Save `network_data.yaml`.
+
+### Task 1.5: Commit the Change
+
+1.  **Add the modified file** to the Git staging area:
+    ```bash
+    git add network_data.yaml
+    ```
+2.  **Commit the change** to your `feature/change-hostname` branch:
+    ```bash
+    git commit -m "Feature: Change router hostname to MyRouter-New"
+    ```
+    *Expected Output:* Git will report that it created a new commit.
+
+### Task 1.6: Merge to Main and Deploy New Configuration
+
+In a real CI/CD pipeline, this merge would trigger automated deployment. Here, we'll merge and then manually run our deploy script.
+
+1.  **Switch back to the `main` branch:**
+    ```bash
+    git checkout main
+    ```
+2.  **Merge your feature branch** into `main`:
+    ```bash
+    git merge feature/change-hostname
+    ```
+    *Expected Output:* Git will report that it fast-forwarded and merged the branch.
+
+3.  **Run the deployment script again.** This will pick up the new hostname from `network_data.yaml` (which is now `MyRouter-New` in the `main` branch) and push it to the router.
+    ```bash
+    python deploy_config.py
+    ```
+    *Expected Output (console):*
+    ```
+    --- Starting Deployment Workflow ---
+    Successfully loaded data from network_data.yaml.
+    Configuration generated from template hostname.j2.
+    Generated config payload (CLI):
+    ['hostname MyRouter-New']
+    Connecting to YOUR_IOSXE_IP via Netmiko...
+    Connected to YOUR_IOSXE_IP. Pushing configuration...
+    Configuration push output:
+    config terminal
+    Enter configuration commands, one per line.  End with CNTL/Z.
+    YOUR_IOSXE_PROMPT(config)#hostname MyRouter-New
+    YOUR_IOSXE_PROMPT(config)#end
+    YOUR_IOSXE_PROMPT#
+    Configuration successfully pushed to YOUR_IOSXE_IP.
+    Verifying current hostname on device...
+    Connecting to YOUR_IOSXE_IP via Netmiko to get hostname...
+    Connected to YOUR_IOSXE_IP. Getting hostname...
+    Retrieved hostname: MyRouter-New
+    --- Deployment COMPLETED SUCCESSFULLY ---
+    Verification: Hostname matches. Actual: 'MyRouter-New', Expected: 'MyRouter-New'
+    ```
+4.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify that its hostname is now `MyRouter-New`.
+    ```
+    Router# show hostname
+    MyRouter-New
+    ```
+
+### Task 1.7: Simulate Rollback
+
+Imagine `MyRouter-New` caused an unexpected issue. We need to revert to `MyRouter-Initial`.
+
+1.  **Find the commit hash** of the commit where you set the hostname to `MyRouter-Initial`.
+    ```bash
+    git log --oneline
+    ```
+    *Expected Output:* You'll see a list of commits. Find the one with message "Initial deployment of router hostname: MyRouter-Initial". Copy its 7-character hash (e.g., `a1b2c3d`).
+
+2.  **Revert to that commit:**
+    ```bash
+    git revert <paste_the_commit_hash_here>
+    ```
+    *Example:* `git revert a1b2c3d`
+    *Expected Output:* Git will open your default text editor (like Vim or Nano) to allow you to edit the commit message for the revert. Just save and close the file without changes (or add a note like "Revert to initial hostname"). Git will then report that it created a new commit.
+    *Observation:* If you now open `network_data.yaml`, you'll see its content has automatically changed back to `router_hostname: MyRouter-Initial`.
+
+### Task 1.8: Deploy Rolled Back Configuration
+
+1.  **Run the deployment script again.** This will pick up the `MyRouter-Initial` hostname from the reverted `network_data.yaml` and push it to the router.
+    ```bash
+    python deploy_config.py
+    ```
+    *Expected Output (console):*
+    ```
+    --- Starting Deployment Workflow ---
+    Successfully loaded data from network_data.yaml.
+    Configuration generated from template hostname.j2.
+    Generated config payload (CLI):
+    ['hostname MyRouter-Initial']
+    Connecting to YOUR_IOSXE_IP via Netmiko...
+    Connected to YOUR_IOSXE_IP. Pushing configuration...
+    Configuration push output:
+    config terminal
+    Enter configuration commands, one per line.  End with CNTL/Z.
+    YOUR_IOSXE_PROMPT(config)#hostname MyRouter-Initial
+    YOUR_IOSXE_PROMPT(config)#end
+    YOUR_IOSXE_PROMPT#
+    Configuration successfully pushed to YOUR_IOSXE_IP.
+    Verifying current hostname on device...
+    Connecting to YOUR_IOSXE_IP via Netmiko to get hostname...
+    Connected to YOUR_IOSXE_IP. Getting hostname...
+    Retrieved hostname: MyRouter-Initial
+    --- Deployment COMPLETED SUCCESSFULLY ---
+    Verification: Hostname matches. Actual: 'MyRouter-Initial', Expected: 'MyRouter-Initial'
+    ```
+2.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify that its hostname is now `MyRouter-Initial` again.
+    ```
+    Router# show hostname
+    MyRouter-Initial
+    ```
 
 ---
 
@@ -373,8 +428,7 @@ You've now completed Module 6 and gained practical experience with Infrastructur
 *   Generate network configurations using Jinja2 templates.
 *   Push configurations to Cisco IOS XE routers using Netmiko.
 *   Utilize Git for version control of your network configurations.
-*   Perform basic network status verification.
-*   Understand and simulate a complete IaC workflow, including rollback.
+*   Simulate a complete IaC workflow, including deployment of changes and rollback to a previous state.
 
 IaC is a foundational practice for modern, scalable, and reliable network automation. This module has provided you with the core tools and concepts to start implementing IaC in your own environment.
 
