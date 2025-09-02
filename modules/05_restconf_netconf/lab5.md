@@ -1,5 +1,3 @@
----
-
 ## Document 2: Python Basics for Network Automation - Module 5 Lab Guide (Complete Markdown Block)
 
 ```markdown
