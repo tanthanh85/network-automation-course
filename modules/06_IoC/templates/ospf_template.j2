@@ -1,5 +1,0 @@
-router ospf {{ ospf.process_id }}
- router-id {{ ospf.router_id }}
-{% for net in ospf.networks %}
- network {{ net.ip }} {{ net.wildcard }} area {{ net.area }}
-{% endfor %}
