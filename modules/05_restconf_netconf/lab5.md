@@ -74,6 +74,7 @@ We will use JSONPlaceholder (`https://jsonplaceholder.typicode.com`), a free pub
     import requests
     import json # For pretty-printing JSON
     import time # For monitoring lab
+    import random # For simulating dynamic data
 
     print("--- Lab 1.2: Make a Simple GET Request ---")
 
@@ -357,7 +358,10 @@ Now, we'll access individual pieces of data from the simulated performance dicti
     # Extracting data from SwitchA's performance
     if switch_a_perf:
         print(f"\nSwitchA CPU: {switch_a_perf['cpu_utilization_percent']}%")
-        print(f"SwitchA G0/1 Input Rate: {switch_a_perf['interfaces']['input_rate_bps']} bps")
+        # Accessing nested list/dictionary for interface input rate
+        # Assuming we want G0/1's input rate from SwitchA
+        switch_a_g0_1_input_rate = switch_a_perf['interfaces']['input_rate_bps']
+        print(f"SwitchA G0/1 Input Rate: {switch_a_g0_1_input_rate} bps")
     else:
         print("SwitchA data not available.")
 
@@ -415,7 +419,7 @@ We'll modify `get_simulated_device_performance` to return slightly different dat
 
         if device_name == "Router1":
             # Simulate CPU going up/down slowly
-            _simulated_cpu_counter = (_simulated_cpu_counter + 5) % 100 # Increment and wrap around
+            _simulated_cpu_counter = (_simulated_cpu_counter + 5) # Increment CPU counter
             current_cpu = 60 + (_simulated_cpu_counter % 30) # CPU between 60 and 89
             
             # Simulate an interface sometimes going down
@@ -428,9 +432,9 @@ We'll modify `get_simulated_device_performance` to return slightly different dat
                 "memory_total_mb": 4096,
                 "memory_used_mb": 3072,
                 "interfaces": [
-                    {"name": "GigabitEthernet0/0", "status": "up", "input_rate_bps": 1000000, "output_rate_bps": 500000},
-                    {"name": "GigabitEthernet0/1", "status": g0_1_status, "input_rate_bps": 0, "output_rate_bps": 0},
-                    {"name": "Loopback0", "status": "up", "input_rate_bps": 0, "output_rate_bps": 0}
+                    {"name": "GigabitEthernet0/0", "status": "up"},
+                    {"name": "GigabitEthernet0/1", "status": g0_1_status},
+                    {"name": "Loopback0", "status": "up"}
                 ]
             }
         elif device_name == "SwitchA":
@@ -443,14 +447,13 @@ We'll modify `get_simulated_device_performance` to return slightly different dat
                 "memory_total_mb": 2048,
                 "memory_used_mb": 1024,
                 "interfaces": [
-                    {"name": "GigabitEthernet0/1", "status": "up", "input_rate_bps": 5000000, "output_rate_bps": 2000000},
-                    {"name": "GigabitEthernet0/2", "status": "up", "input_rate_bps": 100000, "output_rate_bps": 50000}
+                    {"name": "GigabitEthernet0/1", "status": "up"},
+                    {"name": "GigabitEthernet0/2", "status": "up"}
                 ]
             }
         else:
             return None # Device not found
     ```
-    *Note: We added a global counter and `random.random()` to make the CPU and interface status change over time. Also, add `import random` at the top of your file with other imports.*
 
 ### Task 3.2: Build the Monitoring Logic
 
@@ -479,8 +482,8 @@ Now, create a function that monitors a device, checks thresholds, and prints ale
             print(f"  CPU: {cpu}%, Memory: {mem_used}/{mem_total}MB")
             
             # Check CPU threshold
-            if cpu > cpu_threshold:
-                print(f"  !!! ALERT: {device_name} CPU utilization ({cpu}%) is above threshold ({cpu_threshold}%).")
+            if cpu >= cpu_threshold: # Use >= to trigger on exact threshold
+                print(f"  !!! ALERT: {device_name} CPU utilization ({cpu}%) is at or above threshold ({cpu_threshold}%).")
             
             # Check interface status
             for iface in interfaces:
@@ -533,7 +536,6 @@ Finally, we'll put it all together in a loop to simulate continuous monitoring.
 
     Monitoring Router1...
       CPU: 60%, Memory: 3072/4096MB
-      !!! ALERT: Router1 Interface GigabitEthernet0/1 is DOWN!
 
     Monitoring SwitchA...
       CPU: 20%, Memory: 1024/2048MB
@@ -545,7 +547,7 @@ Finally, we'll put it all together in a loop to simulate continuous monitoring.
       !!! ALERT: Router1 Interface GigabitEthernet0/1 is DOWN!
 
     Monitoring SwitchA...
-      CPU: 21%, Memory: 1024/2048MB
+      CPU: 20%, Memory: 1024/2048MB
 
     --- Monitoring Cycle 3 ---
 
@@ -553,16 +555,16 @@ Finally, we'll put it all together in a loop to simulate continuous monitoring.
       CPU: 70%, Memory: 3072/4096MB
 
     Monitoring SwitchA...
-      CPU: 22%, Memory: 1024/2048MB
+      CPU: 21%, Memory: 1024/2048MB
 
     --- Monitoring Cycle 4 ---
 
     Monitoring Router1...
       CPU: 75%, Memory: 3072/4096MB
-      !!! ALERT: Router1 CPU utilization (75%) is above threshold (75%).
+      !!! ALERT: Router1 CPU utilization (75%) is at or above threshold (75%).
 
     Monitoring SwitchA...
-      CPU: 23%, Memory: 1024/2048MB
+      CPU: 21%, Memory: 1024/2048MB
 
     ... (continues for 10 cycles, or until Ctrl+C) ...
 
