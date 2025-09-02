@@ -94,6 +94,7 @@ module example-interfaces {
     }
   }
 }
+```
 ### 2.2 Available YANG Models: Native, IETF, OpenConfig
 
 YANG models are categorized by their origin and purpose:
