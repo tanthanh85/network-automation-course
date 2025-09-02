@@ -9,22 +9,21 @@
 
 ## Introduction
 
-Welcome to Module 2 of the Python Basics for Network Automation Lab Guide! In this module, you'll get hands-on with concurrency concepts in Python, specifically focusing on data synchronization with `threading` and asynchronous programming with `asyncio`. These skills are vital for writing efficient network automation scripts that can handle multiple devices or operations concurrently.
+Welcome to Module 2 of the Python Basics for Network Automation Lab Guide! In this module, you'll get hands-on with concurrency concepts in Python, specifically focusing on data synchronization with `threading` and asynchronous programming with `asyncio`. These skills are vital for writing efficient Python scripts that can handle multiple operations concurrently.
 
 **Lab Objectives:**
 *   Understand and observe race conditions in multi-threaded programs.
 *   Apply `threading.Lock` to prevent race conditions.
-*   Use `threading.Semaphore` to limit concurrent access to resources (e.g., network devices).
-*   Implement `queue.Queue` for thread-safe task distribution (e.g., for log processing).
+*   Use `threading.Semaphore` to limit concurrent access to resources.
+*   Implement `queue.Queue` for thread-safe task distribution.
 *   Write and execute basic `asyncio` coroutines for non-blocking I/O.
-*   Run multiple `asyncio` tasks concurrently using `asyncio.gather` for **concurrent network device connections**.
-*   Apply asynchronous techniques to **log collection** and **real-time monitoring** simulations.
+*   Run multiple `asyncio` tasks concurrently using `asyncio.gather`.
+*   Understand how these concepts apply to **concurrent network device connections**, **log collection**, and **real-time monitoring**.
 
 **Prerequisites:**
 *   Completion of Module 1 Labs.
 *   Your `na_env` virtual environment activated.
 *   A code editor (VS Code recommended).
-*   **Optional (for real-world testing):** Access to a Cisco IOS XE routers sandbox (e.g., Cisco DevNet Sandbox) with SSH access. You will need to replace simulated IPs/credentials with real ones if you choose to test against live devices.
 
 Let's dive into concurrent Python!
 
@@ -156,78 +155,43 @@ Now, we'll use a `threading.Lock` to make sure that only one thread can access t
     *   The "Actual final counter value (with lock)" will now consistently match the "Expected final counter value (with lock)" (which is 50000).
     *   You will see the message: `!!! Race condition PREVENTED: The actual value now matches the expected. !!!`
 
-### Task 1.3: Limit Concurrent Network Device Connections with a "Semaphore"
+### Task 1.3: Limit Concurrent Access with a "Semaphore" (Limited Parking Spots)
 
-You'll simulate limiting the number of concurrent network connections to avoid overwhelming devices, which is a common requirement when working with **Cisco IOS XE routers sandbox** or other live equipment.
+You'll simulate limiting the number of concurrent operations, which is useful when you want to avoid overwhelming a resource (like a network device or a server).
 
 1.  In `threading_sync_lab.py`, add the following code:
     ```python
     # ... (previous code) ...
 
     import random # For simulating random connection times
-    # from netmiko import ConnectHandler # Conceptual: This would be used for real connections
 
-    print("\n--- Limiting Concurrent Connections to Network Devices with a Semaphore ---")
+    print("\n--- Limiting Concurrent Access with a Semaphore ---")
 
     # Create a Semaphore that allows a maximum of 3 concurrent "connections" (parking spots)
     max_concurrent_connections = 3
     connection_semaphore = threading.Semaphore(max_concurrent_connections)
 
-    # Conceptual: Replace with your Cisco IOS XE Sandbox details if you have one
-    # SANDBOX_USERNAME = "developer"
-    # SANDBOX_PASSWORD = "Cisco123!"
-    # SANDBOX_ENABLE_PASSWORD = "Cisco123!"
-
-    def connect_to_device_limited(device_ip, thread_name):
+    def simulate_connection(resource_name, thread_name):
         # Acquire the semaphore. This will block if all 'max_concurrent_connections' are busy.
         with connection_semaphore:
             # Indicate how many "slots" are currently available
             # _value is for observation only, don't rely on it for logic
-            print(f"[{thread_name}] Acquiring connection to {device_ip}. "
+            print(f"[{thread_name}] Acquiring connection to {resource_name}. "
                   f"Active slots: {connection_semaphore._value}")
             
-            # --- CONCEPTUAL REAL-WORLD NETMIKO CONNECTION ---
-            # If you have a Cisco IOS XE Sandbox, uncomment and fill in details:
-            # device_params = {
-            #     "device_type": "cisco_ios",
-            #     "host": device_ip,
-            #     "username": SANDBOX_USERNAME,
-            #     "password": SANDBOX_PASSWORD,
-            #     "secret": SANDBOX_ENABLE_PASSWORD,
-            #     "port": 22, # Default SSH port
-            # }
-            # try:
-            #     with ConnectHandler(**device_params) as net_connect:
-            #         # Example: Get hostname from the device
-            #         hostname_output = net_connect.send_command("show hostname")
-            #         print(f"[{thread_name}] Connected to {device_ip}. Hostname: {hostname_output.strip()}")
-            #         # Or collect logs: log_output = net_connect.send_command("show logging")
-            # except Exception as e:
-            #     print(f"[{thread_name}] Error connecting to {device_ip}: {e}")
-            # --- END CONCEPTUAL REAL-WORLD NETMIKO CONNECTION ---
-
             time.sleep(random.uniform(1, 3)) # Simulate connection time
             
-            print(f"[{thread_name}] Finished connection to {device_ip}. Releasing slot.")
+            print(f"[{thread_name}] Finished connection to {resource_name}. Releasing slot.")
 
-    # Using example IPs that might be in a Cisco IOS XE Sandbox (replace if needed)
-    device_ips_to_connect = [
-        "10.10.20.40", # Cisco IOS XE Always-On Sandbox
-        "10.10.20.41", # Another potential sandbox IP
-        "10.10.20.42",
-        "10.10.20.43",
-        "10.10.20.44",
-        "10.10.20.45",
-        "10.10.20.46",
-        "10.10.20.47",
-        "10.10.20.48",
-        "10.10.20.49",
-    ] # 10 conceptual device IPs
+    resources_to_connect = [
+        "Server-1", "Database-2", "API-Service-3", "Network-Device-4", 
+        "Log-Server-5", "Web-App-6", "Storage-7", "Printer-8"
+    ] # 8 conceptual resources
 
     connection_threads = []
-    for i, ip in enumerate(device_ips_to_connect):
-        thread_name = f"DeviceConn-{i+1}" # Give each thread a unique name
-        thread = threading.Thread(target=connect_to_device_limited, args=(ip, thread_name), name=thread_name)
+    for i, res in enumerate(resources_to_connect):
+        thread_name = f"ConnThread-{i+1}" # Give each thread a unique name
+        thread = threading.Thread(target=simulate_connection, args=(res, thread_name), name=thread_name)
         connection_threads.append(thread)
         thread.start() # Start the thread
 
@@ -235,13 +199,13 @@ You'll simulate limiting the number of concurrent network connections to avoid o
     for thread in connection_threads:
         thread.join()
 
-    print("\nAll simulated network connections completed.")
+    print("\nAll simulated resource connections completed.")
     ```
 2.  Save and run `threading_sync_lab.py`.
 3.  **Expected Output/Observation:**
     *   You will see print statements indicating threads acquiring and finishing connections.
     *   Crucially, you should observe that at any given moment, the `Active slots` count will not go below 0 (meaning no more than `max_concurrent_connections` (3) threads are actively "connecting" at the same time).
-    *   The output will show threads waiting for a slot to become available before proceeding. If you uncommented the Netmiko code and used real sandbox credentials, you would see actual hostnames or version outputs from the devices.
+    *   The output will show threads waiting for a slot to become available before proceeding.
 
 ### Task 1.4: Thread-Safe Task Distribution for Log Collection with a "Queue"
 
@@ -258,27 +222,15 @@ A `queue.Queue` is perfect for when one part of your program (a "producer") coll
     # Create a thread-safe Queue. This is our conveyor belt.
     log_queue = queue.Queue()
 
-    def log_collector_producer(device_ips):
+    def log_collector_producer(num_logs_to_collect):
         """
-        This function simulates collecting logs from devices and putting them on the queue.
+        This function simulates collecting logs from sources and putting them on the queue.
         It's the "producer."
         """
-        for i, ip in enumerate(device_ips):
-            # Conceptual: In a real scenario, this would use Netmiko to get logs:
-            # from netmiko import ConnectHandler
-            # device_params = {"device_type": "cisco_ios", "host": ip, ...}
-            # try:
-            #     with ConnectHandler(**device_params) as net_connect:
-            #         raw_log = net_connect.send_command("show logging")
-            #         log_queue.put({"device_ip": ip, "log_data": raw_log})
-            #         print(f"[Collector] Added logs from {ip} to queue.")
-            # except Exception as e:
-            #     print(f"[Collector] Error collecting logs from {ip}: {e}")
-            
-            # Simulated log data
-            simulated_log = f"Log from {ip}: Interface Gi0/{i} changed state to up at {time.ctime()}"
-            log_queue.put({"device_ip": ip, "log_data": simulated_log})
-            print(f"[Collector] Added simulated log from {ip} to queue.")
+        for i in range(num_logs_to_collect):
+            simulated_log = f"Log entry {i+1}: Device X - Interface Gi0/{i} changed state to up."
+            log_queue.put(simulated_log)
+            print(f"[Collector] Added log entry {i+1} to queue.")
             time.sleep(0.2) # Simulate time to collect log
 
         print("[Collector] Finished collecting all logs.")
@@ -290,28 +242,20 @@ A `queue.Queue` is perfect for when one part of your program (a "producer") coll
         """
         while True:
             # Get a log task from the queue. This will wait (block) if the queue is empty.
-            log_task = log_queue.get() 
+            log_entry = log_queue.get() 
             
             # We use 'None' as a special signal to tell the worker to stop
-            if log_task is None: 
+            if log_entry is None: 
                 print(f"[Processor {worker_id}] Received stop signal. Exiting.")
                 log_queue.task_done() # Tell the queue this 'None' task is done
                 break # Exit the loop, stopping the worker thread
             
-            device_ip = log_task["device_ip"]
-            log_data = log_task["log_data"]
-            
-            print(f"[Processor {worker_id}] Analyzing log from {device_ip}: {log_data.splitlines()}...") # Print only first line
-            # Conceptual: Here you would parse, analyze, or store the log data
-            # e.g., if "down" in log_data: alert_team(device_ip)
+            print(f"[Processor {worker_id}] Analyzing log: '{log_entry}'...")
             time.sleep(random.uniform(0.5, 1.5)) # Simulate log analysis time
-            print(f"[Processor {worker_id}] Finished analyzing log from {device_ip}.")
+            print(f"[Processor {worker_id}] Finished analyzing log.")
             log_queue.task_done() # Tell the queue that this task is done
 
-    # Using example IPs that might be in a Cisco IOS XE Sandbox
-    log_device_ips = [
-        "10.10.20.40", "10.10.20.41", "10.10.20.42", "10.10.20.43", "10.10.20.44"
-    ]
+    num_logs_to_collect = 10 
     num_log_processors = 2 # We'll have 2 worker threads processing logs
 
     # 1. Start log processor worker threads
@@ -322,7 +266,7 @@ A `queue.Queue` is perfect for when one part of your program (a "producer") coll
         processor_thread.start()
 
     # 2. Start log collector producer thread
-    collector_thread = threading.Thread(target=log_collector_producer, args=(log_device_ips,))
+    collector_thread = threading.Thread(target=log_collector_producer, args=(num_logs_to_collect,))
     collector_thread.start()
 
     # 3. Wait for the collector to finish adding all logs to the queue
@@ -348,7 +292,7 @@ A `queue.Queue` is perfect for when one part of your program (a "producer") coll
 
 ## Lab 2: Doing Many Things at Once with `asyncio` (The Smart Manager)
 
-**Objective:** Learn how to use Python's `asyncio` to make your scripts run I/O-bound tasks (like network operations) concurrently, without getting stuck waiting.
+**Objective:** Learn how to use Python's `asyncio` to make your scripts run I/O-bound tasks concurrently, without getting stuck waiting.
 
 ### Task 2.1: Basic `async` and `await` - Sequential vs. Concurrent
 
@@ -362,41 +306,31 @@ We'll start by seeing how `asyncio` functions (`coroutines`) work when run one a
     import asyncio # The module for asynchronous programming
     import time    # For measuring time and basic delays
     import random  # For simulating variable delays
-    # import asyncssh # Conceptual: This would be used for real async connections
 
-    async def simulate_network_fetch(device_ip, delay):
+    async def simulate_task(task_name, delay):
         """
         This is a 'coroutine' (an async function).
-        It simulates fetching data from a network device.
+        It simulates an operation that involves waiting (like a network call or file I/O).
         'await asyncio.sleep(delay)' is a NON-BLOCKING pause.
         """
-        print(f"[{time.strftime('%H:%M:%S')}] Starting fetch from {device_ip} (delay: {delay}s)...")
-        # --- CONCEPTUAL REAL-WORLD ASYNCHRONOUS CONNECTION ---
-        # If you have a Cisco IOS XE Sandbox, you might use asyncssh here:
-        # try:
-        #     async with asyncssh.connect(device_ip, username='developer', password='Cisco123!') as conn:
-        #         result = await conn.run("show version")
-        #         print(f"[{time.strftime('%H:%M:%S')}] Connected to {device_ip}. Version: {result.stdout.splitlines()}")
-        #         return result.stdout.splitlines()
-        # except Exception as e:
-        #     print(f"[{time.strftime('%H:%M:%S')}] Error fetching from {device_ip}: {e}")
-        #     return f"Error from {device_ip}"
-        # --- END CONCEPTUAL REAL-WORLD ASYNCHRONOUS CONNECTION ---
+        print(f"[{time.strftime('%H:%M:%S')}] Starting {task_name} (delay: {delay}s)...")
+        # When 'await' is used, this coroutine pauses and tells the asyncio manager:
+        # "I'm waiting for {delay} seconds. While I wait, you can run other tasks!"
         await asyncio.sleep(delay) 
-        print(f"[{time.strftime('%H:%M:%S')}] Finished fetch from {device_ip}.")
-        return f"Data from {device_ip}"
+        print(f"[{time.strftime('%H:%M:%S')}] Finished {task_name}.")
+        return f"Result for {task_name}"
 
     async def main_sequential():
         """
-        This main coroutine will run our network fetches one after another (sequentially).
+        This main coroutine will run our simulated tasks one after another (sequentially).
         """
-        print("--- Running Network Fetches Sequentially (Blocking Simulation) ---")
+        print("--- Running Tasks Sequentially (Blocking Simulation) ---")
         start_time = time.time()
 
-        # We 'await' each fetch. This means the program will fully wait for the first one
+        # We 'await' each task. This means the program will fully wait for the first one
         # to complete before starting the second one.
-        result1 = await simulate_network_fetch("192.168.1.1", 3) # Will wait 3 seconds
-        result2 = await simulate_network_fetch("192.168.1.2", 2) # Will wait 2 seconds AFTER the first one finishes
+        result1 = await simulate_task("Task 1 (Sequential)", 3) # Will wait 3 seconds
+        result2 = await simulate_task("Task 2 (Sequential)", 2) # Will wait 2 seconds AFTER the first one finishes
 
         print(f"\nSequential results: {result1}, {result2}")
         end_time = time.time()
@@ -409,22 +343,22 @@ We'll start by seeing how `asyncio` functions (`coroutines`) work when run one a
     ```
 4.  Save and run `asyncio_lab.py`.
 5.  **Expected Output/Observation:**
-    *   The output will clearly show the first fetch starting, then finishing, *then* the second fetch starting and finishing.
+    *   The output will clearly show the first task starting, then finishing, *then* the second task starting and finishing.
     *   The "Total sequential time" will be approximately the sum of the individual delays (3s + 2s = around 5 seconds).
     ```
-    --- Running Network Fetches Sequentially (Blocking Simulation) ---
-    [HH:MM:SS] Starting fetch from 192.168.1.1 (delay: 3s)...
-    [HH:MM:SS] Finished fetch from 192.168.1.1.
-    [HH:MM:SS] Starting fetch from 192.168.1.2 (delay: 2s)...
-    [HH:MM:SS] Finished fetch from 192.168.1.2.
+    --- Running Tasks Sequentially (Blocking Simulation) ---
+    [HH:MM:SS] Starting Task 1 (Sequential) (delay: 3s)...
+    [HH:MM:SS] Finished Task 1 (Sequential).
+    [HH:MM:SS] Starting Task 2 (Sequential) (delay: 2s)...
+    [HH:MM:SS] Finished Task 2 (Sequential).
 
-    Sequential results: Data from 192.168.1.1, Data from 192.168.1.2
+    Sequential results: Result for Task 1 (Sequential), Result for Task 2 (Sequential)
     Total sequential time: 5.xx seconds
     ```
 
 ### Task 2.2: Running Multiple Coroutines Concurrently with `asyncio.gather`
 
-Now, we'll tell `asyncio` to start all the network fetches at the same time and wait for them all to finish. This is where the magic of concurrency happens for **concurrent network device connections**!
+Now, we'll tell `asyncio` to start all the tasks at the same time and wait for them all to finish. This is where the magic of concurrency happens! This is how you would handle **concurrent network device connections** efficiently.
 
 1.  In the same `asyncio_lab.py` file, add the following coroutine:
     ```python
@@ -432,15 +366,15 @@ Now, we'll tell `asyncio` to start all the network fetches at the same time and 
 
     async def main_concurrent():
         """
-        This main coroutine will run our network fetches concurrently (at the same time).
+        This main coroutine will run our simulated tasks concurrently (at the same time).
         """
-        print("\n--- Running Network Fetches Concurrently (Non-Blocking Simulation) ---")
+        print("\n--- Running Tasks Concurrently (Non-Blocking Simulation) ---")
         start_time = time.time()
 
         # 1. Create coroutine objects (these are just "plans" for tasks, they don't run yet)
-        task1 = simulate_network_fetch("192.168.1.10", 3)
-        task2 = simulate_network_fetch("192.168.1.11", 2)
-        task3 = simulate_network_fetch("192.168.1.12", 4)
+        task1 = simulate_task("Task A (Concurrent)", 3)
+        task2 = simulate_task("Task B (Concurrent)", 2)
+        task3 = simulate_task("Task C (Concurrent)", 4)
 
         # 2. Use asyncio.gather() to run all these "plans" concurrently.
         #    It starts them all, and then waits for the *longest* one to finish.
@@ -458,72 +392,58 @@ Now, we'll tell `asyncio` to start all the network fetches at the same time and 
     ```
 2.  Save and run `asyncio_lab.py`.
 3.  **Expected Output/Observation:**
-    *   You will see "Starting fetch..." messages for all three devices appear almost immediately one after another.
-    *   Then, "Finished fetch..." messages will appear as each task completes, likely out of order (shortest delay finishes first).
+    *   You will see "Starting..." messages for all three tasks appear almost immediately one after another.
+    *   Then, "Finished..." messages will appear as each task completes, likely out of order (shortest delay finishes first).
     *   The "Total concurrent time" will be approximately the duration of the *longest* task (which is 4 seconds in this case), not the sum.
     ```
-    --- Running Network Fetches Concurrently (Non-Blocking Simulation) ---
-    [HH:MM:SS] Starting fetch from 192.168.1.10 (delay: 3s)...
-    [HH:MM:SS] Starting fetch from 192.168.1.11 (delay: 2s)...
-    [HH:MM:SS] Starting fetch from 192.168.1.12 (delay: 4s)...
-    [HH:MM:SS] Finished fetch from 192.168.1.11.
-    [HH:MM:SS] Finished fetch from 192.168.1.10.
-    [HH:MM:SS] Finished fetch from 192.168.1.12.
+    --- Running Tasks Concurrently (Non-Blocking Simulation) ---
+    [HH:MM:SS] Starting Task A (Concurrent) (delay: 3s)...
+    [HH:MM:SS] Starting Task B (Concurrent) (delay: 2s)...
+    [HH:MM:SS] Starting Task C (Concurrent) (delay: 4s)...
+    [HH:MM:SS] Finished Task B (Concurrent).
+    [HH:MM:SS] Finished Task A (Concurrent).
+    [HH:MM:SS] Finished Task C (Concurrent).
 
-    Concurrent results: ['Data from 192.168.1.10', 'Data from 192.168.1.11', 'Data from 192.168.1.12']
+    Concurrent results: ['Result for Task A (Concurrent)', 'Result for Task B (Concurrent)', 'Result for Task C (Concurrent)']
     Total concurrent time: 4.xx seconds
     ```
 
 ### Task 2.3: Concurrent Device Configuration Simulation
 
-Let's apply this to a more realistic network automation scenario: configuring multiple devices concurrently.
+Let's apply this to a more realistic network automation scenario: simulating configuring multiple devices concurrently.
 
 1.  In `asyncio_lab.py`, add the following coroutines:
     ```python
     # ... (previous code) ...
 
-    async def configure_device(device_ip, config_commands):
+    async def configure_device_sim(device_name, config_commands_count):
         """
         Simulates sending configuration commands to a device.
         """
-        print(f"[{time.strftime('%H:%M:%S')}] Configuring {device_ip}...")
-        # --- CONCEPTUAL REAL-WORLD ASYNCHRONOUS CONFIGURATION ---
-        # If you have a Cisco IOS XE Sandbox, you might use asyncssh here:
-        # try:
-        #     async with asyncssh.connect(device_ip, username='developer', password='Cisco123!') as conn:
-        #         await conn.run("config t")
-        #         for cmd in config_commands:
-        #             await conn.run(cmd)
-        #         await conn.run("end")
-        #     print(f"[{time.strftime('%H:%M:%S')}] Configuration successful for {device_ip}.")
-        #     return f"Configured {device_ip} with {len(config_commands)} commands."
-        # except Exception as e:
-        #     print(f"[{time.strftime('%H:%M:%S')}] Error configuring {device_ip}: {e}")
-        #     return f"Error configuring {device_ip}"
-        # --- END CONCEPTUAL REAL-WORLD ASYNCHRONOUS CONFIGURATION ---
+        print(f"[{time.strftime('%H:%M:%S')}] Configuring {device_name} (commands: {config_commands_count})...")
+        # Simulate variable config time for each device
         await asyncio.sleep(random.uniform(1, 3)) 
-        print(f"[{time.strftime('%H:%M:%S')}] Configuration complete for {device_ip}.")
-        return f"Configured {device_ip} with {len(config_commands)} commands."
+        print(f"[{time.strftime('%H:%M:%S')}] Configuration complete for {device_name}.")
+        return f"Configured {device_name} with {config_commands_count} commands."
 
     async def main_config_automation():
         """
         This coroutine orchestrates concurrent configuration of multiple devices.
         """
-        print("\n--- Concurrent Device Configuration Automation ---")
+        print("\n--- Concurrent Device Configuration Automation Simulation ---")
         start_time = time.time()
 
-        # Using example IPs that might be in a Cisco IOS XE Sandbox (replace if needed)
         devices_to_configure = {
-            "10.10.20.40": ["hostname R1-LAB", "interface Loopback0", "ip address 10.0.0.1 255.255.255.255"],
-            "10.10.20.41": ["hostname R2-LAB", "interface GigabitEthernet0/1", "no shutdown"],
-            "10.10.20.42": ["hostname R3-LAB", "line con 0", "logging synchronous"],
-            "10.10.20.43": ["hostname R4-LAB", "interface Vlan1", "ip address 192.168.10.4 255.255.255.0"]
+            "Router-HQ": 3, # 3 simulated commands
+            "Switch-Access-1": 5,
+            "Firewall-DMZ": 2,
+            "Core-Router-Backup": 4
         }
 
         config_tasks = []
-        for ip, commands in devices_to_configure.items():
+        for name, commands_count in devices_to_configure.items():
             # Create a list of coroutine "plans" for each device
-            config_tasks.append(configure_device(ip, commands))
+            config_tasks.append(configure_device_sim(name, commands_count))
 
         # Run all configuration tasks concurrently
         config_results = await asyncio.gather(*config_tasks)
@@ -546,55 +466,50 @@ Let's apply this to a more realistic network automation scenario: configuring mu
 3.  **Expected Output/Observation:**
     *   You will see "Configuring..." messages for all devices appear quickly, interleaved with each other.
     *   "Configuration complete..." messages will appear as each device's simulated configuration finishes, likely out of order.
-    *   The total time will be much less than if you configured each device one by one (it will be close to the time of the longest single configuration, which is about 3 seconds in this simulation).
+    *   The total time will be much less than if you configured each device one by one (it will be close to the time of the longest single configuration simulation, which is about 3 seconds).
     ```
-    --- Concurrent Device Configuration Automation ---
-    [HH:MM:SS] Configuring 10.10.20.40...
-    [HH:MM:SS] Configuring 10.10.20.41...
-    [HH:MM:SS] Configuring 10.10.20.42...
-    [HH:MM:SS] Configuring 10.10.20.43...
-    [HH:MM:SS] Configuration complete for 10.10.20.41.
-    [HH:MM:SS] Configuration complete for 10.10.20.40.
-    [HH:MM:SS] Configuration complete for 10.10.20.43.
-    [HH:MM:SS] Configuration complete for 10.10.20.42.
+    --- Concurrent Device Configuration Automation Simulation ---
+    [HH:MM:SS] Configuring Router-HQ (commands: 3)...
+    [HH:MM:SS] Configuring Switch-Access-1 (commands: 5)...
+    [HH:MM:SS] Configuring Firewall-DMZ (commands: 2)...
+    [HH:MM:SS] Configuring Core-Router-Backup (commands: 4)...
+    [HH:MM:SS] Configuration complete for Firewall-DMZ.
+    [HH:MM:SS] Configuration complete for Router-HQ.
+    [HH:MM:SS] Configuration complete for Switch-Access-1.
+    [HH:MM:SS] Configuration complete for Core-Router-Backup.
 
     All device configurations completed:
-    - Configured 10.10.20.40 with 3 commands.
-    - Configured 10.10.20.41 with 3 commands.
-    - Configured 10.10.20.42 with 3 commands.
-    - Configured 10.10.20.43 with 3 commands.
+    - Configured Router-HQ with 3 commands.
+    - Configured Switch-Access-1 with 5 commands.
+    - Configured Firewall-DMZ with 2 commands.
+    - Configured Core-Router-Backup with 4 commands.
     Total configuration time: 2.xx seconds
     ```
 
 ### Task 2.4: Concurrent Log Collection and Real-time Monitoring Simulation
 
-This task demonstrates how `asyncio` can be used for efficiently collecting logs or monitoring status from multiple devices simultaneously, crucial for **real-time monitoring** and **log collection**.
+This task demonstrates how `asyncio` can be used for efficiently collecting logs or monitoring status from multiple sources simultaneously, crucial for **real-time monitoring** and **log collection**.
 
 1.  In `asyncio_lab.py`, add the following coroutine:
     ```python
     # ... (previous code) ...
 
-    async def fetch_device_status(device_ip):
+    async def fetch_status_or_log(source_name):
         """
-        Simulates fetching status (e.g., interface status or CPU utilization) from a device.
+        Simulates fetching status or log data from a source.
         """
-        print(f"[{time.strftime('%H:%M:%S')}] Monitoring {device_ip} status...")
-        # --- CONCEPTUAL REAL-WORLD ASYNCHRONOUS MONITORING ---
-        # If you have a Cisco IOS XE Sandbox, you might use asyncssh here:
-        # try:
-        #     async with asyncssh.connect(device_ip, username='developer', password='Cisco123!') as conn:
-        #         status_output = await conn.run("show ip interface brief")
-        #         # Or for logs: log_output = await conn.run("show logging | include %UP%")
-        #         return {device_ip: status_output.stdout.splitlines()}
-        # except Exception as e:
-        #     print(f"[{time.strftime('%H:%M:%S')}] Error monitoring {device_ip}: {e}")
-        #     return {device_ip: "Error"}
-        # --- END CONCEPTUAL REAL-WORLD ASYNCHRONOUS MONITORING ---
+        print(f"[{time.strftime('%H:%M:%S')}] Monitoring {source_name} status/logs...")
         delay = random.uniform(0.5, 2.5) # Simulate variable monitoring time
         await asyncio.sleep(delay)
-        status_data = f"Interface Gi0/1 on {device_ip} is {'up' if random.random() > 0.3 else 'down'}"
-        print(f"[{time.strftime('%H:%M:%S')}] Finished monitoring {device_ip}.")
-        return {device_ip: status_data}
+        
+        # Simulate different types of data
+        if "Device" in source_name:
+            status_data = f"Device {source_name} - Interface Gi0/1 is {'up' if random.random() > 0.3 else 'down'}"
+        else: # Assume it's a log source
+            status_data = f"Log from {source_name}: Critical event detected at {time.ctime()}"
+
+        print(f"[{time.strftime('%H:%M:%S')}] Finished monitoring {source_name}.")
+        return {source_name: status_data}
 
     async def main_monitoring_and_logs():
         """
@@ -603,29 +518,22 @@ This task demonstrates how `asyncio` can be used for efficiently collecting logs
         print("\n--- Concurrent Log Collection & Real-time Monitoring Simulation ---")
         start_time = time.time()
 
-        # Using example IPs that might be in a Cisco IOS XE Sandbox (replace if needed)
-        devices_to_monitor = [
-            "10.10.20.40",
-            "10.10.20.41",
-            "10.10.20.42",
-            "10.10.20.43",
-            "10.10.20.44",
-            "10.10.20.45",
-            "10.10.20.46",
-            "10.10.20.47",
-        ] # 8 conceptual devices
+        sources_to_monitor = [
+            "Device-1", "Device-2", "Log-Server-A", "Device-3", 
+            "API-Gateway-B", "Device-4", "Syslog-C", "Sensor-D",
+        ] # 8 conceptual sources
 
         monitor_tasks = []
-        for ip in devices_to_monitor:
-            monitor_tasks.append(fetch_device_status(ip))
+        for source in sources_to_monitor:
+            monitor_tasks.append(fetch_status_or_log(source))
 
         # Run all monitoring tasks concurrently
         monitoring_results = await asyncio.gather(*monitor_tasks)
 
         print("\n--- All Monitoring Results ---")
         for res in monitoring_results:
-            for ip, status in res.items():
-                print(f"  {ip}: {status}")
+            for source, data in res.items():
+                print(f"  {source}: {data}")
 
         end_time = time.time()
         print(f"\nTotal monitoring time: {end_time - start_time:.2f} seconds")
@@ -640,37 +548,37 @@ This task demonstrates how `asyncio` can be used for efficiently collecting logs
     ```
 2.  Save and run `asyncio_lab.py`.
 3.  **Expected Output/Observation:**
-    *   You will see "Monitoring..." messages for all devices appear quickly.
-    *   "Finished monitoring..." messages will appear as each device's simulated status fetch completes, likely out of order.
-    *   The total time will be significantly less than if you monitored each device sequentially, demonstrating the efficiency for large-scale **log collection** and **real-time monitoring** tasks.
+    *   You will see "Monitoring..." messages for all sources appear quickly.
+    *   "Finished monitoring..." messages will appear as each source's simulated status fetch completes, likely out of order.
+    *   The total time will be significantly less than if you monitored each source sequentially, demonstrating the efficiency for large-scale **log collection** and **real-time monitoring** tasks.
     ```
     --- Concurrent Log Collection & Real-time Monitoring Simulation ---
-    [HH:MM:SS] Monitoring 10.10.20.40 status...
-    [HH:MM:SS] Monitoring 10.10.20.41 status...
-    [HH:MM:SS] Monitoring 10.10.20.42 status...
-    [HH:MM:SS] Monitoring 10.10.20.43 status...
-    [HH:MM:SS] Monitoring 10.10.20.44 status...
-    [HH:MM:SS] Monitoring 10.10.20.45 status...
-    [HH:MM:SS] Monitoring 10.10.20.46 status...
-    [HH:MM:SS] Monitoring 10.10.20.47 status...
-    [HH:MM:SS] Finished monitoring 10.10.20.42.
-    [HH:MM:SS] Finished monitoring 10.10.20.45.
-    [HH:MM:SS] Finished monitoring 10.10.20.40.
-    [HH:MM:SS] Finished monitoring 10.10.20.47.
-    [HH:MM:SS] Finished monitoring 10.10.20.44.
-    [HH:MM:SS] Finished monitoring 10.10.20.41.
-    [HH:MM:SS] Finished monitoring 10.10.20.43.
-    [HH:MM:SS] Finished monitoring 10.10.20.46.
+    [HH:MM:SS] Monitoring Device-1 status/logs...
+    [HH:MM:SS] Monitoring Device-2 status/logs...
+    [HH:MM:SS] Monitoring Log-Server-A status/logs...
+    [HH:MM:SS] Monitoring Device-3 status/logs...
+    [HH:MM:SS] Monitoring API-Gateway-B status/logs...
+    [HH:MM:SS] Monitoring Device-4 status/logs...
+    [HH:MM:SS] Monitoring Syslog-C status/logs...
+    [HH:MM:SS] Monitoring Sensor-D status/logs...
+    [HH:MM:SS] Finished monitoring Device-2.
+    [HH:MM:SS] Finished monitoring Log-Server-A.
+    [HH:MM:SS] Finished monitoring Device-1.
+    [HH:MM:SS] Finished monitoring Device-4.
+    [HH:MM:SS] Finished monitoring API-Gateway-B.
+    [HH:MM:SS] Finished monitoring Device-3.
+    [HH:MM:SS] Finished monitoring Sensor-D.
+    [HH:MM:SS] Finished monitoring Syslog-C.
 
     --- All Monitoring Results ---
-      10.10.20.40: Interface Gi0/1 on 10.10.20.40 is up
-      10.10.20.41: Interface Gi0/1 on 10.10.20.41 is up
-      10.10.20.42: Interface Gi0/1 on 10.10.20.42 is down
-      10.10.20.43: Interface Gi0/1 on 10.10.20.43 is up
-      10.10.20.44: Interface Gi0/1 on 10.10.20.44 is up
-      10.10.20.45: Interface Gi0/1 on 10.10.20.45 is down
-      10.10.20.46: Interface Gi0/1 on 10.10.20.46 is up
-      10.10.20.47: Interface Gi0/1 on 10.10.20.47 is up
+      Device-1: Device Device-1 - Interface Gi0/1 is up
+      Device-2: Device Device-2 - Interface Gi0/1 is down
+      Log-Server-A: Log from Log-Server-A: Critical event detected at Mon Sep 01 HH:MM:SS 2025
+      Device-3: Device Device-3 - Interface Gi0/1 is up
+      API-Gateway-B: Log from API-Gateway-B: Critical event detected at Mon Sep 01 HH:MM:SS 2025
+      Device-4: Device Device-4 - Interface Gi0/1 is down
+      Syslog-C: Log from Syslog-C: Critical event detected at Mon Sep 01 HH:MM:SS 2025
+      Sensor-D: Log from Sensor-D: Critical event detected at Mon Sep 01 HH:MM:SS 2025
 
     Total monitoring time: 2.xx seconds
     ```
@@ -679,9 +587,9 @@ This task demonstrates how `asyncio` can be used for efficiently collecting logs
 
 ## Conclusion
 
-You've now completed the labs for Data Synchronization and Asynchronous Mechanisms! You've experienced the challenges of race conditions and learned how to mitigate them with `threading.Lock` and `threading.Semaphore`. More importantly for network automation, you've seen the power of `asyncio` to perform I/O-bound tasks concurrently, leading to significant time savings, especially for **concurrent network device connections**, **log collection**, and **real-time monitoring** on devices like **Cisco IOS XE routers sandbox**.
+You've now completed the labs for Data Synchronization and Asynchronous Mechanisms! You've experienced the challenges of race conditions and learned how to mitigate them with `threading.Lock` and `threading.Semaphore`. More importantly, you've seen the power of `asyncio` to perform I/O-bound tasks concurrently, leading to significant time savings, which is directly applicable to **concurrent network device connections**, **log collection**, and **real-time monitoring**.
 
-These are fundamental concepts that will empower you to write highly efficient and scalable network automation solutions.
+These are fundamental concepts that will empower you to write highly efficient and scalable Python automation solutions.
 
 **Keep Learning!**
 
