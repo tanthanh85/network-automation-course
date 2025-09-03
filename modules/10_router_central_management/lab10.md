@@ -21,7 +21,7 @@ This console will allow you to:
 **It is crucial that you replace the dummy values for your IOS XE router with its actual IP address, username, and password to make the code functional.**
 
 **Lab Objectives:**
-*   Set up the Flask project structure.
+*   Set up the Flask project structure with clear separation of concerns.
 *   Implement inventory management (add/list/delete routers) to an SQLite database.
 *   Develop backend functions for router operations (reboot, backup, logging, monitoring).
 *   Create Flask routes and HTML templates for the web GUI.
@@ -38,9 +38,9 @@ Let's build a web console!
 
 ---
 
-## Lab Setup
+## Lab Setup: Project Structure
 
-For this module, we will create a dedicated project structure for our Flask application.
+For this module, we will create a dedicated project structure for our Flask application, organizing files into logical folders.
 
 1.  **Navigate** to your main `network_automation_labs` directory.
 2.  **Create a new directory** for this module's labs:
@@ -50,6 +50,8 @@ For this module, we will create a dedicated project structure for our Flask appl
     ```
 3.  **Inside `module10_router_console`, create the following directories:**
     ```bash
+    mkdir database
+    mkdir network_functions
     mkdir templates
     mkdir static
     mkdir backups # For config backups
@@ -57,12 +59,22 @@ For this module, we will create a dedicated project structure for our Flask appl
     ```
 4.  **Inside `module10_router_console`, create the following empty Python files:**
     ```bash
-    touch __init__.py
+    touch __init__.py # Makes module10_router_console a Python package
     touch config.py
-    touch network_ops.py
     touch app.py
     ```
-5.  **Inside the `templates` directory, create the following empty HTML files:**
+5.  **Inside the `database` directory, create the following empty Python file:**
+    ```bash
+    touch database/__init__.py # Makes database a Python package
+    touch database/db_ops.py
+    ```
+6.  **Inside the `network_functions` directory, create the following empty Python files:**
+    ```bash
+    touch network_functions/__init__.py # Makes network_functions a Python package
+    touch network_functions/netmiko_ops.py
+    touch network_functions/restconf_ops.py
+    ```
+7.  **Inside the `templates` directory, create the following empty HTML files:**
     ```bash
     touch templates/index.html
     touch templates/inventory.html
@@ -70,7 +82,7 @@ For this module, we will create a dedicated project structure for our Flask appl
     touch templates/monitor_interface.html
     touch templates/logs_display.html
     ```
-6.  **Inside the `static` directory, create an empty CSS file:**
+8.  **Inside the `static` directory, create an empty CSS file:**
     ```bash
     touch static/style.css
     ```
@@ -81,8 +93,14 @@ network_automation_labs/
 └── module10_router_console/
 ├── init.py
 ├── config.py
-├── network_ops.py
 ├── app.py
+├── database/
+│ ├── init.py
+│ └── db_ops.py
+├── network_functions/
+│ ├── init.py
+│ ├── netmiko_ops.py
+│ └── restconf_ops.py
 ├── templates/
 │ ├── index.html
 │ ├── inventory.html
@@ -91,10 +109,9 @@ network_automation_labs/
 │ └── logs_display.html
 ├── static/
 │ └── style.css
-├── backups/
-└── logs/
+├── backups/ <-- New directory (created by app)
+└── logs/ <-- New directory (created by app)
 ```
-
 ### Task 0.1: Install Required Libraries
 
 1.  Ensure your `na_env` virtual environment is active (from `network_automation_labs` directory).
@@ -110,7 +127,7 @@ network_automation_labs/
 
 ### Task 0.2: Populate `config.py`
 
-This file will store your router's connection details and database path.
+This file will store your router's connection details and paths for the database and directories.
 
 1.  Open `config.py` in your code editor.
 2.  Add the following Python code. **REPLACE THE DUMMY VALUES WITH YOUR ACTUAL LAB IOS XE ROUTER DETAILS!**
@@ -132,7 +149,7 @@ This file will store your router's connection details and database path.
     }
 
     # SQLite Database file path
-    DB_FILE = "inventory.db"
+    DB_FILE = "database/inventory.db" # Database file inside 'database' folder
 
     # Directory to store configuration backups
     BACKUP_DIR = "backups"
@@ -142,31 +159,28 @@ This file will store your router's connection details and database path.
     ```
 3.  Save `config.py`.
 
-### Task 0.3: Populate `network_ops.py`
+### Task 0.3: Populate `database/db_ops.py`
 
-This file will contain all the backend network operation functions, including SQLite interactions.
+This file will handle all SQLite database operations for the inventory.
 
-1.  Open `network_ops.py` in your code editor.
+1.  Open `database/db_ops.py` in your code editor.
 2.  Add the following Python code:
     ```python
-    # network_ops.py
+    # database/db_ops.py
+    import sqlite3
     import logging
     import os
-    import time
-    import datetime
-    import requests
-    import json
-    import sqlite3 # For SQLite database operations
-    from netmiko import ConnectHandler
-    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException
-    from .config import DB_FILE, BACKUP_DIR, LOGS_DIR
+    from ..config import DB_FILE # Import DB_FILE from parent config
 
-    # Configure logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    # --- Database Initialization ---
     def _init_db():
         """Initializes the SQLite database and creates the routers table if it doesn't exist."""
+        # Ensure the database directory exists
+        db_dir = os.path.dirname(DB_FILE)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir)
+
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         cursor.execute('''
@@ -187,7 +201,6 @@ This file will contain all the backend network operation functions, including SQ
         conn.close()
         logging.info("SQLite database initialized.")
 
-    # --- Inventory Management Functions (SQLite) ---
     def load_inventory():
         """Loads all routers from the SQLite database."""
         _init_db() # Ensure DB is initialized
@@ -261,24 +274,74 @@ This file will contain all the backend network operation functions, including SQ
         finally:
             conn.close()
 
-    # --- Netmiko Operations ---
+    # Standalone test for functions (only runs when this file is executed directly)
+    if __name__ == '__main__':
+        from ..config import DEFAULT_ROUTER_INFO # Import from parent config
+        print("--- Testing db_ops.py functions ---")
+        
+        test_router_name = "TestRouterDB"
+        test_router_info = DEFAULT_ROUTER_INFO.copy()
+        test_router_info['name'] = test_router_name
+        
+        # Test add/load/delete inventory
+        print("\nTesting inventory management...")
+        # Clean up previous test entry if exists
+        delete_router_from_inventory(test_router_name) 
+        
+        if add_router_to_inventory(test_router_info):
+            print(f"Router {test_router_name} added.")
+        else:
+            print(f"Failed to add {test_router_name}.")
+        
+        routers = load_inventory()
+        print(f"Current inventory has {len(routers)} routers.")
+        for r in routers:
+            print(f"  - {r['name']} ({r['host']})")
+        
+        if delete_router_from_inventory(test_router_name):
+            print(f"Router {test_router_name} deleted.")
+        else:
+            print(f"Failed to delete {test_router_name}.")
+        
+        print("\n--- Test Complete ---")
+    ```
+3.  Save `database/db_ops.py`.
+
+### Task 0.4: Populate `network_functions/netmiko_ops.py`
+
+This file will contain Netmiko-specific operations.
+
+1.  Open `network_functions/netmiko_ops.py` in your code editor.
+2.  Add the following Python code:
+    ```python
+    # network_functions/netmiko_ops.py
+    import logging
+    import os
+    import datetime
+    from netmiko import ConnectHandler
+    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException
+    from ..config import BACKUP_DIR, LOGS_DIR # Import from parent config
+
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
     def _get_netmiko_connection(router_info):
         """Helper to establish Netmiko connection."""
         host = router_info.get('host')
         try:
             net_connect = ConnectHandler(**router_info)
+            logging.info(f"Netmiko: Successfully connected to {host}.")
             return net_connect
         except (NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException) as e:
             logging.error(f"Netmiko connection error to {host}: {e}")
             return None
         except Exception as e:
-            logging.error(f"Unexpected error connecting to {host}: {e}")
+            logging.error(f"Netmiko unexpected error connecting to {host}: {e}")
             return None
 
     def reboot_router(router_info):
         """Reboots the specified router."""
         host = router_info.get('host')
-        logging.info(f"Attempting to reboot router {host}...")
+        logging.info(f"Netmiko: Attempting to reboot router {host}...")
         net_connect = _get_netmiko_connection(router_info)
         if net_connect:
             try:
@@ -286,10 +349,10 @@ This file will contain all the backend network operation functions, including SQ
                 output = net_connect.send_command("reload", expect_string=r"\[confirm\]", strip_prompt=False)
                 # Send 'y' to confirm
                 output += net_connect.send_command("y", strip_prompt=False)
-                logging.info(f"Reboot command sent to {host}:\n{output}")
+                logging.info(f"Netmiko: Reboot command sent to {host}:\n{output}")
                 return True
             except Exception as e:
-                logging.error(f"Error sending reboot command to {host}: {e}")
+                logging.error(f"Netmiko: Error sending reboot command to {host}: {e}")
             finally:
                 net_connect.disconnect()
         return False
@@ -297,7 +360,7 @@ This file will contain all the backend network operation functions, including SQ
     def backup_config(router_info):
         """Backs up the running configuration of the router."""
         host = router_info.get('host')
-        logging.info(f"Attempting to backup config for router {host}...")
+        logging.info(f"Netmiko: Attempting to backup config for router {host}...")
         net_connect = _get_netmiko_connection(router_info)
         if net_connect:
             try:
@@ -309,10 +372,10 @@ This file will contain all the backend network operation functions, including SQ
                 
                 with open(backup_filename, 'w') as f:
                     f.write(output)
-                logging.info(f"Backup successful for {host}. Saved to {backup_filename}")
+                logging.info(f"Netmiko: Backup successful for {host}. Saved to {backup_filename}")
                 return True
             except Exception as e:
-                logging.error(f"Error backing up config for {host}: {e}")
+                logging.error(f"Netmiko: Error backing up config for {host}: {e}")
             finally:
                 net_connect.disconnect()
         return False
@@ -320,90 +383,31 @@ This file will contain all the backend network operation functions, including SQ
     def get_show_logging(router_info):
         """Retrieves 'show logging' output from the router."""
         host = router_info.get('host')
-        logging.info(f"Attempting to get 'show logging' for router {host}...")
+        logging.info(f"Netmiko: Attempting to get 'show logging' for router {host}...")
         net_connect = _get_netmiko_connection(router_info)
         if net_connect:
             try:
                 output = net_connect.send_command("show logging")
-                logging.info(f"Successfully retrieved 'show logging' from {host}.")
+                logging.info(f"Netmiko: Successfully retrieved 'show logging' from {host}.")
                 return output
             except Exception as e:
-                logging.error(f"Error getting 'show logging' from {host}: {e}")
+                logging.error(f"Netmiko: Error getting 'show logging' from {host}: {e}")
             finally:
                 net_connect.disconnect()
         return None
 
-    # --- RESTCONF Monitoring Functions ---
-    def get_interface_stats_restconf(router_info, interface_name):
-        """
-        Retrieves interface statistics (in/out octets) via RESTCONF.
-        Returns a dictionary or None.
-        """
-        host = router_info.get('host')
-        restconf_port = router_info.get('restconf_port')
-        username = router_info.get('username')
-        password = router_info.get('password')
-        verify_ssl = router_info.get('verify_ssl', False)
-
-        RESTCONF_BASE_URL = f"https://{host}:{restconf_port}/restconf/data"
-        path = f"ietf-interfaces:interfaces-state/interface={interface_name}/statistics"
-        full_url = f"{RESTCONF_BASE_URL}/{path}"
-
-        headers = {
-            "Content-Type": "application/yang-data+json",
-            "Accept": "application/yang-data+json"
-        }
-        
-        try:
-            response = requests.get(
-                full_url,
-                headers=headers,
-                auth=(username, password),
-                verify=verify_ssl
-            )
-            response.raise_for_status()
-            data = response.json()
-            
-            # Extract relevant stats
-            stats = data.get('ietf-interfaces:statistics', {})
-            return {
-                "in-octets": stats.get("in-octets"),
-                "out-octets": stats.get("out-octets"),
-                "timestamp": time.time() # Add timestamp for calculation
-            }
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error fetching interface stats for {interface_name} on {host}: {e}")
-            return None
-        except json.JSONDecodeError:
-            logging.error(f"JSON decode error for interface stats on {host}.")
-            return None
-        except Exception as e:
-            logging.error(f"Unexpected error fetching interface stats for {interface_name} on {host}: {e}")
-            return None
-
-    # --- Standalone Test Section (for development/debugging) ---
+    # Standalone test for functions (only runs when this file is executed directly)
     if __name__ == '__main__':
-        from .config import DEFAULT_ROUTER_INFO
-        print("--- Testing network_ops.py functions ---")
+        from ..config import DEFAULT_ROUTER_INFO # Import from parent config
+        print("--- Testing netmiko_ops.py functions ---")
         
         # Ensure backup/logs directories exist for testing
         os.makedirs(BACKUP_DIR, exist_ok=True)
         os.makedirs(LOGS_DIR, exist_ok=True)
 
-        # Add a test router to inventory (if not already there)
-        test_router_name = "TestRouter"
+        # Use DEFAULT_ROUTER_INFO for testing
         test_router_info = DEFAULT_ROUTER_INFO.copy()
-        test_router_info['name'] = test_router_name
-        
-        # Test add/load/delete inventory
-        print("\nTesting inventory management...")
-        if not get_router_by_name(test_router_name):
-            add_router_to_inventory(test_router_info)
-        else:
-            print(f"Router {test_router_name} already in inventory.")
-        
-        routers = load_inventory()
-        print(f"Current inventory has {len(routers)} routers.")
+        test_router_info['name'] = "TestRouterNetmiko" # Give it a name for logging
         
         # Test Backup
         print("\nTesting backup_config...")
@@ -420,14 +424,6 @@ This file will contain all the backend network operation functions, including SQ
         else:
             print("Show logging test failed.")
 
-        # Test get_interface_stats_restconf (requires RESTCONF enabled on router)
-        print("\nTesting get_interface_stats_restconf for GigabitEthernet1...")
-        interface_stats = get_interface_stats_restconf(test_router_info, "GigabitEthernet1")
-        if interface_stats:
-            print("Interface stats test successful:", interface_stats)
-        else:
-            print("Interface stats test failed.")
-
         # Test Reboot (CAUTION: This will actually reboot your router)
         # print("\nTesting reboot_router (CAUTION: Router will reboot!)...")
         # if reboot_router(test_router_info):
@@ -435,14 +431,134 @@ This file will contain all the backend network operation functions, including SQ
         # else:
         #     print("Reboot command failed.")
         
-        # Clean up test router from inventory
-        # delete_router_from_inventory(test_router_name)
-        # print(f"\nRouter {test_router_name} removed from inventory.")
-        print("\n--- network_ops.py Test Complete ---")
+        print("\n--- netmiko_ops.py Test Complete ---")
     ```
-3.  Save `network_ops.py`.
+3.  Save `network_functions/netmiko_ops.py`.
 
-### Task 0.4: Populate HTML Templates
+### Task 0.5: Populate `network_functions/restconf_ops.py`
+
+This file will contain RESTCONF-specific operations for monitoring.
+
+1.  Open `network_functions/restconf_ops.py` in your code editor.
+2.  Add the following Python code:
+    ```python
+    # network_functions/restconf_ops.py
+    import logging
+    import requests
+    import json
+    import time
+    from ..config import BACKUP_DIR, LOGS_DIR # Import from parent config
+
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+    def get_restconf_data(router_info, path):
+        """
+        Makes a GET request to the IOS XE RESTCONF API for a given YANG path.
+        Returns the JSON response as a Python dictionary, or None on error.
+        """
+        host = router_info.get('host')
+        restconf_port = router_info.get('restconf_port')
+        username = router_info.get('username')
+        password = router_info.get('password')
+        verify_ssl = router_info.get('verify_ssl', False)
+
+        RESTCONF_BASE_URL = f"https://{host}:{restconf_port}/restconf/data"
+        full_url = f"{RESTCONF_BASE_URL}/{path}"
+
+        headers = {
+            "Content-Type": "application/yang-data+json",
+            "Accept": "application/yang-data+json"
+        }
+        
+        try:
+            # logging.info(f"RESTCONF: Fetching {path} from {host}...") # Uncomment for debugging
+            response = requests.get(
+                full_url,
+                headers=headers,
+                auth=(username, password),
+                verify=verify_ssl
+            )
+            response.raise_for_status() # Raise an exception for HTTP errors
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logging.error(f"RESTCONF error fetching {path} from {host}: {e}")
+            return None
+        except json.JSONDecodeError:
+            logging.error(f"RESTCONF: JSON decode error for {path} response from {host}.")
+            return None
+        except Exception as e:
+            logging.error(f"RESTCONF: Unexpected error fetching {path} from {host}: {e}")
+            return None
+
+    def get_interface_list(router_info):
+        """Queries and returns a list of interface names from IOS XE via RESTCONF."""
+        path = "ietf-interfaces:interfaces/interface"
+        data = get_restconf_data(router_info, path)
+        interfaces = []
+        if data:
+            iface_list = data.get('ietf-interfaces:interfaces', {}).get('interface', [])
+            for iface in iface_list:
+                name = iface.get('name')
+                if name:
+                    interfaces.append(name)
+        return interfaces
+
+    def get_interface_stats_restconf(router_info, interface_name):
+        """
+        Retrieves interface statistics (in/out octets) via RESTCONF.
+        Returns a dictionary or None.
+        """
+        path = f"ietf-interfaces:interfaces-state/interface={interface_name}/statistics"
+        data = get_restconf_data(router_info, path)
+        if data:
+            stats = data.get('ietf-interfaces:statistics', {})
+            return {
+                "in-octets": stats.get("in-octets"),
+                "out-octets": stats.get("out-octets"),
+                "status": "up" # RESTCONF does not directly provide oper-status in statistics, assume up if stats are there
+            }
+        # Fallback to get oper-status if stats are not available
+        oper_status_path = f"ietf-interfaces:interfaces/interface={interface_name}/oper-status"
+        oper_status_data = get_restconf_data(router_info, oper_status_path)
+        if oper_status_data:
+            status = oper_status_data.get('ietf-interfaces:oper-status')
+            return {"in-octets": 0, "out-octets": 0, "status": status}
+        
+        return {"in-octets": 0, "out-octets": 0, "status": "unknown"}
+
+    # Standalone test for functions (only runs when this file is executed directly)
+    if __name__ == '__main__':
+        from ..config import DEFAULT_ROUTER_INFO # Import from parent config
+        print("--- Testing restconf_ops.py functions ---")
+        
+        test_router_info = DEFAULT_ROUTER_INFO.copy()
+        test_router_info['name'] = "TestRouterRESTCONF" # Give it a name for logging
+        
+        # Test get_interface_list
+        print("\nTesting get_interface_list...")
+        interfaces = get_interface_list(test_router_info)
+        if interfaces:
+            print("Interface list successful:", interfaces)
+        else:
+            print("Interface list failed.")
+
+        # Test get_interface_stats_restconf (requires RESTCONF enabled on router)
+        if interfaces:
+            print("\nTesting get_interface_stats_restconf for first interface...")
+            first_interface = interfaces
+            interface_stats = get_interface_stats_restconf(test_router_info, first_interface)
+            if interface_stats:
+                print(f"Stats for {first_interface}:", interface_stats)
+            else:
+                print(f"Stats for {first_interface} failed.")
+        else:
+            print("\nNo interfaces to test stats for.")
+        
+        print("\n--- restconf_ops.py Test Complete ---")
+    ```
+3.  Save `network_functions/restconf_ops.py`.
+
+### Task 0.6: Populate HTML Templates
 
 These files define the structure and content of your web pages.
 
@@ -913,371 +1029,6 @@ This file defines the styling for your web dashboard.
     ```
 3.  Save `static/style.css`.
 
-### Task 0.7: Populate `app.py`
-
-This is the main Flask application file that will bring everything together.
-
-1.  Open `app.py` in your code editor.
-2.  Add the following Python code:
-    ```python
-    # app.py
-    from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
-    import time
-    import threading
-    import os
-    import json # For parsing JSON from RESTCONF
-
-    # Import functions and configurations
-    from .network_ops import (
-        load_inventory, add_router_to_inventory, delete_router_from_inventory, get_router_by_name,
-        reboot_router, backup_config, get_show_logging, get_interface_stats_restconf
-    )
-    from .config import DEFAULT_ROUTER_INFO, BACKUP_DIR, LOGS_DIR
-
-    app = Flask(__name__)
-    app.secret_key = 'supersecretkey' # Needed for flash messages. CHANGE THIS IN PRODUCTION!
-
-    # Ensure directories exist
-    os.makedirs(BACKUP_DIR, exist_ok=True)
-    os.makedirs(LOGS_DIR, exist_ok=True)
-
-    # --- Flask Routes ---
-
-    @app.route('/')
-    def index():
-        """Home page displaying number of managed routers."""
-        routers = load_inventory()
-        return render_template('index.html', num_routers=len(routers))
-
-    @app.route('/inventory', methods=['GET', 'POST'])
-    def inventory_management():
-        """Handles adding and listing routers in inventory."""
-        if request.method == 'POST':
-            # Handle adding a new router
-            name = request.form['name']
-            host = request.form['host']
-            username = request.form['username']
-            password = request.form['password']
-            secret = request.form.get('secret', '') # Optional
-            device_type = request.form.get('device_type', 'cisco_ios')
-            port = int(request.form.get('port', 22))
-            restconf_port = int(request.form.get('restconf_port', 443))
-            verify_ssl_str = request.form.get('verify_ssl', 'False')
-            verify_ssl = verify_ssl_str.lower() == 'true' # Convert string to boolean
-
-            # Basic validation
-            if not name or not host or not username or not password:
-                flash('All required fields must be filled!', 'error')
-            elif get_router_by_name(name):
-                flash(f'Router with name "{name}" already exists!', 'error')
-            else:
-                new_router = {
-                    "name": name,
-                    "host": host,
-                    "username": username,
-                    "password": password,
-                    "secret": secret,
-                    "device_type": device_type,
-                    "port": port,
-                    "restconf_port": restconf_port,
-                    "verify_ssl": verify_ssl
-                }
-                if add_router_to_inventory(new_router):
-                    flash(f'Router "{name}" added successfully!', 'success')
-                else:
-                    flash(f'Failed to add router "{name}". See console for details.', 'error')
-            return redirect(url_for('inventory_management'))
-        
-        routers = load_inventory()
-        return render_template('inventory.html', routers=routers)
-
-    @app.route('/inventory/delete', methods=['POST'])
-    def inventory_delete():
-        """Handles deleting a router from inventory."""
-        router_name = request.form['name']
-        if delete_router_from_inventory(router_name):
-            flash(f'Router "{router_name}" deleted successfully!', 'success')
-        else:
-            flash(f'Router "{router_name}" not found for deletion.', 'error')
-        return redirect(url_for('inventory_management'))
-
-    @app.route('/actions', methods=['GET', 'POST'])
-    def router_actions():
-        """Handles router actions like reboot, backup, get logging."""
-        routers = load_inventory()
-        if request.method == 'POST':
-            selected_router_names = request.form.getlist('selected_routers')
-            action = request.form['action']
-
-            if not selected_router_names:
-                flash('Please select at least one router.', 'error')
-                return redirect(url_for('router_actions'))
-
-            for router_name in selected_router_names:
-                router_info = get_router_by_name(router_name)
-                if not router_info:
-                    flash(f'Router "{router_name}" not found in inventory.', 'error')
-                    continue
-
-                if action == 'Reboot Selected':
-                    # Run reboot in a separate thread to avoid blocking the GUI
-                    thread = threading.Thread(target=reboot_router, args=(router_info,))
-                    thread.start()
-                    flash(f'Reboot command sent to {router_name} in background.', 'info')
-                elif action == 'Backup Config Selected':
-                    thread = threading.Thread(target=backup_config, args=(router_info,))
-                    thread.start()
-                    flash(f'Backup initiated for {router_name} in background. Check "{BACKUP_DIR}" folder.', 'info')
-                elif action == 'Get Show Logging Selected':
-                    # For show logging, we fetch and then redirect to a display page
-                    # This might still block if many routers are selected.
-                    # For simplicity, we'll collect logs sequentially here for display.
-                    logs_data = {}
-                    router_name_to_host = {}
-                    for name in selected_router_names:
-                        info = get_router_by_name(name)
-                        if info:
-                            log_output = get_show_logging(info)
-                            logs_data[name] = log_output if log_output else f"Error retrieving logs from {name}."
-                            router_name_to_host[name] = info['host']
-                    return render_template('logs_display.html', logs_data=logs_data, router_name_to_host=router_name_to_host)
-            
-            return redirect(url_for('router_actions')) # Redirect to prevent re-submission on refresh
-        
-        return render_template('router_actions.html', routers=routers)
-
-    @app.route('/download_log/<router_name>')
-    def download_log(router_name):
-        """Allows downloading the last retrieved log for a router."""
-        # For this lab, we'll assume logs are stored in LOGS_DIR with a fixed name for simplicity.
-        # In a real app, you'd manage unique log filenames and paths.
-        log_filename = f"{router_name}_logging.txt"
-        temp_log_path = os.path.join(LOGS_DIR, log_filename)
-        
-        # Check if the file exists before sending
-        if os.path.exists(temp_log_path):
-            return send_from_directory(LOGS_DIR, log_filename, as_attachment=True)
-        else:
-            flash(f"Log file for {router_name} not found. Please retrieve logs first.", "error")
-            return redirect(url_for('router_actions'))
-
-
-    @app.route('/monitor', methods=['GET', 'POST'])
-    def monitor_interfaces():
-        """Handles interface monitoring dashboard."""
-        routers = load_inventory()
-        all_interfaces = {} # Store {router_name: [interface_names]}
-        selected_interfaces_names = {} # Store {router_name: [selected_iface_names]}
-        monitored_data = [] # Store live stats
-
-        # Populate all_interfaces for display in the form
-        for router in routers:
-            # This is a blocking call, for many routers, it would need threading
-            # For simplicity in monitoring interface selection, we keep it direct.
-            interfaces_list = get_interface_status(router) 
-            all_interfaces[router['name']] = [iface['name'] for iface in interfaces_list]
-            # Initialize selected interfaces from session or form submission
-            selected_interfaces_names[router['name']] = request.form.getlist('selected_interfaces') if request.method == 'POST' else []
-        
-        if request.method == 'POST':
-            # Process form submission for selected interfaces
-            for selected_iface_str in request.form.getlist('selected_interfaces'):
-                router_name, iface_name = selected_iface_str.split('|')
-                router_info = get_router_by_name(router_name)
-                if router_info:
-                    # Fetch live stats for selected interface
-                    stats = get_interface_stats_restconf(router_info, iface_name)
-                    if stats:
-                        # Calculate utilization (conceptual, needs previous stats for accurate bps)
-                        # For simplicity, we'll just show current octets.
-                        # Real bps calculation needs (current_octets - previous_octets) / time_diff
-                        in_octets = stats.get('in-octets', 0)
-                        out_octets = stats.get('out-octets', 0)
-                        
-                        # Dummy calculation for bps for display purposes
-                        # In a real scenario, you'd store previous octets and calculate diff/time
-                        in_util_bps = in_octets / 1000 if in_octets is not None else 0
-                        out_util_bps = out_octets / 1000 if out_octets is not None else 0
-
-                        monitored_data.append({
-                            "router_name": router_name,
-                            "interface_name": iface_name,
-                            "status": stats.get('status', 'N/A'),
-                            "in_octets": in_octets,
-                            "out_octets": out_octets,
-                            "in_util_bps": in_util_bps,
-                            "out_util_bps": out_util_bps
-                        })
-        
-        return render_template(
-            'monitor_interface.html', 
-            routers=routers, 
-            all_interfaces=all_interfaces,
-            selected_interfaces_names=selected_interfaces_names,
-            monitored_data=monitored_data,
-            current_time=time.strftime("%Y-%m-%d %H:%M:%S")
-        )
-
-    # --- Main execution block for running Flask app ---
-    if __name__ == '__main__':
-        # This block is for direct execution of app.py
-        # You can also run Flask using 'flask run' command from terminal
-        app.run(debug=True, host='0.0.0.0', port=5000)
-    ```
-3.  Save `app.py`.
-
-### Task 0.7: Populate `static/style.css`
-
-This file defines the styling for your web dashboard.
-
-1.  Open `static/style.css` in your code editor.
-2.  Add the following CSS code:
-    ```css
-    body { 
-        font-family: Arial, sans-serif; 
-        margin: 20px; 
-        background-color: #f4f4f4; 
-        color: #333; 
-    }
-    .container { 
-        background-color: #fff; 
-        padding: 20px; 
-        border-radius: 8px; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-        max-width: 900px; /* Wider for tables */
-        margin: auto; 
-    }
-    h1, h2 { 
-        color: #0056b3; 
-    }
-    nav {
-        margin-bottom: 20px;
-    }
-    nav a {
-        margin-right: 15px;
-        text-decoration: none;
-        color: #007bff;
-        font-weight: bold;
-    }
-    nav a:hover {
-        text-decoration: underline;
-    }
-    hr {
-        border: 0;
-        height: 1px;
-        background: #eee;
-        margin: 20px 0;
-    }
-    form {
-        background-color: #f9f9f9;
-        padding: 15px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
-    form label {
-        display: inline-block;
-        width: 150px;
-        margin-bottom: 5px;
-        font-weight: bold;
-    }
-    form input[type="text"],
-    form input[type="password"],
-    form input[type="number"] {
-        width: calc(100% - 160px);
-        padding: 8px;
-        margin-bottom: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-    form input[type="submit"] {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-        margin-right: 10px;
-    }
-    form input[type="submit"]:hover {
-        background-color: #0056b3;
-    }
-    .message {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
-    .error-message {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
-    table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        margin-top: 15px; 
-    }
-    th, td { 
-        border: 1px solid #ddd; 
-        padding: 8px; 
-        text-align: left; 
-    }
-    th { 
-        background-color: #f2f2f2; 
-        color: #555;
-    }
-    tbody tr:nth-child(odd) {
-        background-color: #f9f9f9;
-    }
-    .status-up { 
-        color: green; 
-        font-weight: bold; 
-    }
-    .status-down { 
-        color: red; 
-        font-weight: bold; 
-    }
-    .metric { 
-        margin-bottom: 10px; 
-        padding: 10px; 
-        border: 1px solid #ddd; 
-        border-radius: 4px; 
-    }
-    .metric strong { 
-        color: #007bff; 
-    }
-    .alert { 
-        color: red; 
-        font-weight: bold; 
-    }
-    pre {
-        background-color: #eee;
-        padding: 15px;
-        border-radius: 5px;
-        overflow-x: auto;
-        white-space: pre-wrap; /* Wrap long lines */
-        word-wrap: break-word; /* Break words to prevent overflow */
-    }
-    .log-section {
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin-bottom: 20px;
-        background-color: #f9f9f9;
-    }
-    .log-header {
-        font-weight: bold;
-        margin-bottom: 5px;
-        color: #0056b3;
-    }
-    ```
-3.  Save `static/style.css`.
-
 ---
 
 ## Lab 1: Inventory Management
@@ -1322,7 +1073,7 @@ This file defines the styling for your web dashboard.
     *   **Verify SSL:** `False` (or `True` if you have proper certs)
 3.  Click **"Add Router"**.
     *Expected Web Output:* A green "Router 'MyLabRouter' added successfully!" message should appear, and the router should be listed in the "Current Inventory" table.
-    *Verification:* Check your `inventory.db` file in your `module10_router_console` directory (it's a database file, so you can't open it directly with a text editor, but its presence confirms creation).
+    *Verification:* Check your `inventory.db` file in your `module10_router_console/database` folder. Its presence confirms creation.
 
 ### Task 1.3: Delete a Router from Inventory
 
