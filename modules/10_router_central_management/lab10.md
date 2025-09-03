@@ -38,7 +38,7 @@ Let's build a web console!
 
 ---
 
-## Lab Setup:
+## Lab Setup
 
 For this module, we will create a dedicated project structure for our Flask application.
 
@@ -76,24 +76,25 @@ For this module, we will create a dedicated project structure for our Flask appl
     ```
 
 Your directory structure should now look like this:
-```
-network_automation_labs/
-└── module10_router_console/
-├── init.py
-├── config.py
-├── network_ops.py
-├── app.py
-├── templates/
-│ ├── index.html
-│ ├── inventory.html
-│ ├── router_actions.html
-│ ├── monitor_interface.html
-│ └── logs_display.html
-├── static/
-│ └── style.css
-├── backups/
-└── logs/
-'''
+    ```
+    network_automation_labs/
+    └── module10_router_console/
+    ├── init.py
+    ├── config.py
+    ├── network_ops.py
+    ├── app.py
+    ├── templates/
+    │ ├── index.html
+    │ ├── inventory.html
+    │ ├── router_actions.html
+    │ ├── monitor_interface.html
+    │ └── logs_display.html
+    ├── static/
+    │ └── style.css
+    ├── backups/
+    └── logs/
+    '''
+
 ### Task 0.1: Install Required Libraries
 
 1.  Ensure your `na_env` virtual environment is active (from `network_automation_labs` directory).
