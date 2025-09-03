@@ -447,7 +447,7 @@ This file will contain RESTCONF-specific operations for monitoring.
     import requests
     import json
     import time
-    from ..config import BACKUP_DIR, LOGS_DIR # Import from parent config
+    # No need to import BACKUP_DIR, LOGS_DIR here, as they are not used in this module.
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -508,32 +508,9 @@ This file will contain RESTCONF-specific operations for monitoring.
         Retrieves interface statistics (in/out octets) via RESTCONF.
         Returns a dictionary or None.
         """
-        host = router_info.get('host')
-        restconf_port = router_info.get('restconf_port')
-        username = router_info.get('username')
-        password = router_info.get('password')
-        verify_ssl = router_info.get('verify_ssl', False)
-
-        RESTCONF_BASE_URL = f"https://{host}:{restconf_port}/restconf/data"
         path = f"ietf-interfaces:interfaces-state/interface={interface_name}/statistics"
-        full_url = f"{RESTCONF_BASE_URL}/{path}"
-
-        headers = {
-            "Content-Type": "application/yang-data+json",
-            "Accept": "application/yang-data+json"
-        }
-        
-        try:
-            response = requests.get(
-                full_url,
-                headers=headers,
-                auth=(username, password),
-                verify=verify_ssl
-            )
-            response.raise_for_status()
-            data = response.json()
-            
-            # Extract relevant stats
+        data = get_restconf_data(router_info, path)
+        if data:
             stats = data.get('ietf-interfaces:statistics', {})
             return {
                 "in-octets": stats.get("in-octets"),
@@ -1284,18 +1261,15 @@ This is the main Flask application file that will bring everything together.
     ```
 3.  Run the Flask application:
     ```bash
-    python app.py
+    flask run
     ```
     *Expected Output (console):*
     ```
-     * Serving Flask app 'app'
      * Debug mode: on
-     * Running on all addresses (0.0.0.0)
-     * Port: 5000
-    Press CTRL+C to quit
-     * Restarting with stat
+     * Running on http://127.0.0.1:5000
     Press CTRL+C to quit
     ```
+    *(Note: You should see "Running on http://127.0.0.1:5000" and not "Serving Flask app 'app'" if you're running it correctly with `flask run`)*
 4.  **Open your web browser** and navigate to `http://127.0.0.1:5000` (or `http://localhost:5000`).
 
 ### Task 1.2: Add a Router to Inventory
