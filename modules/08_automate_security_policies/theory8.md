@@ -45,7 +45,7 @@ The **Cisco Firepower Management Center (FMC) API** is a RESTful API that allows
 
 ### 3.1 FMC API Authentication
 
-The FMC API uses a token-based authentication similar to Cisco DNA Center:
+The FMC API uses a token-based authentication:
 1.  Send a `POST` request to the `/api/fmc_platform/v1/auth/generatetoken` endpoint with username/password in the body.
 2.  The response contains an `X-auth-access-token` in the header, which you use for subsequent requests in the `X-auth-access-token` header.
 3.  The response also provides a `DOMAIN_UUID` and `X-token-expiration` (timestamp).
@@ -123,6 +123,7 @@ While not directly part of FTD configuration, detecting unauthorized devices is 
             print(f"UNAUTHORIZED DEVICES DETECTED on {switch_ip}: {unauthorized_macs}")
             # Trigger alert (e.g., email, Slack)
             # Trigger quarantine (e.g., disable port via Netmiko)
+            # Trigger FTD rule to block unauthorized MAC/IP (via CLI or API)
         else:
             print(f"No unauthorized devices detected on {switch_ip}.")
 
