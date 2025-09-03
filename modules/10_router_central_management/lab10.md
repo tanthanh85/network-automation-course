@@ -38,7 +38,7 @@ Let's build a web console!
 
 ---
 
-## Lab Setup: Project Structure
+## Lab Setup:
 
 For this module, we will create a dedicated project structure for our Flask application.
 
