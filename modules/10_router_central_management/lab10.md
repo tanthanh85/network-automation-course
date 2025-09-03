@@ -508,14 +508,37 @@ This file will contain RESTCONF-specific operations for monitoring.
         Retrieves interface statistics (in/out octets) via RESTCONF.
         Returns a dictionary or None.
         """
+        host = router_info.get('host')
+        restconf_port = router_info.get('restconf_port')
+        username = router_info.get('username')
+        password = router_info.get('password')
+        verify_ssl = router_info.get('verify_ssl', False)
+
+        RESTCONF_BASE_URL = f"https://{host}:{restconf_port}/restconf/data"
         path = f"ietf-interfaces:interfaces-state/interface={interface_name}/statistics"
-        data = get_restconf_data(router_info, path)
-        if data:
+        full_url = f"{RESTCONF_BASE_URL}/{path}"
+
+        headers = {
+            "Content-Type": "application/yang-data+json",
+            "Accept": "application/yang-data+json"
+        }
+        
+        try:
+            response = requests.get(
+                full_url,
+                headers=headers,
+                auth=(username, password),
+                verify=verify_ssl
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            # Extract relevant stats
             stats = data.get('ietf-interfaces:statistics', {})
             return {
                 "in-octets": stats.get("in-octets"),
                 "out-octets": stats.get("out-octets"),
-                "timestamp": time.time() # Add timestamp for calculation
+                "status": "up" # RESTCONF does not directly provide oper-status in statistics, assume up if stats are there
             }
         # Fallback to get oper-status if stats are not available
         oper_status_path = f"ietf-interfaces:interfaces/interface={interface_name}/oper-status"
@@ -545,7 +568,7 @@ This file will contain RESTCONF-specific operations for monitoring.
         # Test get_interface_stats_restconf (requires RESTCONF enabled on router)
         if interfaces:
             print("\nTesting get_interface_stats_restconf for first interface...")
-            first_interface = interfaces # Take the first interface found
+            first_interface = interfaces if interfaces else "GigabitEthernet1" # Use first found or default
             interface_stats = get_interface_stats_restconf(test_router_info, first_interface)
             if interface_stats:
                 print(f"Stats for {first_interface}:", interface_stats)
