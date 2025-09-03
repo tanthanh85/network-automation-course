@@ -36,33 +36,39 @@ Our console will be built using **Python Flask**, a lightweight web framework.
 *   **Routes:** Specific URLs (e.g., `/`, `/reboot`, `/backup`) that trigger Python functions when accessed by a web browser.
 *   **HTML Templates:** Flask uses Jinja2 (which you've seen in Module 6) to render dynamic HTML pages. These define the layout and display data fetched by the Python backend.
 *   **Static Files:** CSS for styling, JavaScript for interactive elements.
-*   **Backend Logic:** Python functions (using Netmiko, `requests`, `PyYAML`) to perform network operations, manage inventory, and process data.
+*   **Backend Logic:** Python functions (using Netmiko, `requests`, `sqlite3`) to perform network operations, manage inventory, and process data.
 *   **Background Tasks:** For long-running operations (like backups or reboots), it's crucial to run them in the background (e.g., using Python's `threading` module) to keep the web GUI responsive.
 ```
+
 +-------------------+ +-----------------------+ +-------------------+
 | Web Browser | <---> | Flask Web App | <---> | Python Backend |
 | (User Interface) | | (Routes, Templates) | | (Netmiko, Requests,|
-+-------------------+ +-----------------------+ | PyYAML, Threading)|
++-------------------+ +-----------------------+ | sqlite3, Threading)|
 ^ | |
 | v v
 +----------------------+-------------------+
 | Network Devices |
 | (Cisco IOS XE) |
 +-------------------+
+
 ```
 ---
 
-## 3. Inventory Management
+## 3. Inventory Management (using SQLite)
 
-A centralized console needs a way to store and manage information about the network devices it controls.
+A centralized console needs a robust way to store and manage information about the network devices it controls.
 
-*   **Data Storage:** We will store device inventory in a **YAML file** (`inventory.yaml`). YAML is human-readable and easily parsed by Python (`PyYAML`).
-*   **YAML Structure:** Each device will be a dictionary with keys like `host`, `username`, `password`, `secret` (for enable mode), `device_type`, and a `name` for display.
+*   **Why SQLite?**
+    *   **File-based Database:** SQLite is a self-contained, serverless, zero-configuration, transactional SQL database engine. It stores data in a single `.db` file, making it easy to set up and manage for smaller applications.
+    *   **Structured Data:** Stores data in tables with defined columns and data types, ensuring data integrity.
+    *   **Queryable:** Allows powerful SQL queries to retrieve, filter, and manipulate data.
+    *   **Scalability (Local):** Excellent for local, single-user applications or small-scale deployments. For multi-user or high-traffic scenarios, a client-server database (like PostgreSQL or MySQL) would be more appropriate.
+*   **Data Storage:** We will store device inventory in an SQLite database file (`inventory.db`).
+*   **Python Integration:** Python has a built-in `sqlite3` module, making database interactions straightforward.
 *   **CRUD Operations (Create, Read, Update, Delete):** The GUI will allow administrators to:
-    *   **Add:** Input new device details, which are then appended to the YAML file.
-    *   **List/Read:** Display all devices from the YAML file on the dashboard.
-    *   **Delete:** Remove a device entry from the YAML file.
-    *   (Update functionality can be added by deleting and re-adding, or by implementing a separate edit form).
+    *   **Add:** Input new device details, which are then inserted into the database table.
+    *   **List/Read:** Query all devices from the database table to display on the dashboard.
+    *   **Delete:** Remove a device entry from the database table.
 
 ---
 
@@ -129,17 +135,17 @@ Integrating alerts is crucial for proactive management. When a monitored metric 
 
 ### Summary
 
-Building a centralized configuration management console with Python Flask empowers network administrators with a unified, user-friendly interface for router management. This involves managing device inventory, performing CLI-based operations (reboot, backup, log collection) via Netmiko, and monitoring performance (CPU, memory, bandwidth) via RESTCONF. Background tasks ensure GUI responsiveness for long-running operations. The console can be extended to include automated alerting, transforming reactive troubleshooting into proactive network management.
+Building a centralized configuration management console with Python Flask empowers network administrators with a unified, user-friendly interface for router management. This involves managing device inventory using SQLite, performing CLI-based operations (reboot, backup, log collection) via Netmiko, and monitoring performance (CPU, memory, bandwidth) via RESTCONF. Background tasks ensure GUI responsiveness for long-running operations. The console can be extended to include automated alerting, transforming reactive troubleshooting into proactive network management.
 
 ### Key Takeaways
 
 *   **Centralized Console:** A single web GUI (Flask) for managing network devices.
-*   **Inventory Management:** Store device details in a YAML file.
+*   **Inventory Management:** Store device details in an **SQLite database**.
 *   **Router Control (Netmiko):** Automate reboots, config backups, and log collection.
 *   **Monitoring (RESTCONF):** Collect CPU, memory, and interface utilization data.
 *   **Flask UI:** Display real-time data in a web browser.
 *   **Background Tasks:** Use `threading` for long-running operations to keep Flask responsive.
 *   **Automated Alerts:** Integrate with Email, Telegram, or Slack for proactive notifications.
-*   **Scalability:** This is a basic console; enterprise-grade solutions often use databases, message queues, and more robust web frameworks.
+*   **Scalability:** This is a basic console; enterprise-grade solutions often use client-server databases, message queues, and more robust web frameworks.
 
 ---
