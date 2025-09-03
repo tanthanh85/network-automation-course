@@ -21,7 +21,7 @@ This console will allow you to:
 **It is crucial that you replace the dummy values for your IOS XE router with its actual IP address, username, and password to make the code functional.**
 
 **Lab Objectives:**
-*   Set up the Flask project structure with clear separation of concerns.
+*   Set up the Flask project structure.
 *   Implement inventory management (add/list/delete routers) to an SQLite database.
 *   Develop backend functions for router operations (reboot, backup, logging, monitoring).
 *   Create Flask routes and HTML templates for the web GUI.
@@ -40,7 +40,7 @@ Let's build a web console!
 
 ## Lab Setup: Project Structure
 
-For this module, we will create a dedicated project structure for our Flask application, organizing files into logical folders.
+For this module, we will create a dedicated project structure for our Flask application.
 
 1.  **Navigate** to your main `network_automation_labs` directory.
 2.  **Create a new directory** for this module's labs:
@@ -59,18 +59,18 @@ For this module, we will create a dedicated project structure for our Flask appl
     ```
 4.  **Inside `module10_router_console`, create the following empty Python files:**
     ```bash
-    touch __init__.py # Makes module10_router_console a Python package
+    touch __init__.py
     touch config.py
     touch app.py
     ```
-5.  **Inside the `database` directory, create the following empty Python file:**
+5.  **Inside the `database` directory, create the following empty Python files:**
     ```bash
-    touch database/__init__.py # Makes database a Python package
+    touch database/__init__.py
     touch database/db_ops.py
     ```
 6.  **Inside the `network_functions` directory, create the following empty Python files:**
     ```bash
-    touch network_functions/__init__.py # Makes network_functions a Python package
+    touch network_functions/__init__.py
     touch network_functions/netmiko_ops.py
     touch network_functions/restconf_ops.py
     ```
@@ -109,8 +109,8 @@ network_automation_labs/
 │ └── logs_display.html
 ├── static/
 │ └── style.css
-├── backups/ <-- New directory (created by app)
-└── logs/ <-- New directory (created by app)
+├── backups/ <-- New directory
+└── logs/ <-- New directory
 ```
 ### Task 0.1: Install Required Libraries
 
@@ -515,7 +515,7 @@ This file will contain RESTCONF-specific operations for monitoring.
             return {
                 "in-octets": stats.get("in-octets"),
                 "out-octets": stats.get("out-octets"),
-                "status": "up" # RESTCONF does not directly provide oper-status in statistics, assume up if stats are there
+                "timestamp": time.time() # Add timestamp for calculation
             }
         # Fallback to get oper-status if stats are not available
         oper_status_path = f"ietf-interfaces:interfaces/interface={interface_name}/oper-status"
@@ -545,7 +545,7 @@ This file will contain RESTCONF-specific operations for monitoring.
         # Test get_interface_stats_restconf (requires RESTCONF enabled on router)
         if interfaces:
             print("\nTesting get_interface_stats_restconf for first interface...")
-            first_interface = interfaces
+            first_interface = interfaces # Take the first interface found
             interface_stats = get_interface_stats_restconf(test_router_info, first_interface)
             if interface_stats:
                 print(f"Stats for {first_interface}:", interface_stats)
@@ -1028,6 +1028,223 @@ This file defines the styling for your web dashboard.
     }
     ```
 3.  Save `static/style.css`.
+
+### Task 0.8: Populate `app.py`
+
+This is the main Flask application file that will bring everything together.
+
+1.  Open `app.py` in your code editor.
+2.  Add the following Python code:
+    ```python
+    # app.py
+    from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
+    import time
+    import threading
+    import os
+    import json # For parsing JSON from RESTCONF
+
+    # Import functions and configurations from our modules
+    from .database.db_ops import load_inventory, add_router_to_inventory, delete_router_from_inventory, get_router_by_name
+    from .network_functions.netmiko_ops import reboot_router, backup_config, get_show_logging
+    from .network_functions.restconf_ops import get_interface_list, get_interface_stats_restconf
+    from .config import DEFAULT_ROUTER_INFO, BACKUP_DIR, LOGS_DIR
+
+    app = Flask(__name__)
+    app.secret_key = 'supersecretkey' # Needed for flash messages. CHANGE THIS IN PRODUCTION!
+
+    # Ensure directories exist
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    os.makedirs(LOGS_DIR, exist_ok=True)
+
+    # --- Flask Routes ---
+
+    @app.route('/')
+    def index():
+        """Home page displaying number of managed routers."""
+        routers = load_inventory()
+        return render_template('index.html', num_routers=len(routers))
+
+    @app.route('/inventory', methods=['GET', 'POST'])
+    def inventory_management():
+        """Handles adding and listing routers in inventory."""
+        if request.method == 'POST':
+            # Handle adding a new router
+            name = request.form['name']
+            host = request.form['host']
+            username = request.form['username']
+            password = request.form['password']
+            secret = request.form.get('secret', '') # Optional
+            device_type = request.form.get('device_type', 'cisco_ios')
+            port = int(request.form.get('port', 22))
+            restconf_port = int(request.form.get('restconf_port', 443))
+            verify_ssl_str = request.form.get('verify_ssl', 'False')
+            verify_ssl = verify_ssl_str.lower() == 'true' # Convert string to boolean
+
+            # Basic validation
+            if not name or not host or not username or not password:
+                flash('All required fields must be filled!', 'error')
+            elif get_router_by_name(name):
+                flash(f'Router with name "{name}" already exists!', 'error')
+            else:
+                new_router = {
+                    "name": name,
+                    "host": host,
+                    "username": username,
+                    "password": password,
+                    "secret": secret,
+                    "device_type": device_type,
+                    "port": port,
+                    "restconf_port": restconf_port,
+                    "verify_ssl": verify_ssl
+                }
+                if add_router_to_inventory(new_router):
+                    flash(f'Router "{name}" added successfully!', 'success')
+                else:
+                    flash(f'Failed to add router "{name}". See console for details.', 'error')
+            return redirect(url_for('inventory_management'))
+        
+        routers = load_inventory()
+        return render_template('inventory.html', routers=routers)
+
+    @app.route('/inventory/delete', methods=['POST'])
+    def inventory_delete():
+        """Handles deleting a router from inventory."""
+        router_name = request.form['name']
+        if delete_router_from_inventory(router_name):
+            flash(f'Router "{router_name}" deleted successfully!', 'success')
+        else:
+            flash(f'Router "{router_name}" not found for deletion.', 'error')
+        return redirect(url_for('inventory_management'))
+
+    @app.route('/actions', methods=['GET', 'POST'])
+    def router_actions():
+        """Handles router actions like reboot, backup, get logging."""
+        routers = load_inventory()
+        if request.method == 'POST':
+            selected_router_names = request.form.getlist('selected_routers')
+            action = request.form['action']
+
+            if not selected_router_names:
+                flash('Please select at least one router.', 'error')
+                return redirect(url_for('router_actions'))
+
+            for router_name in selected_router_names:
+                router_info = get_router_by_name(router_name)
+                if not router_info:
+                    flash(f'Router "{router_name}" not found in inventory.', 'error')
+                    continue
+
+                if action == 'Reboot Selected':
+                    # Run reboot in a separate thread to avoid blocking the GUI
+                    thread = threading.Thread(target=reboot_router, args=(router_info,))
+                    thread.start()
+                    flash(f'Reboot command sent to {router_name} in background.', 'info')
+                elif action == 'Backup Config Selected':
+                    thread = threading.Thread(target=backup_config, args=(router_info,))
+                    thread.start()
+                    flash(f'Backup initiated for {router_name} in background. Check "{BACKUP_DIR}" folder.', 'info')
+                elif action == 'Get Show Logging Selected':
+                    # For show logging, we fetch and then redirect to a display page
+                    # This might still block if many routers are selected.
+                    # For simplicity, we'll collect logs sequentially here for display.
+                    logs_data = {}
+                    router_name_to_host = {}
+                    for name in selected_router_names:
+                        info = get_router_by_name(name)
+                        if info:
+                            log_output = get_show_logging(info)
+                            # Save log to a temporary file for download link
+                            if log_output:
+                                temp_log_path = os.path.join(LOGS_DIR, f"{name}_logging.txt")
+                                os.makedirs(LOGS_DIR, exist_ok=True)
+                                with open(temp_log_path, 'w') as f:
+                                    f.write(log_output)
+                                logs_data[name] = log_output
+                            else:
+                                logs_data[name] = f"Error retrieving logs from {name}."
+                            router_name_to_host[name] = info['host']
+                    return render_template('logs_display.html', logs_data=logs_data, router_name_to_host=router_name_to_host)
+            
+            return redirect(url_for('router_actions')) # Redirect to prevent re-submission on refresh
+        
+        return render_template('router_actions.html', routers=routers)
+
+    @app.route('/download_log/<router_name>')
+    def download_log(router_name):
+        """Allows downloading the last retrieved log for a router."""
+        log_filename = f"{router_name}_logging.txt"
+        temp_log_path = os.path.join(LOGS_DIR, log_filename)
+        
+        if os.path.exists(temp_log_path):
+            return send_from_directory(LOGS_DIR, log_filename, as_attachment=True)
+        else:
+            flash(f"Log file for {router_name} not found. Please retrieve logs first.", "error")
+            return redirect(url_for('router_actions'))
+
+
+    @app.route('/monitor', methods=['GET', 'POST'])
+    def monitor_interfaces():
+        """Handles interface monitoring dashboard."""
+        routers = load_inventory()
+        all_interfaces = {} # Store {router_name: [interface_names]}
+        selected_interfaces_names = {} # Store {router_name: [selected_iface_names]}
+        monitored_data = [] # Store live stats
+
+        # Populate all_interfaces for display in the form
+        for router in routers:
+            # This is a blocking call, for many routers, it would need threading
+            # For simplicity in monitoring interface selection, we keep it direct.
+            interfaces_list = get_interface_list(router) 
+            all_interfaces[router['name']] = interfaces_list
+            # Initialize selected interfaces from session or form submission
+            selected_interfaces_names[router['name']] = request.form.getlist('selected_interfaces') if request.method == 'POST' else []
+        
+        if request.method == 'POST':
+            # Process form submission for selected interfaces
+            for selected_iface_str in request.form.getlist('selected_interfaces'):
+                router_name, iface_name = selected_iface_str.split('|')
+                router_info = get_router_by_name(router_name)
+                if router_info:
+                    # Fetch live stats for selected interface
+                    stats = get_interface_stats_restconf(router_info, iface_name)
+                    if stats:
+                        # Calculate utilization (conceptual, needs previous stats for accurate bps)
+                        # For simplicity, we'll just show current octets.
+                        # Real bps calculation needs (current_octets - previous_octets) / time_diff
+                        in_octets = stats.get('in-octets', 0)
+                        out_octets = stats.get('out-octets', 0)
+                        
+                        # Dummy calculation for bps for display purposes
+                        # In a real scenario, you'd store previous octets and calculate diff/time
+                        in_util_bps = in_octets / 1000 if in_octets is not None else 0
+                        out_util_bps = out_octets / 1000 if out_octets is not None else 0
+
+                        monitored_data.append({
+                            "router_name": router_name,
+                            "interface_name": iface_name,
+                            "status": stats.get('status', 'N/A'),
+                            "in_octets": in_octets,
+                            "out_octets": out_octets,
+                            "in_util_bps": in_util_bps,
+                            "out_util_bps": out_util_bps
+                        })
+        
+        return render_template(
+            'monitor_interface.html', 
+            routers=routers, 
+            all_interfaces=all_interfaces,
+            selected_interfaces_names=selected_interfaces_names,
+            monitored_data=monitored_data,
+            current_time=time.strftime("%Y-%m-%d %H:%M:%S")
+        )
+
+    # --- Main execution block for running Flask app ---
+    if __name__ == '__main__':
+        # This block is for direct execution of app.py
+        # You can also run Flask using 'flask run' command from terminal
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    ```
+3.  Save `app.py`.
 
 ---
 
