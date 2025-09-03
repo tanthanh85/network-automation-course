@@ -91,26 +91,26 @@ Your directory structure should now look like this:
 ```
 network_automation_labs/
 └── module10_router_console/
-├── init.py
-├── config.py
-├── app.py
-├── database/
-│ ├── init.py
-│ └── db_ops.py
-├── network_functions/
-│ ├── init.py
-│ ├── netmiko_ops.py
-│ └── restconf_ops.py
-├── templates/
-│ ├── index.html
-│ ├── inventory.html
-│ ├── router_actions.html
-│ ├── monitor_interface.html
-│ └── logs_display.html
-├── static/
-│ └── style.css
-├── backups/ <-- New directory
-└── logs/ <-- New directory
+    ├── init.py
+    ├── config.py
+    ├── app.py
+    ├── database/
+         ├── init.py
+         └── db_ops.py
+    ├── network_functions/
+         ├── init.py
+         ├── netmiko_ops.py
+         └── restconf_ops.py
+    ├── templates/
+         ├── index.html
+         ├── inventory.html
+         ├── router_actions.html
+         ├── monitor_interface.html
+         └── logs_display.html
+    ├── static/
+         └── style.css
+    ├── backups/ <-- New directory
+    └── logs/ <-- New directory
 ```
 ### Task 0.1: Install Required Libraries
 
@@ -319,7 +319,7 @@ This file will contain Netmiko-specific operations.
     import os
     import datetime
     from netmiko import ConnectHandler
-    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException
+    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
     from ..config import BACKUP_DIR, LOGS_DIR # Import from parent config
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -328,13 +328,28 @@ This file will contain Netmiko-specific operations.
         """Helper to establish Netmiko connection."""
         host = router_info.get('host')
         try:
-            net_connect = ConnectHandler(**router_info)
+            # Netmiko expects 'password' and 'secret' keys directly, not from router_info.get()
+            # So, we create a connection dict with necessary fields
+            conn_params = {
+                "device_type": router_info.get('device_type'),
+                "host": router_info.get('host'),
+                "username": router_info.get('username'),
+                "password": router_info.get('password'),
+                "port": router_info.get('port'),
+            }
+            if router_info.get('secret'):
+                conn_params['secret'] = router_info['secret']
+
+            net_connect = ConnectHandler(**conn_params)
             logging.info(f"Netmiko: Successfully connected to {host}.")
             return net_connect
-        except (NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException) as e:
-            logging.error(f"Netmiko connection error to {host}: {e}")
+        except NetmikoTimeoutException as e:
+            logging.error(f"Netmiko connection error to {host}: Connection timed out. {e}")
             return None
-        except Exception as e:
+        except NetmikoAuthenticationException as e:
+            logging.error(f"Netmiko connection error to {host}: Authentication failed. {e}")
+            return None
+        except Exception as e: # Catch any other unexpected errors during connection attempt
             logging.error(f"Netmiko unexpected error connecting to {host}: {e}")
             return None
 
@@ -351,8 +366,12 @@ This file will contain Netmiko-specific operations.
                 output += net_connect.send_command("y", strip_prompt=False)
                 logging.info(f"Netmiko: Reboot command sent to {host}:\n{output}")
                 return True
-            except Exception as e:
-                logging.error(f"Netmiko: Error sending reboot command to {host}: {e}")
+            except NetmikoTimeoutException as e:
+                logging.error(f"Netmiko: Error sending reboot command to {host}: Connection timed out. {e}")
+            except NetmikoAuthenticationException as e:
+                logging.error(f"Netmiko: Error sending reboot command to {host}: Authentication failed. {e}")
+            except Exception as e: # Catch any other unexpected errors during command execution
+                logging.error(f"Netmiko: Unexpected error sending reboot command to {host}: {e}")
             finally:
                 net_connect.disconnect()
         return False
@@ -374,8 +393,12 @@ This file will contain Netmiko-specific operations.
                     f.write(output)
                 logging.info(f"Netmiko: Backup successful for {host}. Saved to {backup_filename}")
                 return True
-            except Exception as e:
-                logging.error(f"Netmiko: Error backing up config for {host}: {e}")
+            except NetmikoTimeoutException as e:
+                logging.error(f"Netmiko: Error backing up config for {host}: Connection timed out. {e}")
+            except NetmikoAuthenticationException as e:
+                logging.error(f"Netmiko: Error backing up config for {host}: Authentication failed. {e}")
+            except Exception as e: # Catch any other unexpected errors during command execution
+                logging.error(f"Netmiko: Unexpected error backing up config for {host}: {e}")
             finally:
                 net_connect.disconnect()
         return False
@@ -390,8 +413,12 @@ This file will contain Netmiko-specific operations.
                 output = net_connect.send_command("show logging")
                 logging.info(f"Netmiko: Successfully retrieved 'show logging' from {host}.")
                 return output
-            except Exception as e:
-                logging.error(f"Netmiko: Error getting 'show logging' from {host}: {e}")
+            except NetmikoTimeoutException as e:
+                logging.error(f"Netmiko: Error getting 'show logging' from {host}: Connection timed out. {e}")
+            except NetmikoAuthenticationException as e:
+                logging.error(f"Netmiko: Error getting 'show logging' from {host}: Authentication failed. {e}")
+            except Exception as e: # Catch any other unexpected errors during command execution
+                logging.error(f"Netmiko: Unexpected error getting 'show logging' from {host}: {e}")
             finally:
                 net_connect.disconnect()
         return None
@@ -480,11 +507,20 @@ This file will contain RESTCONF-specific operations for monitoring.
             )
             response.raise_for_status() # Raise an exception for HTTP errors
             return response.json()
+        except requests.exceptions.HTTPError as e:
+            logging.error(f"RESTCONF HTTP error fetching {path} from {host}: {e.response.status_code} - {e.response.text}")
+            return None
+        except requests.exceptions.ConnectionError as e:
+            logging.error(f"RESTCONF Connection error fetching {path} from {host}: {e}. Is device reachable and RESTCONF enabled?")
+            return None
+        except requests.exceptions.Timeout as e:
+            logging.error(f"RESTCONF Timeout error fetching {path} from {host}: {e}. Device slow or unreachable?")
+            return None
         except requests.exceptions.RequestException as e:
-            logging.error(f"RESTCONF error fetching {path} from {host}: {e}")
+            logging.error(f"RESTCONF general request error fetching {path} from {host}: {e}")
             return None
         except json.JSONDecodeError:
-            logging.error(f"RESTCONF: JSON decode error for {path} response from {host}.")
+            logging.error(f"RESTCONF: JSON decode error for {path} response from {host}. Response was not valid JSON.")
             return None
         except Exception as e:
             logging.error(f"RESTCONF: Unexpected error fetching {path} from {host}: {e}")
@@ -492,11 +528,11 @@ This file will contain RESTCONF-specific operations for monitoring.
 
     def get_interface_list(router_info):
         """Queries and returns a list of interface names from IOS XE via RESTCONF."""
-        path = "ietf-interfaces:interfaces/interface"
+        path = "ietf-interfaces:interfaces-state/interface"
         data = get_restconf_data(router_info, path)
         interfaces = []
         if data:
-            iface_list = data.get('ietf-interfaces:interfaces', {}).get('interface', [])
+            iface_list = data.get('ietf-interfaces:interfaces-state', {}).get('interface', [])
             for iface in iface_list:
                 name = iface.get('name')
                 if name:
@@ -510,21 +546,33 @@ This file will contain RESTCONF-specific operations for monitoring.
         """
         path = f"ietf-interfaces:interfaces-state/interface={interface_name}/statistics"
         data = get_restconf_data(router_info, path)
+        
         if data:
+            # Access the specific interface data within the list
+            # Note: data.get('ietf-interfaces:interfaces-state', {}).get('interface', [{}])
+            # will always return the first item of the 'interface' list.
+            # If the API response for 'interface={interface_name}' directly returns the interface object,
+            # then you might not need the and 'interface' key.
+            # Let's assume the API returns the specific interface object directly if queried by name.
+            
             stats = data.get('ietf-interfaces:statistics', {})
+            oper_status_data = get_restconf_data(router_info, f"ietf-interfaces:interfaces/interface={interface_name}/oper-status")
+            oper_status = oper_status_data.get('ietf-interfaces:oper-status') if oper_status_data else "unknown"
+
             return {
                 "in-octets": stats.get("in-octets"),
                 "out-octets": stats.get("out-octets"),
-                "status": "up" # RESTCONF does not directly provide oper-status in statistics, assume up if stats are there
+                "status": oper_status
             }
-        # Fallback to get oper-status if stats are not available
+        
+        # If data fetching failed, try to get just oper-status
         oper_status_path = f"ietf-interfaces:interfaces/interface={interface_name}/oper-status"
         oper_status_data = get_restconf_data(router_info, oper_status_path)
         if oper_status_data:
             status = oper_status_data.get('ietf-interfaces:oper-status')
-            return {"in-octets": 0, "out-octets": 0, "status": status}
+            return {"in-octets": "N/A", "out-octets": "N/A", "status": status}
         
-        return {"in-octets": 0, "out-octets": 0, "status": "unknown"}
+        return {"in-octets": "N/A", "out-octets": "N/A", "status": "Error"}
 
     # Standalone test for functions (only runs when this file is executed directly)
     if __name__ == '__main__':
@@ -545,7 +593,8 @@ This file will contain RESTCONF-specific operations for monitoring.
         # Test get_interface_stats_restconf (requires RESTCONF enabled on router)
         if interfaces:
             print("\nTesting get_interface_stats_restconf for first interface...")
-            first_interface = interfaces if interfaces else "GigabitEthernet1" # Use first found or default
+            # Ensure interfaces list is not empty before accessing
+            first_interface = interfaces if interfaces else "GigabitEthernet1" 
             interface_stats = get_interface_stats_restconf(test_router_info, first_interface)
             if interface_stats:
                 print(f"Stats for {first_interface}:", interface_stats)
@@ -1208,11 +1257,9 @@ This is the main Flask application file that will bring everything together.
                     # Fetch live stats for selected interface
                     stats = get_interface_stats_restconf(router_info, iface_name)
                     if stats:
-                        # Calculate utilization (conceptual, needs previous stats for accurate bps)
-                        # For simplicity, we'll just show current octets.
-                        # Real bps calculation needs (current_octets - previous_octets) / time_diff
-                        in_octets = stats.get('in-octets', 0)
-                        out_octets = stats.get('out-octets', 0)
+                        # Corrected: Convert octets to int before division
+                        in_octets = int(stats.get('in-octets', 0)) if stats.get('in-octets') is not None else 0
+                        out_octets = int(stats.get('out-octets', 0)) if stats.get('out-octets') is not None else 0
                         
                         # Dummy calculation for bps for display purposes
                         # In a real scenario, you'd store previous octets and calculate diff/time
@@ -1240,8 +1287,12 @@ This is the main Flask application file that will bring everything together.
 
     # --- Main execution block for running Flask app ---
     if __name__ == '__main__':
-        # This block is for direct execution of app.py
-        # You can also run Flask using 'flask run' command from terminal
+        # To run the Flask app, you typically use 'flask run' from the terminal.
+        # Set FLASK_APP environment variable first:
+        # export FLASK_APP=app.py (Linux/macOS)
+        # $env:FLASK_APP="app.py" (Windows PowerShell)
+        # Then run: flask run --host=0.0.0.0 --port=5000 --debug
+        # Or for simple testing, you can run it directly like this:
         app.run(debug=True, host='0.0.0.0', port=5000)
     ```
 3.  Save `app.py`.
@@ -1259,18 +1310,33 @@ This is the main Flask application file that will bring everything together.
     ```bash
     cd module10_router_console
     ```
-3.  Run the Flask application:
+3.  **Set the `FLASK_APP` environment variable.** This tells Flask where your application is located.
+    *   **Linux/macOS:**
+        ```bash
+        export FLASK_APP=app.py
+        ```
+    *   **Windows (Command Prompt):**
+        ```cmd
+        set FLASK_APP=app.py
+        ```
+    *   **Windows (PowerShell):**
+        ```powershell
+        $env:FLASK_APP="app.py"
+        ```
+4.  **Run the Flask application:**
     ```bash
-    flask run
+    flask run --host=0.0.0.0 --port=5000 --debug
     ```
     *Expected Output (console):*
     ```
      * Debug mode: on
-     * Running on http://127.0.0.1:5000
+     * Running on http://0.0.0.0:5000
+    Press CTRL+C to quit
+     * Restarting with stat
     Press CTRL+C to quit
     ```
-    *(Note: You should see "Running on http://127.0.0.1:5000" and not "Serving Flask app 'app'" if you're running it correctly with `flask run`)*
-4.  **Open your web browser** and navigate to `http://127.0.0.1:5000` (or `http://localhost:5000`).
+    *(Note the `Running on http://0.0.0.0:5000` line, confirming it's running correctly.)*
+5.  **Open your web browser** and navigate to `http://127.0.0.1:5000` (or `http://localhost:5000`).
 
 ### Task 1.2: Add a Router to Inventory
 
