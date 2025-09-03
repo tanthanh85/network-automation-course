@@ -1,197 +1,1342 @@
-# Lab 10 — Centralized Router Management Console
+# Python Basics for Network Automation: Module 10 Lab Guide
 
-## 🎯 Objective
-Design and deploy a **web-based centralized management platform** to monitor and interact with Cisco routers using Flask and Netmiko.
+## Creating a Centralized Configuration Management Console for Cisco Routers - Hands-on Exercises
 
-This lab teaches how to:
-- Build a web UI with Flask
-- Read router inventory from YAML
-- Collect interface status and configuration backups
-- Display results via dynamic HTML templates
-- Extend automation logic via modular scripts
-
-Tested against Cisco DevNet Sandbox IOS XE device.
+**[Your Organization/Name]**
+**September 01, 2025**
 
 ---
 
-## 🧰 Prerequisites
-- **Python 3.9+** installed
-- **VS Code** with Python extension
-- Cisco IOS XE DevNet sandbox access
-  - Host: `sandbox-iosxe-latest-1.cisco.com`
-  - Port: `22`
-  - Username: `developer`
-  - Password: `C1sco12345`
+## Introduction
+
+Welcome to Module 10 of the Python Basics for Network Automation Lab Guide! In this module, you will build a simple, centralized web-based management console for Cisco IOS XE routers using **Python Flask**.
+
+This console will allow you to:
+*   Manage a simple inventory of routers.
+*   Reboot a router.
+*   Backup router configurations.
+*   Retrieve "show logging" output.
+*   Monitor interface bandwidth utilization.
+
+**It is crucial that you replace the dummy values for your IOS XE router with its actual IP address, username, and password to make the code functional.**
+
+**Lab Objectives:**
+*   Set up the Flask project structure.
+*   Implement inventory management (add/list/delete routers) to a YAML file.
+*   Develop backend functions for router operations (reboot, backup, logging, monitoring).
+*   Create Flask routes and HTML templates for the web GUI.
+*   Integrate long-running tasks as background threads.
+
+**Prerequisites:**
+*   Completion of Module 1 through Module 9 Labs.
+*   Your `na_env` virtual environment activated.
+*   A code editor (VS Code recommended).
+*   An active internet connection.
+*   **Access to a Cisco IOS XE router with SSH and RESTCONF enabled (e.g., Cisco DevNet Sandboxes).** You will need its IP, username, and password.
+
+Let's build a web console!
 
 ---
 
-## 🗂 Folder Structure
-```bash
-lab10_central_console/
-├── app.py
+## Lab Setup: Project Structure
+
+For this module, we will create a dedicated project structure for our Flask application.
+
+1.  **Navigate** to your main `network_automation_labs` directory.
+2.  **Create a new directory** for this module's labs:
+    ```bash
+    mkdir module10_router_console
+    cd module10_router_console
+    ```
+3.  **Inside `module10_router_console`, create the following directories:**
+    ```bash
+    mkdir templates
+    mkdir static
+    ```
+4.  **Inside `module10_router_console`, create the following empty Python files:**
+    ```bash
+    touch __init__.py
+    touch config.py
+    touch inventory.yaml # This will store our router inventory
+    touch network_ops.py
+    touch app.py
+    ```
+5.  **Inside the `templates` directory, create the following empty HTML files:**
+    ```bash
+    touch templates/index.html
+    touch templates/inventory.html
+    touch templates/router_actions.html
+    touch templates/monitor_interface.html
+    touch templates/logs_display.html
+    ```
+6.  **Inside the `static` directory, create an empty CSS file:**
+    ```bash
+    touch static/style.css
+    ```
+
+Your directory structure should now look like this:
+```
+network_automation_labs/
+└── module10_router_console/
+├── init.py
+├── config.py
 ├── inventory.yaml
-├── requirements.txt
+├── network_ops.py
+├── app.py
 ├── templates/
-│   ├── index.html
-│   ├── status.html
-│   └── backup.html
-├── static/
-│   └── style.css
-├── utils/
-│   ├── fetch_status.py
-│   └── backup_config.py
-└── logs/
-    └── router_logs.txt
+│ ├── index.html
+│ ├── inventory.html
+│ ├── router_actions.html
+│ ├── monitor_interface.html
+│ └── logs_display.html
+└── static/
+└── style.css
 ```
+### Task 0.1: Install Required Libraries
+
+1.  Ensure your `na_env` virtual environment is active (from `network_automation_labs` directory).
+2.  Navigate into your `module10_router_console` directory:
+    ```bash
+    cd module10_router_console
+    ```
+3.  Install the necessary Python libraries:
+    ```bash
+    pip install Flask PyYAML netmiko requests
+    ```
+    *Expected Observation:* Libraries and their dependencies will be installed.
+
+### Task 0.2: Populate `config.py`
+
+This file will store your router's connection details.
+
+1.  Open `config.py` in your code editor.
+2.  Add the following Python code. **REPLACE THE DUMMY VALUES WITH YOUR ACTUAL LAB IOS XE ROUTER DETAILS!**
+    ```python
+    # config.py
+
+    # --- IOS XE Router Information (REPLACE WITH YOUR ACTUAL LAB DETAILS) ---
+    # This router should be reachable via SSH and RESTCONF.
+    # We'll use this as a template for new inventory entries.
+    DEFAULT_ROUTER_INFO = {
+        "device_type": "cisco_ios", # For Netmiko
+        "host": "YOUR_ROUTER_IP", # e.g., 10.10.20.40
+        "username": "YOUR_ROUTER_USERNAME",
+        "password": "YOUR_ROUTER_PASSWORD",
+        "secret": "YOUR_ROUTER_ENABLE_PASSWORD", # For Netmiko enable mode
+        "port": 22, # Default SSH port for Netmiko
+        "restconf_port": 443, # Default HTTPS port for RESTCONF
+        "verify_ssl": False # Set to True in production if you have proper CA certificates
+    }
+
+    # Path to the inventory YAML file
+    INVENTORY_FILE = "inventory.yaml"
+
+    # Directory to store configuration backups
+    BACKUP_DIR = "backups"
+
+    # Directory to store logs
+    LOGS_DIR = "logs"
+    ```
+3.  Save `config.py`.
+
+### Task 0.3: Populate `inventory.yaml`
+
+This file will store your router inventory. Initially, it will be empty or contain a sample.
+
+1.  Open `inventory.yaml` in your code editor.
+2.  Add the following YAML content (you can leave it empty or add a sample):
+    ```yaml
+    # inventory.yaml
+    # This file will store your router inventory in YAML format.
+    # Example entry:
+    # - name: MyLabRouter
+    #   host: 192.168.1.10
+    #   username: admin
+    #   password: password
+    #   secret: enable_pass
+    #   device_type: cisco_ios
+    #   port: 22
+    #   restconf_port: 443
+    #   verify_ssl: False
+    ```
+3.  Save `inventory.yaml`.
+
+### Task 0.4: Populate `network_ops.py`
+
+This file will contain all the backend network operation functions.
+
+1.  Open `network_ops.py` in your code editor.
+2.  Add the following Python code:
+    ```python
+    # network_ops.py
+    import logging
+    import os
+    import time
+    import datetime
+    import requests
+    import json
+    from netmiko import ConnectHandler
+    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException
+    import yaml
+    from .config import INVENTORY_FILE, BACKUP_DIR, LOGS_DIR
+
+    # Configure logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+    # --- Inventory Management Functions ---
+    def load_inventory():
+        """Loads router inventory from the YAML file."""
+        if not os.path.exists(INVENTORY_FILE):
+            return []
+        with open(INVENTORY_FILE, 'r') as f:
+            inventory = yaml.safe_load(f)
+            return inventory if inventory else []
+
+    def save_inventory(inventory):
+        """Saves router inventory to the YAML file."""
+        with open(INVENTORY_FILE, 'w') as f:
+            yaml.dump(inventory, f, default_flow_style=False)
+
+    def add_router_to_inventory(router_data):
+        """Adds a new router to the inventory."""
+        inventory = load_inventory()
+        inventory.append(router_data)
+        save_inventory(inventory)
+        logging.info(f"Router {router_data.get('name', router_data.get('host'))} added to inventory.")
+
+    def delete_router_from_inventory(router_name):
+        """Deletes a router from the inventory by name."""
+        inventory = load_inventory()
+        initial_len = len(inventory)
+        inventory = [r for r in inventory if r.get('name') != router_name]
+        if len(inventory) < initial_len:
+            save_inventory(inventory)
+            logging.info(f"Router {router_name} deleted from inventory.")
+            return True
+        logging.warning(f"Router {router_name} not found in inventory for deletion.")
+        return False
+
+    # --- Netmiko Operations ---
+    def _get_netmiko_connection(router_info):
+        """Helper to establish Netmiko connection."""
+        host = router_info.get('host')
+        try:
+            net_connect = ConnectHandler(**router_info)
+            return net_connect
+        except (NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException) as e:
+            logging.error(f"Netmiko connection error to {host}: {e}")
+            return None
+        except Exception as e:
+            logging.error(f"Unexpected error connecting to {host}: {e}")
+            return None
+
+    def reboot_router(router_info):
+        """Reboots the specified router."""
+        host = router_info.get('host')
+        logging.info(f"Attempting to reboot router {host}...")
+        net_connect = _get_netmiko_connection(router_info)
+        if net_connect:
+            try:
+                # Send reload command, expect confirmation prompt
+                output = net_connect.send_command("reload", expect_string=r"\[confirm\]", strip_prompt=False)
+                # Send 'y' to confirm
+                output += net_connect.send_command("y", strip_prompt=False)
+                logging.info(f"Reboot command sent to {host}:\n{output}")
+                return True
+            except Exception as e:
+                logging.error(f"Error sending reboot command to {host}: {e}")
+            finally:
+                net_connect.disconnect()
+        return False
+
+    def backup_config(router_info):
+        """Backs up the running configuration of the router."""
+        host = router_info.get('host')
+        logging.info(f"Attempting to backup config for router {host}...")
+        net_connect = _get_netmiko_connection(router_info)
+        if net_connect:
+            try:
+                output = net_connect.send_command("show running-config")
+                
+                os.makedirs(BACKUP_DIR, exist_ok=True) # Ensure backup directory exists
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_filename = os.path.join(BACKUP_DIR, f"{host}_running_config_{timestamp}.txt")
+                
+                with open(backup_filename, 'w') as f:
+                    f.write(output)
+                logging.info(f"Backup successful for {host}. Saved to {backup_filename}")
+                return True
+            except Exception as e:
+                logging.error(f"Error backing up config for {host}: {e}")
+            finally:
+                net_connect.disconnect()
+        return False
+
+    def get_show_logging(router_info):
+        """Retrieves 'show logging' output from the router."""
+        host = router_info.get('host')
+        logging.info(f"Attempting to get 'show logging' for router {host}...")
+        net_connect = _get_netmiko_connection(router_info)
+        if net_connect:
+            try:
+                output = net_connect.send_command("show logging")
+                logging.info(f"Successfully retrieved 'show logging' from {host}.")
+                return output
+            except Exception as e:
+                logging.error(f"Error getting 'show logging' from {host}: {e}")
+            finally:
+                net_connect.disconnect()
+        return None
+
+    # --- RESTCONF Monitoring Functions ---
+    def get_interface_stats_restconf(router_info, interface_name):
+        """
+        Retrieves interface statistics (in/out octets) via RESTCONF.
+        Returns a dictionary or None.
+        """
+        host = router_info.get('host')
+        restconf_port = router_info.get('restconf_port')
+        username = router_info.get('username')
+        password = router_info.get('password')
+        verify_ssl = router_info.get('verify_ssl', False)
+
+        RESTCONF_BASE_URL = f"https://{host}:{restconf_port}/restconf/data"
+        path = f"ietf-interfaces:interfaces-state/interface={interface_name}/statistics"
+        full_url = f"{RESTCONF_BASE_URL}/{path}"
+
+        headers = {
+            "Content-Type": "application/yang-data+json",
+            "Accept": "application/yang-data+json"
+        }
+        
+        try:
+            response = requests.get(
+                full_url,
+                headers=headers,
+                auth=(username, password),
+                verify=verify_ssl
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            # Extract relevant stats
+            stats = data.get('ietf-interfaces:statistics', {})
+            return {
+                "in-octets": stats.get("in-octets"),
+                "out-octets": stats.get("out-octets"),
+                "timestamp": time.time() # Add timestamp for calculation
+            }
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error fetching interface stats for {interface_name} on {host}: {e}")
+            return None
+        except json.JSONDecodeError:
+            logging.error(f"JSON decode error for interface stats on {host}.")
+            return None
+        except Exception as e:
+            logging.error(f"Unexpected error fetching interface stats for {interface_name} on {host}: {e}")
+            return None
+
+    # --- Standalone Test Section (for development/debugging) ---
+    if __name__ == '__main__':
+        from .config import DEFAULT_ROUTER_INFO
+        print("--- Testing network_ops.py functions ---")
+        
+        # Ensure backup/logs directories exist for testing
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        os.makedirs(LOGS_DIR, exist_ok=True)
+
+        # Add a test router to inventory (if not already there)
+        test_router_name = "TestRouter"
+        test_router_info = DEFAULT_ROUTER_INFO.copy()
+        test_router_info['name'] = test_router_name
+        
+        # Temporarily add to inventory for testing
+        inventory = load_inventory()
+        if not any(r.get('name') == test_router_name for r in inventory):
+            add_router_to_inventory(test_router_info)
+            inventory = load_inventory() # Reload after adding
+
+        print(f"\n--- Testing on {test_router_info['host']} ---")
+
+        # Test Backup
+        print("\nTesting backup_config...")
+        if backup_config(test_router_info):
+            print("Backup test successful.")
+        else:
+            print("Backup test failed.")
+
+        # Test get_show_logging
+        print("\nTesting get_show_logging...")
+        logs = get_show_logging(test_router_info)
+        if logs:
+            print("Show logging test successful. First 100 chars:\n", logs[:100])
+        else:
+            print("Show logging test failed.")
+
+        # Test get_interface_stats_restconf (requires RESTCONF enabled on router)
+        print("\nTesting get_interface_stats_restconf for GigabitEthernet1...")
+        interface_stats = get_interface_stats_restconf(test_router_info, "GigabitEthernet1")
+        if interface_stats:
+            print("Interface stats test successful:", interface_stats)
+        else:
+            print("Interface stats test failed.")
+
+        # Test Reboot (CAUTION: This will actually reboot your router)
+        # print("\nTesting reboot_router (CAUTION: Router will reboot!)...")
+        # if reboot_router(test_router_info):
+        #     print("Reboot command sent.")
+        # else:
+        #     print("Reboot command failed.")
+        
+        # Clean up test router from inventory
+        # delete_router_from_inventory(test_router_name)
+        # print(f"\nRouter {test_router_name} removed from inventory.")
+        print("\n--- network_ops.py Test Complete ---")
+    ```
+3.  Save `network_ops.py`.
+
+### Task 0.5: Populate HTML Templates
+
+These files define the structure and content of your web pages.
+
+1.  Open `templates/index.html` in your code editor.
+2.  Add the following HTML code:
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Router Management Console</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+    <body>
+        <div class="container">
+            <h1>Router Management Console</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/inventory">Inventory Management</a>
+                <a href="/actions">Router Actions</a>
+                <a href="/monitor">Monitor Interfaces</a>
+            </nav>
+            <hr>
+            <h2>Welcome!</h2>
+            <p>Use the navigation above to manage your Cisco IOS XE routers.</p>
+            <p>Currently managing <strong>{{ num_routers }}</strong> routers.</p>
+        </div>
+    </body>
+    </html>
+    ```
+3.  Save `templates/index.html`.
+
+4.  Open `templates/inventory.html` in your code editor.
+5.  Add the following HTML code:
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Inventory Management</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+    <body>
+        <div class="container">
+            <h1>Inventory Management</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/inventory">Inventory Management</a>
+                <a href="/actions">Router Actions</a>
+                <a href="/monitor">Monitor Interfaces</a>
+            </nav>
+            <hr>
+
+            <h2>Add New Router</h2>
+            <form action="/inventory/add" method="post">
+                <label for="name">Name:</label><br>
+                <input type="text" id="name" name="name" required><br><br>
+                <label for="host">Host (IP/Hostname):</label><br>
+                <input type="text" id="host" name="host" required><br><br>
+                <label for="username">Username:</label><br>
+                <input type="text" id="username" name="username" required><br><br>
+                <label for="password">Password:</label><br>
+                <input type="password" id="password" name="password" required><br><br>
+                <label for="secret">Enable Password (optional):</label><br>
+                <input type="password" id="secret" name="secret"><br><br>
+                <label for="device_type">Device Type (e.g., cisco_ios):</label><br>
+                <input type="text" id="device_type" name="device_type" value="cisco_ios" required><br><br>
+                <label for="port">SSH Port:</label><br>
+                <input type="number" id="port" name="port" value="22" required><br><br>
+                <label for="restconf_port">RESTCONF Port:</label><br>
+                <input type="number" id="restconf_port" name="restconf_port" value="443" required><br><br>
+                <label for="verify_ssl">Verify SSL (True/False):</label><br>
+                <input type="text" id="verify_ssl" name="verify_ssl" value="False" required><br><br>
+                <input type="submit" value="Add Router">
+            </form>
+
+            <h2>Current Inventory</h2>
+            {% if routers %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Host</th>
+                        <th>Username</th>
+                        <th>Device Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for router in routers %}
+                    <tr>
+                        <td>{{ router.name }}</td>
+                        <td>{{ router.host }}</td>
+                        <td>{{ router.username }}</td>
+                        <td>{{ router.device_type }}</td>
+                        <td>
+                            <form action="/inventory/delete" method="post" style="display:inline;">
+                                <input type="hidden" name="name" value="{{ router.name }}">
+                                <input type="submit" value="Delete" onclick="return confirm('Are you sure you want to delete {{ router.name }}?');">
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No routers in inventory. Add one above!</p>
+            {% endif %}
+        </div>
+    </body>
+    </html>
+    ```
+6.  Save `templates/inventory.html`.
+
+7.  Open `templates/router_actions.html` in your code editor.
+8.  Add the following HTML code:
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Router Actions</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+    <body>
+        <div class="container">
+            <h1>Router Actions</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/inventory">Inventory Management</a>
+                <a href="/actions">Router Actions</a>
+                <a href="/monitor">Monitor Interfaces</a>
+            </nav>
+            <hr>
+
+            {% if message %}
+            <p class="message">{{ message }}</p>
+            {% endif %}
+
+            <h2>Select Routers for Action</h2>
+            {% if routers %}
+            <form action="/actions" method="post">
+                {% for router in routers %}
+                <input type="checkbox" id="router_{{ loop.index }}" name="selected_routers" value="{{ router.name }}">
+                <label for="router_{{ loop.index }}">{{ router.name }} ({{ router.host }})</label><br>
+                {% endfor %}
+                <br>
+                <input type="submit" name="action" value="Reboot Selected">
+                <input type="submit" name="action" value="Backup Config Selected">
+                <input type="submit" name="action" value="Get Show Logging Selected">
+            </form>
+            {% else %}
+            <p>No routers in inventory. Please add some via <a href="/inventory">Inventory Management</a>.</p>
+            {% endif %}
+        </div>
+    </body>
+    </html>
+    ```
+9.  Save `templates/router_actions.html`.
+
+10. Open `templates/logs_display.html` in your code editor.
+11. Add the following HTML code:
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Show Logging Output</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <style>
+            pre {
+                background-color: #eee;
+                padding: 15px;
+                border-radius: 5px;
+                overflow-x: auto;
+                white-space: pre-wrap; /* Wrap long lines */
+                word-wrap: break-word; /* Break words to prevent overflow */
+            }
+            .log-section {
+                border: 1px solid #ccc;
+                padding: 10px;
+                margin-bottom: 20px;
+                background-color: #f9f9f9;
+            }
+            .log-header {
+                font-weight: bold;
+                margin-bottom: 5px;
+                color: #0056b3;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Show Logging Output</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/inventory">Inventory Management</a>
+                <a href="/actions">Router Actions</a>
+                <a href="/monitor">Monitor Interfaces</a>
+            </nav>
+            <hr>
+
+            {% if logs_data %}
+                {% for router_name, log_output in logs_data.items() %}
+                    <div class="log-section">
+                        <div class="log-header">Logs for {{ router_name }} ({{ router_name_to_host.get(router_name, 'N/A') }})</div>
+                        <pre>{{ log_output }}</pre>
+                        <a href="/download_log/{{ router_name }}" download="{{ router_name }}_logging.txt">Download Log</a>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No logs to display or an error occurred.</p>
+            {% endif %}
+        </div>
+    </body>
+    </html>
+    ```
+12. Save `templates/logs_display.html`.
+
+13. Open `templates/monitor_interface.html` in your code editor.
+14. Add the following HTML code:
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Monitor Interfaces</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <meta http-equiv="refresh" content="10"> <!-- Auto-refresh every 10 seconds -->
+    </head>
+    <body>
+        <div class="container">
+            <h1>Monitor Interfaces</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/inventory">Inventory Management</a>
+                <a href="/actions">Router Actions</a>
+                <a href="/monitor">Monitor Interfaces</a>
+            </nav>
+            <hr>
+
+            <p>Last updated: {{ current_time }}</p>
+
+            <h2>Select Interfaces to Monitor</h2>
+            {% if routers %}
+            <form action="/monitor" method="post">
+                {% for router in routers %}
+                <h3>{{ router.name }} ({{ router.host }})</h3>
+                {% if router.interfaces %}
+                    {% for iface in router.interfaces %}
+                    <input type="checkbox" id="{{ router.name }}_{{ iface.name }}" name="selected_interfaces" value="{{ router.name }}|{{ iface.name }}" {% if iface.name in selected_interfaces_names.get(router.name, []) %}checked{% endif %}>
+                    <label for="{{ router.name }}_{{ iface.name }}">{{ iface.name }}</label><br>
+                    {% endfor %}
+                {% else %}
+                    <p>No interfaces found or error retrieving for this router.</p>
+                {% endif %}
+                {% endfor %}
+                <br>
+                <input type="submit" value="Update Monitored Interfaces">
+            </form>
+            {% else %}
+            <p>No routers in inventory. Please add some via <a href="/inventory">Inventory Management</a>.</p>
+            {% endif %}
+
+            {% if monitored_data %}
+            <h2>Live Interface Utilization</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Router</th>
+                        <th>Interface</th>
+                        <th>Status</th>
+                        <th>In-Octets</th>
+                        <th>Out-Octets</th>
+                        <th>In-Utilization (bps)</th>
+                        <th>Out-Utilization (bps)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in monitored_data %}
+                    <tr>
+                        <td>{{ item.router_name }}</td>
+                        <td>{{ item.interface_name }}</td>
+                        <td class="status-{{ item.status }}">{{ item.status }}</td>
+                        <td>{{ item.in_octets }}</td>
+                        <td>{{ item.out_octets }}</td>
+                        <td>{{ item.in_util_bps | round(2) }}</td>
+                        <td>{{ item.out_util_bps | round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% elif selected_interfaces_names %}
+            <p>Fetching data for selected interfaces...</p>
+            {% endif %}
+        </div>
+    </body>
+    </html>
+    ```
+15. Save `templates/monitor_interface.html`.
+
+### Task 0.6: Populate `static/style.css`
+
+This file defines the styling for your web dashboard.
+
+1.  Open `static/style.css` in your code editor.
+2.  Add the following CSS code:
+    ```css
+    body { 
+        font-family: Arial, sans-serif; 
+        margin: 20px; 
+        background-color: #f4f4f4; 
+        color: #333; 
+    }
+    .container { 
+        background-color: #fff; 
+        padding: 20px; 
+        border-radius: 8px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        max-width: 900px; /* Wider for tables */
+        margin: auto; 
+    }
+    h1, h2 { 
+        color: #0056b3; 
+    }
+    nav {
+        margin-bottom: 20px;
+    }
+    nav a {
+        margin-right: 15px;
+        text-decoration: none;
+        color: #007bff;
+        font-weight: bold;
+    }
+    nav a:hover {
+        text-decoration: underline;
+    }
+    hr {
+        border: 0;
+        height: 1px;
+        background: #eee;
+        margin: 20px 0;
+    }
+    form {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    form label {
+        display: inline-block;
+        width: 150px;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    form input[type="text"],
+    form input[type="password"],
+    form input[type="number"] {
+        width: calc(100% - 160px);
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    form input[type="submit"] {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-right: 10px;
+    }
+    form input[type="submit"]:hover {
+        background-color: #0056b3;
+    }
+    .message {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .error-message {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-top: 15px; 
+    }
+    th, td { 
+        border: 1px solid #ddd; 
+        padding: 8px; 
+        text-align: left; 
+    }
+    th { 
+        background-color: #f2f2f2; 
+        color: #555;
+    }
+    tbody tr:nth-child(odd) {
+        background-color: #f9f9f9;
+    }
+    .status-up { 
+        color: green; 
+        font-weight: bold; 
+    }
+    .status-down { 
+        color: red; 
+        font-weight: bold; 
+    }
+    .metric { 
+        margin-bottom: 10px; 
+        padding: 10px; 
+        border: 1px solid #ddd; 
+        border-radius: 4px; 
+    }
+    .metric strong { 
+        color: #007bff; 
+    }
+    .alert { 
+        color: red; 
+        font-weight: bold; 
+    }
+    pre {
+        background-color: #eee;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        white-space: pre-wrap; /* Wrap long lines */
+        word-wrap: break-word; /* Break words to prevent overflow */
+    }
+    .log-section {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 20px;
+        background-color: #f9f9f9;
+    }
+    .log-header {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #0056b3;
+    }
+    ```
+3.  Save `static/style.css`.
+
+### Task 0.7: Populate `app.py`
+
+This is the main Flask application file that will bring everything together.
+
+1.  Open `app.py` in your code editor.
+2.  Add the following Python code:
+    ```python
+    # app.py
+    from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
+    import time
+    import threading
+    import os
+    import json # For parsing JSON from RESTCONF
+
+    # Import functions and configurations
+    from .network_ops import (
+        load_inventory, save_inventory, add_router_to_inventory, delete_router_from_inventory,
+        reboot_router, backup_config, get_show_logging, get_interface_stats_restconf
+    )
+    from .config import DEFAULT_ROUTER_INFO, BACKUP_DIR, LOGS_DIR
+
+    app = Flask(__name__)
+    app.secret_key = 'supersecretkey' # Needed for flash messages. CHANGE THIS IN PRODUCTION!
+
+    # Ensure directories exist
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    os.makedirs(LOGS_DIR, exist_ok=True)
+
+    # --- Helper to get router info by name ---
+    def get_router_by_name(router_name):
+        inventory = load_inventory()
+        for router in inventory:
+            if router.get('name') == router_name:
+                return router
+        return None
+
+    # --- Flask Routes ---
+
+    @app.route('/')
+    def index():
+        """Home page displaying number of managed routers."""
+        routers = load_inventory()
+        return render_template('index.html', num_routers=len(routers))
+
+    @app.route('/inventory', methods=['GET', 'POST'])
+    def inventory_management():
+        """Handles adding and listing routers in inventory."""
+        if request.method == 'POST':
+            # Handle adding a new router
+            name = request.form['name']
+            host = request.form['host']
+            username = request.form['username']
+            password = request.form['password']
+            secret = request.form.get('secret', '') # Optional
+            device_type = request.form.get('device_type', 'cisco_ios')
+            port = int(request.form.get('port', 22))
+            restconf_port = int(request.form.get('restconf_port', 443))
+            verify_ssl = request.form.get('verify_ssl', 'False').lower() == 'true'
+
+            # Basic validation
+            if not name or not host or not username or not password:
+                flash('All required fields must be filled!', 'error')
+            elif get_router_by_name(name):
+                flash(f'Router with name "{name}" already exists!', 'error')
+            else:
+                new_router = {
+                    "name": name,
+                    "host": host,
+                    "username": username,
+                    "password": password,
+                    "secret": secret,
+                    "device_type": device_type,
+                    "port": port,
+                    "restconf_port": restconf_port,
+                    "verify_ssl": verify_ssl
+                }
+                add_router_to_inventory(new_router)
+                flash(f'Router "{name}" added successfully!', 'success')
+            return redirect(url_for('inventory_management'))
+        
+        routers = load_inventory()
+        return render_template('inventory.html', routers=routers)
+
+    @app.route('/inventory/delete', methods=['POST'])
+    def inventory_delete():
+        """Handles deleting a router from inventory."""
+        router_name = request.form['name']
+        if delete_router_from_inventory(router_name):
+            flash(f'Router "{router_name}" deleted successfully!', 'success')
+        else:
+            flash(f'Router "{router_name}" not found for deletion.', 'error')
+        return redirect(url_for('inventory_management'))
+
+    @app.route('/actions', methods=['GET', 'POST'])
+    def router_actions():
+        """Handles router actions like reboot, backup, get logging."""
+        routers = load_inventory()
+        message = None
+        if request.method == 'POST':
+            selected_router_names = request.form.getlist('selected_routers')
+            action = request.form['action']
+
+            if not selected_router_names:
+                flash('Please select at least one router.', 'error')
+                return redirect(url_for('router_actions'))
+
+            for router_name in selected_router_names:
+                router_info = get_router_by_name(router_name)
+                if not router_info:
+                    flash(f'Router "{router_name}" not found in inventory.', 'error')
+                    continue
+
+                if action == 'Reboot Selected':
+                    # Run reboot in a separate thread to avoid blocking the GUI
+                    thread = threading.Thread(target=reboot_router, args=(router_info,))
+                    thread.start()
+                    flash(f'Reboot command sent to {router_name} in background.', 'info')
+                elif action == 'Backup Config Selected':
+                    thread = threading.Thread(target=backup_config, args=(router_info,))
+                    thread.start()
+                    flash(f'Backup initiated for {router_name} in background. Check "{BACKUP_DIR}" folder.', 'info')
+                elif action == 'Get Show Logging Selected':
+                    # For show logging, we fetch and then redirect to a display page
+                    # This might still block if many routers are selected.
+                    # For simplicity, we'll collect logs sequentially here for display.
+                    logs_data = {}
+                    router_name_to_host = {}
+                    for name in selected_router_names:
+                        info = get_router_by_name(name)
+                        if info:
+                            log_output = get_show_logging(info)
+                            logs_data[name] = log_output if log_output else f"Error retrieving logs from {name}."
+                            router_name_to_host[name] = info['host']
+                    return render_template('logs_display.html', logs_data=logs_data, router_name_to_host=router_name_to_host)
+            
+            return redirect(url_for('router_actions')) # Redirect to prevent re-submission on refresh
+        
+        return render_template('router_actions.html', routers=routers, message=message)
+
+    @app.route('/download_log/<router_name>')
+    def download_log(router_name):
+        """Allows downloading the last retrieved log for a router."""
+        # In a real app, you'd store logs in a structured way and retrieve by ID.
+        # For this lab, we'll assume logs are temporarily stored or re-fetched.
+        # For simplicity, we'll just create a dummy file for download.
+        log_content = f"Simulated log content for {router_name}. This would be the actual 'show logging' output."
+        log_filename = f"{router_name}_logging.txt"
+        temp_log_path = os.path.join(LOGS_DIR, log_filename)
+        os.makedirs(LOGS_DIR, exist_ok=True)
+        with open(temp_log_path, 'w') as f:
+            f.write(log_content)
+        
+        return send_from_directory(LOGS_DIR, log_filename, as_attachment=True)
+
+
+    @app.route('/monitor', methods=['GET', 'POST'])
+    def monitor_interfaces():
+        """Handles interface monitoring dashboard."""
+        routers = load_inventory()
+        all_interfaces = {} # Store {router_name: [interface_names]}
+        selected_interfaces_names = {} # Store {router_name: [selected_iface_names]}
+        monitored_data = [] # Store live stats
+
+        # Populate all_interfaces for display in the form
+        for router in routers:
+            # This is a blocking call, for many routers, it would need threading
+            # For simplicity in monitoring interface selection, we keep it direct.
+            interfaces_list = get_interface_status(router) 
+            all_interfaces[router['name']] = [iface['name'] for iface in interfaces_list]
+            # Initialize selected interfaces from session or form submission
+            selected_interfaces_names[router['name']] = request.form.getlist('selected_interfaces') if request.method == 'POST' else []
+        
+        if request.method == 'POST':
+            # Process form submission for selected interfaces
+            for selected_iface_str in request.form.getlist('selected_interfaces'):
+                router_name, iface_name = selected_iface_str.split('|')
+                router_info = get_router_by_name(router_name)
+                if router_info:
+                    # Fetch live stats for selected interface
+                    stats = get_interface_stats_restconf(router_info, iface_name)
+                    if stats:
+                        # Calculate utilization (conceptual, needs previous stats for accurate bps)
+                        # For simplicity, we'll just show current octets.
+                        # Real bps calculation needs (current_octets - previous_octets) / time_diff
+                        in_util_bps = stats.get('in-octets', 0) / 1000 # Dummy bps
+                        out_util_bps = stats.get('out-octets', 0) / 1000 # Dummy bps
+
+                        monitored_data.append({
+                            "router_name": router_name,
+                            "interface_name": iface_name,
+                            "status": stats.get('status', 'N/A'),
+                            "in_octets": stats.get('in-octets', 'N/A'),
+                            "out_octets": stats.get('out-octets', 'N/A'),
+                            "in_util_bps": in_util_bps,
+                            "out_util_bps": out_util_bps
+                        })
+        
+        return render_template(
+            'monitor_interface.html', 
+            routers=routers, 
+            all_interfaces=all_interfaces,
+            selected_interfaces_names=selected_interfaces_names,
+            monitored_data=monitored_data,
+            current_time=time.strftime("%Y-%m-%d %H:%M:%S")
+        )
+
+    # --- Main execution block for running Flask app ---
+    if __name__ == '__main__':
+        # This block is for direct execution of app.py
+        # You can also run Flask using 'flask run' command from terminal
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    ```
+3.  Save `app.py`.
+
+### Task 0.7: Populate `static/style.css`
+
+This file defines the styling for your web dashboard.
+
+1.  Open `static/style.css` in your code editor.
+2.  Add the following CSS code:
+    ```css
+    body { 
+        font-family: Arial, sans-serif; 
+        margin: 20px; 
+        background-color: #f4f4f4; 
+        color: #333; 
+    }
+    .container { 
+        background-color: #fff; 
+        padding: 20px; 
+        border-radius: 8px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        max-width: 900px; /* Wider for tables */
+        margin: auto; 
+    }
+    h1, h2 { 
+        color: #0056b3; 
+    }
+    nav {
+        margin-bottom: 20px;
+    }
+    nav a {
+        margin-right: 15px;
+        text-decoration: none;
+        color: #007bff;
+        font-weight: bold;
+    }
+    nav a:hover {
+        text-decoration: underline;
+    }
+    hr {
+        border: 0;
+        height: 1px;
+        background: #eee;
+        margin: 20px 0;
+    }
+    form {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    form label {
+        display: inline-block;
+        width: 150px;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    form input[type="text"],
+    form input[type="password"],
+    form input[type="number"] {
+        width: calc(100% - 160px);
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    form input[type="submit"] {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-right: 10px;
+    }
+    form input[type="submit"]:hover {
+        background-color: #0056b3;
+    }
+    .message {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .error-message {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-top: 15px; 
+    }
+    th, td { 
+        border: 1px solid #ddd; 
+        padding: 8px; 
+        text-align: left; 
+    }
+    th { 
+        background-color: #f2f2f2; 
+        color: #555;
+    }
+    tbody tr:nth-child(odd) {
+        background-color: #f9f9f9;
+    }
+    .status-up { 
+        color: green; 
+        font-weight: bold; 
+    }
+    .status-down { 
+        color: red; 
+        font-weight: bold; 
+    }
+    .metric { 
+        margin-bottom: 10px; 
+        padding: 10px; 
+        border: 1px solid #ddd; 
+        border-radius: 4px; 
+    }
+    .metric strong { 
+        color: #007bff; 
+    }
+    .alert { 
+        color: red; 
+        font-weight: bold; 
+    }
+    pre {
+        background-color: #eee;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        white-space: pre-wrap; /* Wrap long lines */
+        word-wrap: break-word; /* Break words to prevent overflow */
+    }
+    .log-section {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 20px;
+        background-color: #f9f9f9;
+    }
+    .log-header {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #0056b3;
+    }
+    ```
+3.  Save `static/style.css`.
 
 ---
 
-## 🔧 Step-by-Step Instructions
+## Lab 1: Inventory Management
 
-### ✅ Step 1: Create Virtual Environment and Install Dependencies
-```bash
-python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
-pip install flask netmiko pyyaml jinja2
-```
-Create `requirements.txt`:
-```text
-flask
-netmiko
-pyyaml
-jinja2
-```
+**Objective:** Use the web GUI to add, list, and delete routers from the inventory.
 
-### ✅ Step 2: Define Your Router Inventory (inventory.yaml)
-```yaml
-routers:
-  - name: IOSXE_R1
-    ip: sandbox-iosxe-latest-1.cisco.com
-    port: 22
-    username: developer
-    password: C1sco12345
-    device_type: cisco_ios
-```
+### Task 1.1: Start the Flask Application
 
-### ✅ Step 3: Create Flask Application (app.py)
-```python
-from flask import Flask, render_template
-from utils import fetch_status, backup_config
+1.  Ensure your `na_env` virtual environment is active (from `network_automation_labs` directory).
+2.  Navigate into your `module10_router_console` directory:
+    ```bash
+    cd module10_router_console
+    ```
+3.  Run the Flask application:
+    ```bash
+    python app.py
+    ```
+    *Expected Output (console):*
+    ```
+     * Serving Flask app 'app'
+     * Debug mode: on
+     * Running on all addresses (0.0.0.0)
+     * Port: 5000
+    Press CTRL+C to quit
+     * Restarting with stat
+    Press CTRL+C to quit
+    ```
+4.  **Open your web browser** and navigate to `http://127.0.0.1:5000` (or `http://localhost:5000`).
 
-app = Flask(__name__)
+### Task 1.2: Add a Router to Inventory
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+1.  In your web browser, navigate to the **"Inventory Management"** link (or go directly to `http://127.0.0.1:5000/inventory`).
+2.  Fill out the "Add New Router" form. Use the information from `config.py` (your actual lab router details).
+    *   **Name:** `MyLabRouter` (or any name you like)
+    *   **Host:** `YOUR_ROUTER_IP`
+    *   **Username:** `YOUR_ROUTER_USERNAME`
+    *   **Password:** `YOUR_ROUTER_PASSWORD`
+    *   **Enable Password:** `YOUR_ROUTER_ENABLE_PASSWORD` (if applicable)
+    *   **Device Type:** `cisco_ios`
+    *   **SSH Port:** `22`
+    *   **RESTCONF Port:** `443`
+    *   **Verify SSL:** `False` (or `True` if you have proper certs)
+3.  Click **"Add Router"**.
+    *Expected Web Output:* A green "Router 'MyLabRouter' added successfully!" message should appear, and the router should be listed in the "Current Inventory" table.
+    *Verification:* Check your `inventory.yaml` file in your `module10_router_console` directory. It should now contain the router's details.
 
-@app.route('/status')
-def status():
-    data = fetch_status.run()
-    return render_template('status.html', data=data)
+### Task 1.3: Delete a Router from Inventory
 
-@app.route('/backup')
-def backup():
-    logs = backup_config.run()
-    return render_template('backup.html', logs=logs)
+1.  In the "Current Inventory" table, find the router you just added.
+2.  Click the **"Delete"** button next to its entry.
+3.  Confirm the deletion when prompted.
+    *Expected Web Output:* A green "Router 'MyLabRouter' deleted successfully!" message should appear, and the router should be removed from the table.
+    *Verification:* Check your `inventory.yaml` file. The router's entry should be gone.
 
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
-```
-
-### ✅ Step 4: Status Collector (utils/fetch_status.py)
-```python
-from netmiko import ConnectHandler
-import yaml
-
-def run():
-    with open("inventory.yaml") as f:
-        routers = yaml.safe_load(f)["routers"]
-
-    results = []
-    for r in routers:
-        conn = ConnectHandler(**r)
-        output = conn.send_command("show ip interface brief")
-        results.append({"name": r["name"], "output": output})
-        conn.disconnect()
-    return results
-```
-
-### ✅ Step 5: Configuration Backup Script (utils/backup_config.py)
-```python
-from netmiko import ConnectHandler
-import yaml
-from datetime import datetime
-
-def run():
-    with open("inventory.yaml") as f:
-        routers = yaml.safe_load(f)["routers"]
-
-    results = []
-    for r in routers:
-        conn = ConnectHandler(**r)
-        config = conn.send_command("show running-config")
-        filename = f"logs/{r['name']}_backup_{datetime.now().strftime('%Y%m%d_%H%M')}.txt"
-        with open(filename, 'w') as f:
-            f.write(config)
-        conn.disconnect()
-        results.append(f"Backed up {r['name']} to {filename}")
-    return results
-```
-
-### ✅ Step 6: Create HTML Templates
-
-#### 🔹 templates/index.html
-```html
-<h1>Network Router Console</h1>
-<a href="/status">🔍 Check Interface Status</a><br>
-<a href="/backup">💾 Backup Running Configuration</a>
-```
-
-#### 🔹 templates/status.html
-```html
-<h2>Interface Status Summary</h2>
-{% for device in data %}
-<h3>{{ device.name }}</h3>
-<pre>{{ device.output }}</pre>
-{% endfor %}
-```
-
-#### 🔹 templates/backup.html
-```html
-<h2>Backup Summary</h2>
-<ul>
-{% for log in logs %}
-  <li>{{ log }}</li>
-{% endfor %}
-</ul>
-```
-
-### ✅ Step 7: Launch Flask Application
-```bash
-flask run --port 5000
-```
-Then open browser: `http://127.0.0.1:5000`
+4.  **Re-add your router** using Task 1.2 so you have a router in inventory for the next labs.
 
 ---
 
-## ✅ Expected Results
+## Lab 2: Router Actions (Reboot, Backup, Show Logging)
 
-### 🔸 Web Homepage
-- Navigation links for: Status and Backup
+**Objective:** Use the web GUI to perform operational tasks on your managed routers.
 
-### 🔸 /status Page
-- Output of `show ip interface brief` for each router
+### Task 2.1: Backup Configuration
 
-### 🔸 /backup Page
-- Confirmation of saved configuration per router in `/logs`
-- Filenames timestamped for easy auditing
+1.  In your web browser, navigate to the **"Router Actions"** link (or go directly to `http://127.0.0.1:5000/actions`).
+2.  Select the checkbox next to your router's name.
+3.  Click **"Backup Config Selected"**.
+    *Expected Web Output:* A green "Backup initiated for MyLabRouter in background. Check 'backups' folder." message.
+    *Verification:* Check the `backups` directory inside your `module10_router_console` folder. A new file named `YOUR_ROUTER_IP_running_config_YYYYMMDD_HHMMSS.txt` should be created, containing your router's running configuration.
+
+### Task 2.2: Retrieve "show logging" Output
+
+1.  In your web browser, navigate to the **"Router Actions"** page again.
+2.  Select the checkbox next to your router's name.
+3.  Click **"Get Show Logging Selected"**.
+    *Expected Web Output:* A new page will load displaying the "show logging" output for your router. You will also see a "Download Log" link.
+    *Verification:* Click the "Download Log" link. A text file containing the log output should be downloaded to your computer.
+
+### Task 2.3: Reboot Router (CAUTION!)
+
+**WARNING: This will actually reboot your physical or virtual router. Ensure you understand the impact before proceeding.**
+
+1.  In your web browser, navigate to the **"Router Actions"** page again.
+2.  Select the checkbox next to your router's name.
+3.  Click **"Reboot Selected"**.
+    *Expected Web Output:* A green "Reboot command sent to MyLabRouter in background." message.
+    *Verification:* Observe your router (via console or ping). It should start the reboot process. This will take some time.
 
 ---
 
-## 📝 Takeaway Notes
-- Flask + Netmiko enables lightweight router automation portals
-- Templates (Jinja2) make UI extensible and readable
-- Using `utils/` folder makes code modular and reusable
-- `inventory.yaml` scales easily for 100+ routers
-- This app can be dockerized or hosted on an NGINX server in production
+## Lab 3: Monitor Interface Bandwidth Utilization
 
+**Objective:** Use the web GUI to monitor bandwidth utilization for selected interfaces.
+
+### Task 3.1: Select Interfaces to Monitor
+
+1.  In your web browser, navigate to the **"Monitor Interfaces"** link (or go directly to `http://127.0.0.1:5000/monitor`).
+2.  You should see your router listed with its interfaces. Select the checkboxes next to one or more interfaces you wish to monitor (e.g., `GigabitEthernet1`).
+3.  Click **"Update Monitored Interfaces"**.
+    *Expected Web Output:* The page will refresh, and a new table titled "Live Interface Utilization" will appear, showing data for your selected interfaces. The page will automatically refresh every 10 seconds.
+    *Observation:* The "In-Utilization (bps)" and "Out-Utilization (bps)" values will likely be very low or zero unless there is actual traffic flowing through those interfaces. These are calculated based on current octet counts, not historical data for true bandwidth.
+
+---
+
+## Conclusion
+
+You've now completed Module 10 and built a functional, web-based management console for Cisco IOS XE routers! You can now:
+
+*   Understand the benefits and architecture of a centralized management console.
+*   Implement inventory management using a YAML file.
+*   Perform remote router actions (reboot, backup, show logging) via Netmiko.
+*   Display and download command output from the web GUI.
+*   Monitor interface bandwidth utilization using RESTCONF and display it in a Flask dashboard.
+*   Handle long-running tasks in the background to keep the GUI responsive.
+
+This module demonstrates how to create more interactive and user-friendly automation tools that can empower network administrators.
+
+**Keep Automating!**
+
+---
