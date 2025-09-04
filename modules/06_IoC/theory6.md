@@ -260,28 +260,28 @@ After generating the configuration, the next crucial step in IaC is to push it t
             logging.error(f"An unexpected error occurred during deployment to {host}: {e}")
             return False
 
-# --- 5. Main Execution Block ---
-if __name__ == "__main__":
-    print("\n=== Starting IaC Deployment Script ===")
-    
-    success = deploy_full_configuration()
-    
-    if success:
-        print(f"\nDeployment to {ROUTER_CONNECTION_INFO['host']} completed successfully!")
-        print("Please log in to your router and verify the new configuration.")
-    else:
-        print(f"\nDeployment to {ROUTER_CONNECTION_INFO['host']} failed. Check logs for details.")
-    
-    print("\n=== Script Finished ===")
-    ```
+
+    if __name__ == "__main__":
+        print("\n=== Starting IaC Deployment Script ===")
+        
+        success = deploy_full_configuration()
+        
+        if success:
+            print(f"\nDeployment to {ROUTER_CONNECTION_INFO['host']} completed successfully!")
+            print("Please log in to your router and verify the new configuration.")
+        else:
+            print(f"\nDeployment to {ROUTER_CONNECTION_INFO['host']} failed. Check logs for details.")
+        
+        print("\n=== Script Finished ===")
+
 
 ---
 
-## 6. Version Control with Git: The Foundation of IaC
+## 5. Version Control with Git: The Foundation of IaC
 
 **Git** is a distributed version control system that tracks changes in any set of computer files. It is the cornerstone of IaC.
 
-### 6.1 Core Git Concepts and Commands
+### 5.1 Core Git Concepts and Commands
 
 Git manages your project's history by tracking changes to files. It operates on three main areas:
 *   **Working Directory:** Where you make changes to your files.
