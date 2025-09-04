@@ -51,12 +51,10 @@ For IaC, you need a way to describe your network configuration in a structured, 
             ip_address: 10.0.0.1
             subnet_mask: 255.255.255.0
             description: "Link to R2"
-            is_trunk: false
           - name: Loopback0
             ip_address: 1.1.1.1
             subnet_mask: 255.255.255.255
             description: "Router ID Loopback"
-            is_trunk: false
         routing:
           ospf:
             process_id: 10
@@ -75,12 +73,10 @@ For IaC, you need a way to describe your network configuration in a structured, 
             ip_address: 10.0.0.2
             subnet_mask: 255.255.255.0
             description: "Link to R1"
-            is_trunk: false
           - name: GigabitEthernet0/1
             ip_address: 10.0.1.1
             subnet_mask: 255.255.255.0
             description: "Link to SW1"
-            is_trunk: true # Example of a trunk interface
         routing:
           ospf:
             process_id: 10
