@@ -379,12 +379,15 @@ This is the main Flask application file that will bring everything together.
 ### Task 1.1: Run `iosxe_api_functions.py` Standalone
 
 1.  Ensure your `na_env` virtual environment is active (from `network_automation_labs` directory).
-2.  Navigate into your `module5_api_lab` directory:
+2.  Navigate into your `module5_api_lab` directory a:
     ```bash
     cd module5_api_lab
+    ```
+3.  Install requests and flask library:
+    ```bash
     pip install requests flask
     ```
-3.  Run the standalone test section of `iosxe_api_functions.py`:
+4.  Run the standalone test section of `iosxe_api_functions.py`:
     ```bash
     python iosxe_api_functions.py
     ```
