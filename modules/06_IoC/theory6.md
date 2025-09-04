@@ -117,11 +117,6 @@ Once you have your complex configuration data (in nested YAML), you need to turn
     interface {{ interface.name }}
      description {{ interface.description }}
      ip address {{ interface.ip_address }} {{ interface.subnet_mask }}
-     {% if interface.is_trunk %}
-     switchport mode trunk
-     {% else %}
-     switchport mode access
-     {% endif %}
      no shutdown
     !
     {% endfor %}
