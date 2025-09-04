@@ -61,8 +61,18 @@ For this module, we will structure our project for better organization.
     ```
 
 Your directory structure should now look like this:
+```
 network_automation_labs/
-network\_automation\_labs/ └── module5\_api\_lab/ ├── init.py ├── config.py ├── iosxe\_api\_functions.py ├── app.py ├── templates/ │ └── index.html └── static/ └── style.css
+└── module5_api_lab/
+├── init.py
+├── config.py
+├── iosxe_api_functions.py
+├── app.py
+├── templates/
+│ └── index.html
+└── static/
+└── style.css
+```
 
 ### Task 0.1: Populate `config.py`
 
@@ -136,7 +146,7 @@ This file will contain reusable functions to query data from the IOS XE router.
         path = "Cisco-IOS-XE-process-cpu-oper:cpu-usage/cpu-utilization"
         data = get_restconf_data(path)
         if data:
-            cpu_total = data.get('Cisco-IOS-XE-process-cpu-oper:cpu-usage', {}).get('cpu-utilization', [{}]).get('cpu-total-utilization')
+            cpu_total = data.get('Cisco-IOS-XE-memory-oper:memory-statistics', {}).get('memory-statistic', [{}])
             return cpu_total if cpu_total is not None else "N/A"
         return "N/A"
 
@@ -148,19 +158,19 @@ This file will contain reusable functions to query data from the IOS XE router.
         if data:
             mem_stats = data.get('Cisco-IOS-XE-memory-oper:memory-statistics', {}).get('memory-statistic', [{}])
             if mem_stats and isinstance(mem_stats, list) and len(mem_stats) > 0:
-                used = mem_stats.get('used-memory')
-                total = mem_stats.get('total-memory')
+                used = mem_stats[0].get('used-memory')
+                total = mem_stats[0].get('total-memory')
                 return int(used) if used is not None else "N/A", int(total) if total is not None else "N/A"
         return "N/A", "N/A"
 
     def get_interface_status():
         """Queries and returns interface operational status from IOS XE via RESTCONF."""
         # This path gets all interfaces. You might filter for specific ones.
-        path = "ietf-interfaces:interfaces/interface" 
+        path = "Cisco-IOS-XE-interfaces-oper:interfaces/interface" 
         data = get_restconf_data(path)
         interfaces = []
         if data:
-            iface_list = data.get('ietf-interfaces:interfaces', {}).get('interface', [])
+            iface_list = data.get('Cisco-IOS-XE-interfaces-oper:interface', {})
             for iface in iface_list:
                 name = iface.get('name')
                 oper_status = iface.get('oper-status')
