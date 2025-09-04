@@ -132,7 +132,6 @@ Once you have your complex configuration data (in nested YAML), you need to turn
     ```
     *   This template loops through each `router` in the `routers` list (passed from YAML).
     *   Inside each router, it loops through its `interfaces` list.
-    *   It uses an `if` condition to determine if an interface should be a trunk or access port.
     *   It also checks if OSPF configuration exists for a router before attempting to configure it.
 
 ---
