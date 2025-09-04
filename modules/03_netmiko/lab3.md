@@ -92,25 +92,19 @@ This file will store the connection details for your network devices.
     multi_devices = [
         {
             "device_type": "cisco_ios",
-            "host": "192.168.1.10", # DUMMY IP 1 (can be the same as single_device if you only have one)
-            "username": "dummy_user",
+            "host": "10.10.10.48", # DUMMY IP 1 (can be the same as single_device if you only have one)
+            "username": "developer",
             "password": "dummy_password",
             "secret": "dummy_enable",
         },
         {
-            "device_type": "cisco_ios",
-            "host": "192.168.1.11", # DUMMY IP 2
-            "username": "dummy_user",
+            "device_type": "cisco_xr", # in Cisco Sandbox, this is a IOS XR router
+            "host": "10.10.10.35", # DUMMY IP 2
+            "username": "developer",
             "password": "dummy_password",
             "secret": "dummy_enable",
-        },
-        {
-            "device_type": "cisco_ios",
-            "host": "192.168.1.12", # DUMMY IP 3
-            "username": "dummy_user",
-            "password": "dummy_password",
-            "secret": "dummy_enable",
-        },
+        }
+
         # Add more device dictionaries here if you have more lab devices
         # Example:
         # {
