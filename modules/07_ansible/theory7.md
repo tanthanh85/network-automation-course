@@ -22,9 +22,9 @@ Ansible is an open-source automation engine that automates provisioning, configu
 
 ---
 
-## 2. Ansible in Detail: Components and Concepts
+## 2. Ansible Components and Concepts
 
-### 2.1 Inventory: Defining Your Network Assets
+### 2.1 Inventory - Defining Your Network Assets
 
 The inventory tells Ansible *which* devices it should manage and *how* to connect to them.
 
@@ -80,7 +80,7 @@ The inventory tells Ansible *which* devices it should manage and *how* to connec
         ```
 *   **Dynamic Inventory:** Python scripts (or other executables) can generate inventory on the fly by printing a JSON representation. This is crucial for environments where devices are constantly added/removed (e.g., cloud, SDN controllers).
 
-### 2.2 Modules: The Building Blocks of Automation
+### 2.2 Modules - The Building Blocks of Automation
 
 Ansible modules are small, reusable pieces of code that perform specific tasks on managed nodes.
 
@@ -89,7 +89,7 @@ Ansible modules are small, reusable pieces of code that perform specific tasks o
 *   **Network Modules:** Ansible has a rich set of modules specifically for network devices (e.g., `ios_config`, `ios_command`, `junos_interface`, `arista.eos.eos_facts`).
 *   **General Modules:** Many modules are general-purpose (e.g., `copy` for file transfer, `template` for Jinja2 rendering, `debug` for printing messages).
 
-### 2.3 Playbooks: Orchestrating Tasks
+### 2.3 Playbooks - Orchestrating Tasks
 
 Playbooks are the heart of Ansible automation. They are YAML files that define a series of tasks to be executed on a group of hosts.
 
@@ -127,7 +127,7 @@ Playbooks are the heart of Ansible automation. They are YAML files that define a
               - ntp server {{ ntp_server_ip }}
     ```
 
-### 2.4 Roles: Reusability and Organization
+### 2.4 Roles - Reusability and Organization
 
 Roles provide a standardized way to organize related playbooks, variables, templates, and files. They promote reusability and make complex projects manageable.
 
@@ -136,7 +136,7 @@ Roles provide a standardized way to organize related playbooks, variables, templ
 
 ---
 
-## 3. Ansible in the IaC Big Picture
+## 3. Ansible in the IaC
 
 Ansible fits perfectly into the Infrastructure as Code paradigm.
 
