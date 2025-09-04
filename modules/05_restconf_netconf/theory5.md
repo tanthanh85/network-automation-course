@@ -127,12 +127,12 @@ To query performance data from a Cisco IOS XE router, you'll use RESTCONF with s
 
 ### 3.1 Building RESTCONF URIs (Uniform Resource Identifiers)
 
-A RESTCONF URI is constructed to point to a specific node in the YANG data tree. The basic structure is: `https://:/restconf/data/`
+A RESTCONF URI is constructed to point to a specific node in the YANG data tree. The basic structure is: `https:/{host}/:{port}/restconf/data/{yangpath}`
 
-*   ``: The IP address or hostname of your router.
-*   ``: Usually 443 for HTTPS.
+*   {host}: The IP address or hostname of your router.
+*   {port}: Usually 443 for HTTPS.
 *   `/restconf/data/`: This is the base path for accessing data nodes defined by YANG models.
-*   ``: This is the critical part. It specifies the path to the desired data within the YANG model hierarchy. It uses a specific format:
+*   {yangpath}: This is the critical part. It specifies the path to the desired data within the YANG model hierarchy. It uses a specific format:
     *   `module-name:top-level-container/list-name=key-value/leaf-name`
     *   `module-name:` is the prefix defined in the YANG model (e.g., `Cisco-IOS-XE-process-cpu-oper:`, `ietf-interfaces:`).
     *   List entries are identified by `list-name=key-value` (e.g., `interface=GigabitEthernet1`).
@@ -274,7 +274,7 @@ APIs provide a powerful, structured way to interact with network devices and con
     *   Native: Vendor-specific, reflects CLI, not portable.
     *   IETF: Standardized, basic functions, portable.
     *   OpenConfig: Industry-driven, operationally rich, vendor-neutral.
-*   Building RESTCONF URIs: Use `https://:/restconf/data/`. YANG path uses `module-name:container/list=key/leaf` format.
+*   Building RESTCONF URIs: Use `https:/{host}/:{port}/restconf/data/{yangpath}`. YANG path uses `module-name:container/list=key/leaf` format.
 *   YANG Filtering: Done by precise URI path for RESTCONF; XML `` for NETCONF.
 *   Cisco YangSuite: Tool to explore YANG models, build filters/URIs, and test API calls.
 *   `requests` Library: Your primary tool for making HTTP requests to REST APIs.
