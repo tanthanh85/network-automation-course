@@ -105,7 +105,7 @@ This file will contain reusable functions to query data from the IOS XE router.
     # iosxe_api_functions.py
     import requests
     import json
-    from .config import IOSXE_API_INFO # Import API info from config.py
+    from config import IOSXE_API_INFO # Import API info from config.py
 
     # Base URL for RESTCONF data (e.g., https://10.10.20.40:443/restconf/data)
     RESTCONF_BASE_URL = f"https://{IOSXE_API_INFO['host']}:{IOSXE_API_INFO['port']}/restconf/data"
@@ -382,6 +382,7 @@ This is the main Flask application file that will bring everything together.
 2.  Navigate into your `module5_api_lab` directory:
     ```bash
     cd module5_api_lab
+    pip install requests flask
     ```
 3.  Run the standalone test section of `iosxe_api_functions.py`:
     ```bash
