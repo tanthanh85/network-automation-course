@@ -133,7 +133,7 @@ This file will contain all the reusable Netmiko functions.
     ```python
     # netmiko_operations.py
     from netmiko import ConnectHandler
-    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException
+    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoBaseException
     import datetime
     import os
     import time # For ThreadPoolExecutor to see progress
@@ -156,7 +156,7 @@ This file will contain all the reusable Netmiko functions.
         except NetmikoAuthenticationException:
             print(f"Error: Authentication failed for {host}. Check username/password/enable password.")
             raise
-        except NetmikoException as e:
+        except NetmikoBaseException as e:
             print(f"An Netmiko-specific error occurred connecting to {host}: {e}")
             raise
         except Exception as e:
@@ -244,7 +244,7 @@ This file will contain all the reusable Netmiko functions.
             return f"--- {host} Failed: Connection timed out. Device unreachable or SSH issue. ---"
         except NetmikoAuthenticationException:
             return f"--- {host} Failed: Authentication failed. Check username/password/enable password. ---"
-        except NetmikoException as e:
+        except NetmikoBaseException as e:
             return f"--- {host} Failed: Netmiko error - {e} ---"
         except Exception as e:
             return f"--- {host} Failed: Unexpected error - {e} ---"
@@ -278,8 +278,8 @@ We will use the actual `netmiko.ConnectHandler` to attempt a connection.
 2.  Add the following code. This script will import the `single_device` dictionary and the `get_device_info` function.
     ```python
     # lab_single_device.py
-    from .devices import single_device # Import the single device dictionary
-    from .netmiko_operations import get_device_info # Import the function to get device info
+    from devices import single_device # Import the single device dictionary
+    from netmiko_operations import get_device_info, apply_config_commands, backup_running_config # Import the function to get device info
 
     print("--- Lab 1.2: Connect to a Single Device ---")
     
@@ -512,6 +512,13 @@ Now, use the `get_device_info()` function to retrieve more detailed information 
 **Objective:** Apply concurrency concepts from Module 2 to manage multiple devices using Netmiko, leveraging `ThreadPoolExecutor` for concurrent connections.
 
 ### Task 3.1: Use `ThreadPoolExecutor` for Concurrent Processing
+```
+The sandbox lab has one IOS XE router and one IOS XR router. However SSH is not enabled on IOS XR router when the lab started. Please SSH to IOS XR router and issue the following command:
+crypto key generate rsa
+configure terminal
+ssh server v2
+commit
+```
 
 1.  Open `lab_multi_device.py` in your code editor.
 2.  Add the following code. This script will import the `multi_devices` list and the `process_device_concurrently` function.
@@ -520,8 +527,8 @@ Now, use the `get_device_info()` function to retrieve more detailed information 
     from concurrent.futures import ThreadPoolExecutor
     import time
 
-    from .devices import multi_devices # Import the list of multiple devices
-    from .netmiko_operations import process_device_concurrently # Import the concurrent processing function
+    from devices import multi_devices # Import the list of multiple devices
+    from netmiko_operations import process_device_concurrently # Import the concurrent processing function
 
     print("--- Lab 3.1: Managing Multiple Devices at Scale (Concurrency) ---")
     # Adjust max_workers based on your system's capabilities and device limits.
