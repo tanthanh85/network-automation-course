@@ -31,53 +31,114 @@ IaC is the practice of managing and provisioning infrastructure (like networks, 
 
 ---
 
-## 2. Describing Configuration Data with YAML
+## 2. Describing Complex Configuration Data with Nested YAML
 
-For IaC, you need a way to describe your network configuration in a structured, human-readable format. **YAML (YAML Ain't Markup Language)** is a popular choice.
+For IaC, you need a way to describe your network configuration in a structured, human-readable format. **YAML (YAML Ain't Markup Language)** is a popular choice because it excels at representing complex, nested data.
 
-*   **Why YAML?**
-    *   **Human-readable:** Easy to read and write, using indentation for structure.
-    *   **Machine-parsable:** Easily converted into Python dictionaries/lists.
-    *   **Flexible:** Can represent complex data hierarchies.
+*   **Why Nested YAML?**
+    *   Simple flat YAML works for single parameters (like a hostname).
+    *   For real-world network devices, configurations involve multiple interfaces, VLANs, routing protocols, and services, each with many parameters. Nested YAML allows you to logically group and organize this complex data.
+    *   It maps directly to Python dictionaries and lists, making it easy to process.
 
-*   **Example YAML Data for a Router:**
+*   **Example Nested YAML Data for Multiple Routers with Interfaces and OSPF:**
     ```yaml
     # network_data.yaml
-    router_name: R1-Core
-    loopback_id: 0
-    loopback_ip: 1.1.1.1
-    loopback_mask: 255.255.255.255
-    banner_message: "Welcome to the IaC Router!"
+    routers:
+      - name: R1-Core
+        mgmt_ip: 192.168.1.1
+        interfaces:
+          - name: GigabitEthernet0/0
+            ip_address: 10.0.0.1
+            subnet_mask: 255.255.255.0
+            description: "Link to R2"
+            is_trunk: false
+          - name: Loopback0
+            ip_address: 1.1.1.1
+            subnet_mask: 255.255.255.255
+            description: "Router ID Loopback"
+            is_trunk: false
+        routing:
+          ospf:
+            process_id: 10
+            networks:
+              - ip: 10.0.0.0
+                wildcard: 0.0.0.255
+                area: 0
+              - ip: 1.1.1.1
+                wildcard: 0.0.0.0
+                area: 0
+
+      - name: R2-Dist
+        mgmt_ip: 192.168.1.2
+        interfaces:
+          - name: GigabitEthernet0/0
+            ip_address: 10.0.0.2
+            subnet_mask: 255.255.255.0
+            description: "Link to R1"
+            is_trunk: false
+          - name: GigabitEthernet0/1
+            ip_address: 10.0.1.1
+            subnet_mask: 255.255.255.0
+            description: "Link to SW1"
+            is_trunk: true # Example of a trunk interface
+        routing:
+          ospf:
+            process_id: 10
+            networks:
+              - ip: 10.0.0.0
+                wildcard: 0.0.0.255
+                area: 0
+              - ip: 10.0.1.0
+                wildcard: 0.0.0.255
+                area: 0
     ```
-    This YAML file defines the *variables* for your configuration.
+    This YAML structure defines a list of routers, and for each router, it includes nested lists of interfaces and OSPF network statements.
 
 ---
 
-## 3. Generating Configuration with Jinja2 Templates
+## 3. Generating Configuration with Jinja2 Templates (Advanced)
 
-Once you have your configuration data (in YAML), you need to turn it into actual device commands. **Jinja2** is a powerful templating engine used for this.
+Once you have your complex configuration data (in nested YAML), you need to turn it into actual device commands. **Jinja2** is perfectly suited for this, especially with its looping and conditional capabilities.
 
-*   **What is Jinja2?**
-    *   A templating language that allows you to embed variables, logic (like loops and conditions), and macros into text files (templates).
-    *   It separates the data from the presentation (the configuration commands).
+*   **Jinja2 Loops (`for`):**
+    *   You can iterate over lists within your data structure. This is essential for configuring multiple interfaces, VLANs, or routing protocol networks.
+    *   Syntax: `{% for item in list_variable %}` ... `{% endfor %}`
 
-*   **How it works:**
-    1.  You create a **Jinja2 template file** (e.g., `router_config.j2`) that contains your device configuration commands, but with placeholders for variables (e.g., `{{ router_name }}`).
-    2.  You load your **data file** (e.g., `network_data.yaml`) into a Python dictionary.
-    3.  You use Python to **render** the Jinja2 template, passing the data dictionary to it. Jinja2 then fills in the placeholders and executes any logic, producing the final configuration text.
+*   **Jinja2 Conditionals (`if`):**
+    *   You can include or exclude configuration lines based on conditions in your data.
+    *   Syntax: `{% if condition %}` ... `{% endif %}`
 
-*   **Example Jinja2 Template (`router_config.j2`):**
+*   **Example Jinja2 Template (`router_full_config.j2`) for Nested Data:**
     ```jinja2
-    hostname {{ router_name }}
     !
-    banner motd #{{ banner_message }}#
+    hostname {{ router.name }}
     !
-    interface Loopback{{ loopback_id }}
-     description Management Interface for Automation
-     ip address {{ loopback_ip }} {{ loopback_mask }}
+    {% for interface in router.interfaces %}
+    interface {{ interface.name }}
+     description {{ interface.description }}
+     ip address {{ interface.ip_address }} {{ interface.subnet_mask }}
+     {% if interface.is_trunk %}
+     switchport mode trunk
+     {% else %}
+     switchport mode access
+     {% endif %}
+     no shutdown
     !
+    {% endfor %}
+    !
+    {% if router.routing.ospf %}
+    router ospf {{ router.routing.ospf.process_id }}
+    {% for network in router.routing.ospf.networks %}
+     network {{ network.ip }} {{ network.wildcard }} area {{ network.area }}
+    {% endfor %}
+    !
+    {% endif %}
     end
     ```
+    *   This template loops through each `router` in the `routers` list (passed from YAML).
+    *   Inside each router, it loops through its `interfaces` list.
+    *   It uses an `if` condition to determine if an interface should be a trunk or access port.
+    *   It also checks if OSPF configuration exists for a router before attempting to configure it.
 
 ---
 
@@ -95,14 +156,14 @@ After generating the configuration, the next crucial step in IaC is to push it t
 
     1.  **Define Device Parameters:** Your Python script needs the device's connection details.
     2.  **Load Data:** Use Python's `PyYAML` library to load your `network_data.yaml` file into a Python dictionary.
-    3.  **Load Template:** Use Python's `Jinja2` library to load your `router_config.j2` template file.
+    3.  **Load Template:** Use Python's `Jinja2` library to load your `router_full_config.j2` template file.
     4.  **Render Template:** Use Jinja2 to render the template, passing the loaded YAML data. This produces the final CLI configuration as a string.
     5.  **Push Configuration:** Use Netmiko to connect to the device and send the rendered configuration.
 
-*   **Integrated Python Example Script (`deploy_router.py`):**
+*   **Integrated Python Example Script (`deploy_full_config.py`):**
 
     ```python
-    # deploy_router.py
+    # deploy_full_config.py
 
     import yaml # For loading YAML data
     from jinja2 import Environment, FileSystemLoader # For Jinja2 templating
@@ -115,7 +176,9 @@ After generating the configuration, the next crucial step in IaC is to push it t
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     # --- 2. Define Router Connection Information (REPLACE WITH YOUR ACTUAL LAB DETAILS) ---
-    ROUTER_INFO = {
+    # This dictionary holds the connection parameters for your Cisco IOS XE router.
+    # Ensure your router is reachable via SSH and has the correct credentials.
+    ROUTER_CONNECTION_INFO = {
         "device_type": "cisco_ios",
         "host": "YOUR_ROUTER_IP",        # <<< REPLACE THIS
         "username": "YOUR_USERNAME",     # <<< REPLACE THIS
@@ -127,38 +190,49 @@ After generating the configuration, the next crucial step in IaC is to push it t
     # --- 3. Define File Paths ---
     DATA_FILE = "network_data.yaml"
     TEMPLATE_DIR = "templates" # Directory where Jinja2 templates are stored
-    TEMPLATE_FILE = "hostname.j2" # The specific Jinja2 template to use
+    TEMPLATE_FILE = "router_full_config.j2" # The specific Jinja2 template to use
 
     # --- 4. Main Deployment Function ---
-    def deploy_configuration():
+    def deploy_full_configuration():
         """
-        Orchestrates the IaC deployment process:
-        1. Loads network data from YAML.
+        Orchestrates the IaC deployment process for a single router:
+        1. Loads network data for the specific router from YAML.
         2. Renders configuration using Jinja2.
         3. Pushes the generated configuration to the router via Netmiko.
         """
-        logging.info(f"\n--- Starting IaC Deployment Workflow ---")
+        logging.info(f"\n--- Starting IaC Deployment Workflow for {ROUTER_CONNECTION_INFO['host']} ---")
 
-        # Load network data from YAML file
+        # Load all network data from YAML file
         try:
             with open(DATA_FILE, 'r') as f:
-                network_data = yaml.safe_load(f)
+                all_network_data = yaml.safe_load(f)
             logging.info(f"Successfully loaded data from {DATA_FILE}.")
         except Exception as e:
             logging.error(f"Error loading network data from {DATA_FILE}: {e}")
+            return False
+
+        # Find the specific router's data from the loaded YAML
+        target_router_data = None
+        for router_entry in all_network_data.get('routers', []):
+            if router_entry.get('mgmt_ip') == ROUTER_CONNECTION_INFO['host']:
+                target_router_data = router_entry
+                break
+        
+        if not target_router_data:
+            logging.error(f"Router with IP {ROUTER_CONNECTION_INFO['host']} not found in {DATA_FILE}. Aborting.")
             return False
 
         # Set up Jinja2 environment to load templates from the 'templates' directory
         env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
         template = env.get_template(TEMPLATE_FILE)
         
-        # Render the template with the loaded network data
-        rendered_config = template.render(network_data)
-        logging.info(f"--- Rendered Configuration ---")
+        # Render the template with the specific router's data
+        rendered_config = template.render(router=target_router_data) # Pass the single router's data as 'router'
+        logging.info(f"--- Rendered Configuration for {target_router_data['name']} ---")
         logging.info(f"\n{rendered_config}") # Display the generated config
-        logging.info(f"----------------------------")
+        logging.info(f"------------------------------------")
 
-        # Netmiko's send_config_set expects a list of commands.
+        # Netmiko's send_config_set expects a list of configuration commands.
         # Split the rendered config string by lines and filter out empty ones.
         config_commands_list = [line for line in rendered_config.splitlines() if line.strip()]
 
@@ -166,11 +240,11 @@ After generating the configuration, the next crucial step in IaC is to push it t
             logging.error("Generated configuration is empty. Aborting deployment.")
             return False
 
-        # Push configuration via Netmiko
-        host = ROUTER_INFO.get('host')
+        # --- Push Configuration via Netmiko ---
+        host = ROUTER_CONNECTION_INFO.get('host')
         try:
             logging.info(f"Connecting to {host} via Netmiko...")
-            with ConnectHandler(**ROUTER_INFO) as net_connect:
+            with ConnectHandler(**ROUTER_CONNECTION_INFO) as net_connect:
                 logging.info(f"Connected to {host}. Pushing configuration...")
                 
                 # Use send_config_set to push the list of commands
@@ -182,32 +256,32 @@ After generating the configuration, the next crucial step in IaC is to push it t
         except (NetmikoTimeoutException, NetmikoAuthenticationException) as e:
             logging.error(f"Netmiko connection/authentication error to {host}: {e}")
             return False
-        except NetmikoException as e:
-            logging.error(f"Netmiko error during config push to {host}: {e}")
-            return False
         except Exception as e:
             logging.error(f"An unexpected error occurred during deployment to {host}: {e}")
             return False
 
-    # --- 5. Main Execution Block ---
-    if __name__ == "__main__":
-        print("\n=== Running IaC Deployment Script ===")
-        success = deploy_configuration()
-        if success:
-            print(f"\nDeployment to {ROUTER_INFO['host']} completed successfully!")
-            print("Please log in to your router and verify the new configuration.")
-        else:
-            print(f"\nDeployment to {ROUTER_INFO['host']} failed. Check logs for details.")
-        print("\n=== Script Finished ===")
+# --- 5. Main Execution Block ---
+if __name__ == "__main__":
+    print("\n=== Starting IaC Deployment Script ===")
+    
+    success = deploy_full_configuration()
+    
+    if success:
+        print(f"\nDeployment to {ROUTER_CONNECTION_INFO['host']} completed successfully!")
+        print("Please log in to your router and verify the new configuration.")
+    else:
+        print(f"\nDeployment to {ROUTER_CONNECTION_INFO['host']} failed. Check logs for details.")
+    
+    print("\n=== Script Finished ===")
     ```
 
 ---
 
-## 5. Version Control with Git: The Foundation of IaC
+## 6. Version Control with Git: The Foundation of IaC
 
 **Git** is a distributed version control system that tracks changes in any set of computer files. It is the cornerstone of IaC.
 
-### 5.1 Core Git Concepts and Commands
+### 6.1 Core Git Concepts and Commands
 
 Git manages your project's history by tracking changes to files. It operates on three main areas:
 *   **Working Directory:** Where you make changes to your files.
@@ -299,7 +373,7 @@ The practices from software development translate directly to DevNetOps:
     *   Committing changes to Git.
     *   Collaborating via branches and pull requests.
     *   Reviewing each other's network changes.
-*   **IaC Changes are Code Changes:** A change to a router's hostname in `network_data.yaml` is treated with the same rigor as a code change in an `application`.
+*   **IaC Changes are Code Changes:** A change to a router's hostname in `network_data.yaml` is treated with the same rigor as a code change in an application.
 *   **The Power of Rollback:** Because every network state is versioned in Git, reverting to a previous working configuration is as simple as a `git revert` command followed by a re-deployment. This is a game-changer for network stability and disaster recovery.
 
 ### 5.4 Essential Git Commands for Collaboration
@@ -371,9 +445,9 @@ Testing is paramount in IaC to ensure changes are correct and don't break the ne
 For fully automated IaC, you integrate all these tools into a CI/CD pipeline. **GitLab CI/CD** is a popular platform for this, but concepts apply to Jenkins, GitHub Actions, Azure DevOps, etc.
 
 *   **What is CI/CD?**
-    *   **Continuous Integration (CI):** Developers frequently merge their code changes into a central repository. Automated processes (builds, tests) run after each merge to quickly detect integration issues.
+    *   **Continuous Integration (CI):** Developers frequently merge code changes. Automated tests run to detect integration issues early.
     *   **Continuous Delivery (CD):** Changes passing CI are automatically prepared for release.
-    *   **Continuous Deployment:** Changes that pass all tests are automatically deployed to production after passing all tests.
+    *   **Continuous Deployment:** Changes are automatically deployed to production after passing all tests.
 
 *   **CI/CD Pipeline Stages (Typical Flow for Network IaC):**
     1.  **Source (Trigger):**
