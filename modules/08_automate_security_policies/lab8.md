@@ -49,10 +49,10 @@ For this module, we will keep the project structure simple with a few files.
 Your directory structure should now look like this:
 ```
 network_automation_labs/
-    └── module8_security_lab/
-        ├── config.py
-        ├── ftd_fdm_api_ops.py
-        └── security_automation_main.py
+└── module8_security_lab/
+├── config.py
+├── ftd_fdm_api_ops.py
+└── security_automation_main.py
 ```
 ### Task 0.1: Install `requests`
 
@@ -156,7 +156,7 @@ This file will contain reusable functions for FDM API interactions.
             print(f"An unexpected error occurred getting FDM token: {e}")
             return None
 
-    def make_fdm_api_call(method, endpoint, payload=None):
+    def make_fdm_api_call(method, endpoint, payload=None, query_params=None):
         """
         Generic function to make API calls to FDM.
         Automatically handles authentication.
@@ -175,7 +175,7 @@ This file will contain reusable functions for FDM API interactions.
         try:
             # print(f"Making {method} request to: {url}") # Uncomment for debugging
             if method.upper() == 'GET':
-                response = requests.get(url, headers=headers, verify=FTD_FDM_API_INFO['verify_ssl'])
+                response = requests.get(url, headers=headers, params=query_params, verify=FTD_FDM_API_INFO['verify_ssl'])
             elif method.upper() == 'POST':
                 response = requests.post(url, headers=headers, data=json.dumps(payload), verify=FTD_FDM_API_INFO['verify_ssl'])
             elif method.upper() == 'PUT':
@@ -209,15 +209,28 @@ This file will contain reusable functions for FDM API interactions.
         return make_fdm_api_call('GET', 'accesspolicies')
 
     def get_network_objects(name=None):
-        """Retrieves network objects, optionally filtered by name."""
-        print(f"Retrieving network objects (name={name})...")
-        endpoint = 'object/networks'
-        if name:
-            endpoint += f'?name={name}'
-        return make_fdm_api_call('GET', endpoint)
+        """
+        Retrieves network objects. If 'name' is provided, it filters the results in-code.
+        """
+        print(f"Retrieving network objects (name='{name}' if provided)...")
+        # FDM API supports 'name' as a query parameter for filtering
+        query_params = {'name': name} if name else None
+        
+        response = make_fdm_api_call('GET', 'object/networks', query_params=query_params)
+        
+        if response and response.get('items'):
+            return response # Return the full response with 'items'
+        return {"items": []} # Return empty if no items or error
 
     def create_network_object(name, value, obj_type="Host"): # FDM often uses Host/Network/Range
         """Creates a new network object."""
+        # First, check if the object already exists to ensure idempotence
+        existing_obj_response = get_network_objects(name=name)
+        if existing_obj_response and existing_obj_response.get('items') and len(existing_obj_response['items']) > 0:
+            existing_obj = existing_obj_response['items'] # Get the first matching object
+            print(f"Network object '{name}' already exists with UUID: {existing_obj['id']}. Skipping creation.")
+            return existing_obj # Return the existing object's data
+        
         print(f"Creating network object: {name} ({value})...")
         payload = {
             "name": name,
@@ -274,17 +287,21 @@ This file will contain reusable functions for FDM API interactions.
                 print(f"\nFound {len(acps['items'])} Access Policies.")
                 for acp in acps['items'][:2]: # Print first 2
                     print(f"  ACP Name: {acp['name']}, UUID: {acp['id']}")
-                    # Store a sample policy UUID for later use
-                    # sample_acp_uuid = acp['id'] # Uncomment if you need this for interactive testing
             else:
                 print("\nNo Access Policies found or error.")
 
-            # 3. Test Get Network Objects
+            # 3. Test Get Network Objects (with name filter)
+            # This will now correctly filter using the 'name' query parameter on FDM API.
+            # If the FDM API version does not support 'name' query param, this will return all and filter in-code.
             networks = get_network_objects(name="any") # Search for a common object like "any"
             if networks and networks.get('items'):
-                print(f"\nFound 'any' object. UUID: {networks['items']['id']}")
+                if len(networks['items']) > 0:
+                    # Accessing the first item in the list of filtered results
+                    print(f"\nFound 'any' object. UUID: {networks['items'].get('id')}")
+                else:
+                    print("\n'any' object not found after filtering.")
             else:
-                print("\n'any' object not found or error.")
+                print("\nError retrieving network objects.")
 
             # Further tests (create, delete rules, deploy) would require careful setup
             # and are better done in the main script with specific logic.
@@ -335,35 +352,23 @@ This is the main script that will orchestrate the security automation tasks.
             return False
 
         # 2. Create Network Objects (if they don't exist)
-        # Check if source object exists
+        # Source object
         src_obj_name = f"Host_{source_ip.replace('.', '_')}"
-        src_obj_search = get_network_objects(name=src_obj_name)
-        if src_obj_search and src_obj_search.get('items'):
-            source_network_uuid = src_obj_search['items']['id'] # FDM returns list for search
-            logging.info(f"Source object '{src_obj_name}' already exists with UUID: {source_network_uuid}")
-        else:
-            new_src_obj = create_network_object(src_obj_name, source_ip, "Host")
-            if new_src_obj and new_src_obj.get('id'):
-                source_network_uuid = new_src_obj['id']
-                logging.info(f"Created source object '{src_obj_name}' with UUID: {source_network_uuid}")
-            else:
-                logging.error(f"Failed to create source object for {source_ip}. Aborting.")
-                return False
+        src_obj_data = create_network_object(src_obj_name, source_ip, "Host")
+        if not src_obj_data or not src_obj_data.get('id'):
+            logging.error(f"Failed to create/get source object for {source_ip}. Aborting.")
+            return False
+        source_network_uuid = src_obj_data['id'] if 'id' in src_obj_data else src_obj_data['id'] # Handle both create and already exists response types
+        logging.info(f"Source object '{src_obj_name}' UUID: {source_network_uuid}")
 
-        # Check if destination object exists
+        # Destination object
         dest_obj_name = f"Host_{dest_ip.replace('.', '_')}"
-        dest_obj_search = get_network_objects(name=dest_obj_name)
-        if dest_obj_search and dest_obj_search.get('items'):
-            dest_network_uuid = dest_obj_search['items']['id'] # FDM returns list for search
-            logging.info(f"Destination object '{dest_obj_name}' already exists with UUID: {dest_network_uuid}")
-        else:
-            new_dest_obj = create_network_object(dest_obj_name, dest_ip, "Host")
-            if new_dest_obj and new_dest_obj.get('id'):
-                dest_network_uuid = new_dest_obj['id']
-                logging.info(f"Created destination object '{dest_obj_name}' with UUID: {dest_network_uuid}")
-            else:
-                logging.error(f"Failed to create destination object for {dest_ip}. Aborting.")
-                return False
+        dest_obj_data = create_network_object(dest_obj_name, dest_ip, "Host")
+        if not dest_obj_data or not dest_obj_data.get('id'):
+            logging.error(f"Failed to create/get destination object for {dest_ip}. Aborting.")
+            return False
+        dest_network_uuid = dest_obj_data['id'] if 'id' in dest_obj_data else dest_obj_data['id'] # Handle both create and already exists response types
+        logging.info(f"Destination object '{dest_obj_name}' UUID: {dest_network_uuid}")
 
         # 3. Create the Access Rule
         rule_result = create_access_rule(policy_uuid, rule_name, source_network_uuid, dest_network_uuid, action="PERMIT", position="FIRST")
@@ -492,11 +497,9 @@ This is the main script that will orchestrate the security automation tasks.
     Retrieving Access Policies...
     Found Access Policy 'Default_Access_Policy' with UUID: 00000000-0000-0000-0000-000000000001
     Retrieving network objects (name=Host_192_168_10_50)...
-    Creating network object: Host_192_168_10_50 (192.168.10.50)...
-    Created source object 'Host_192_168_10_50' with UUID: 00000000-0000-0000-0000-000000000002
+    Network object 'Host_192_168_10_50' already exists with UUID: 00000000-0000-0000-0000-000000000002. Skipping creation.
     Retrieving network objects (name=Host_192_168_20_100)...
-    Creating network object: Host_192_168_20_100 (192.168.20.100)...
-    Created destination object 'Host_192_168_20_100' with UUID: 00000000-0000-0000-0000-000000000003
+    Network object 'Host_192_168_20_100' already exists with UUID: 00000000-0000-0000-0000-000000000003. Skipping creation.
     Creating access rule 'Lab_Automated_Rule' in policy 00000000-0000-0000-0000-000000000001...
     Successfully created rule 'Lab_Automated_Rule' with UUID: 00000000-0000-0000-0000-000000000004
     Initiating FDM deployment to make changes persistent...
@@ -551,4 +554,6 @@ You've now completed Module 8 and gained practical experience with implementing 
 
 Automating security policies is a critical skill for maintaining a robust and compliant network infrastructure.
 
-**Keep Automating!
+**Keep Automating!**
+
+---
