@@ -506,12 +506,12 @@ Now, use the `get_device_info()` function to retrieve more detailed information 
 **Objective:** Apply concurrency concepts from Module 2 to manage multiple devices using Netmiko, leveraging `ThreadPoolExecutor` for concurrent connections.
 
 ### Task 3.1: Use `ThreadPoolExecutor` for Concurrent Processing
-```
-The sandbox lab has one IOS XE router and one IOS XR router. However SSH is not enabled on IOS XR router when the lab started. Please SSH to IOS XR router and issue the following command:
-crypto key generate rsa
-configure terminal
-ssh server v2
-commit
+The Cisco sandbox lab has one IOS XE router and one IOS XR router. However SSH is not enabled on IOS XR router when the lab started. Please SSH to IOS XR router and issue the following commands:
+```bash
+    crypto key generate rsa
+    configure terminal
+    ssh server v2
+    commit
 ```
 
 1.  Open `lab_multi_device.py` in your code editor.

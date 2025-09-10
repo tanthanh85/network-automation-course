@@ -44,12 +44,12 @@ Our console will be built using **Python Flask**, a lightweight web framework.
 | Web Browser | <---> | Flask Web App | <---> | Python Backend |
 | (User Interface) | | (Routes, Templates) | | (Netmiko, Requests,|
 +-------------------+ +-----------------------+ | sqlite3, Threading)|
-^ | |
-| v v
-+----------------------+-------------------+
-| Network Devices |
-| (Cisco IOS XE) |
-+-------------------+
+                            ^ | |
+                            | v v
+                    +----------------------+-------------------+
+                    | Network Devices |
+                    | (Cisco IOS XE) |
+                    +-------------------+
 
 ```
 ---
