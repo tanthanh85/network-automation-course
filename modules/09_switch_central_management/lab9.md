@@ -86,7 +86,7 @@ This file will store your switch connection details and a list of managed switch
     MANAGED_SWITCHES = [
         {
             "device_type": "cisco_ios", # Or 'cisco_nxos' if applicable
-            "host": "YOUR_SWITCH_IP_1", # e.g., 192.168.1.10
+            "host": "devnetsandboxiosxec9k.cisco.com", # e.g., 192.168.1.10
             "username": "YOUR_SWITCH_USERNAME",
             "password": "YOUR_SWITCH_PASSWORD",
             "secret": "YOUR_SWITCH_ENABLE_PASSWORD", # If your switch uses enable password
@@ -113,7 +113,7 @@ This file will contain reusable functions for switch operations using Netmiko.
     ```python
     # switch_ops.py
     from netmiko import ConnectHandler
-    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException
+    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoBaseException
     import logging
     import re # For regular expressions to parse output
 
@@ -128,7 +128,7 @@ This file will contain reusable functions for switch operations using Netmiko.
             net_connect = ConnectHandler(**device_info)
             logging.info(f"Successfully connected to {host}.")
             return net_connect
-        except (NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException) as e:
+        except (NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoBaseException) as e:
             logging.error(f"Connection error to {host}: {e}")
             return None
         except Exception as e:
@@ -264,6 +264,7 @@ This is the main Python script that will run the interactive management console.
     from switch_ops import get_switch_connection, get_vlan_brief, create_vlan, assign_port_to_vlan, get_interface_vlan_assignment
     from config import MANAGED_SWITCHES
     import logging
+    import time
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
