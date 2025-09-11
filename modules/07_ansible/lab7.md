@@ -49,17 +49,19 @@ For this module, we will create a dedicated project structure.
     touch playbook_hostname.yaml
     touch playbook_full_config.yaml
     touch python_ansible_deploy.py
+    touch playbook_loopback_ospf.yaml
     ```
 
 Your directory structure should now look like this:
 ```
 network_automation_labs/
 └── module7_ansible_lab/
-├── config.py
-├── inventory.yaml
-├── playbook_hostname.yaml
-├── playbook_full_config.yaml
-└── python_ansible_deploy.py
+    ├── config.py
+    ├── inventory.yaml
+    ├── playbook_hostname.yaml
+    ├── playbook_full_config.yaml
+    ├── playbook_loopback_ospf.yaml
+    └── python_ansible_deploy.py
 ```
 ### Task 0.1: Install Ansible and Netmiko
 
@@ -121,6 +123,37 @@ This file will define your network devices for Ansible.
           ansible_port: 22 # Explicitly define SSH port
     ```
 3.  Save `inventory.yaml`.
+
+
+### Task 0.4: Setting Environment Variables for Ansible Credentials
+-----------------------------------------------------
+
+Ansible can securely retrieve sensitive information like usernames and passwords from environment variables. This is a recommended practice to avoid hardcoding credentials directly in your playbooks or inventory files.
+
+You will need to set the following environment variables with your actual IOS XE router credentials:
+
+*   `ANSIBLE_USER`: Your IOS XE username.
+*   `ANSIBLE_PASSWORD`: Your IOS XE password.
+*   `ANSIBLE_ENABLE_PASS`: Your IOS XE enable (secret) password.
+
+How to set environment variables:
+
+For Linux/macOS (Bash/Zsh): Open your terminal and run the following commands. Replace `YOUR_IOSXE_USERNAME`, `YOUR_IOSXE_PASSWORD`, and `YOUR_IOSXE_ENABLE_PASSWORD` with your actual credentials.
+```bash
+export ANSIBLE_USER="YOUR_IOSXE_USERNAME"
+export ANSIBLE_PASSWORD="YOUR_IOSXE_PASSWORD"
+export ANSIBLE_ENABLE_PASS="YOUR_IOSXE_ENABLE_PASSWORD"
+```
+
+_Note: These variables will only be set for the current terminal session. If you open a new terminal, you will need to set them again. For persistent settings, you can add these lines to your shell's profile file (e.g., `~/.bashrc`, `~/.zshrc`)._
+
+For Windows (Command Prompt - CMD): Open Command Prompt and run:
+```cmd
+set ANSIBLE_USER=YOUR_IOSXE_USERNAME
+set ANSIBLE_PASSWORD=YOUR_IOSXE_PASSWORD
+set ANSIBLE_ENABLE_PASS=YOUR_IOSXE_ENABLE_PASSWORD
+```
+Note: These variables will only be set for the current CMD session.
 
 ---
 
