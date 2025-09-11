@@ -395,6 +395,135 @@ This file will define your network devices for Ansible.
     *   `show run | section ospf` (should show `router ospf 10` and `network 10.0.0.0 0.0.0.255 area 0`)
 
 ---
+### Lab 4: Automating with Ansible Loops
+------------------------------------
+
+**Objective:** Learn how to use Ansible loops to configure multiple similar network objects efficiently, specifically creating multiple loopback interfaces and adding them to OSPF.
+
+Ansible loops are a powerful feature that allows you to repeat a task multiple times, iterating over a list of items. This is incredibly useful for configuring repetitive elements like interfaces, VLANs, or routing entries. The `loop` keyword is the modern and preferred way to implement loops in Ansible playbooks. When using `loop`, each item in the list becomes available via the `item` variable within the task.
+
+### Task 4.1: Create Ansible Playbook for Loopback and OSPF Configuration
+
+In this task, you will create a new playbook that uses a loop to configure 10 new loopback interfaces (Loopback101 through Loopback110) with unique IP addresses (192.168.1.1/32 through 192.168.1.10/32). Subsequently, another loop will add these newly configured networks to OSPF process 1 in area 0.
+
+Open `playbook_loopback_ospf.yaml` in your code editor. Add the following YAML content:
+
+```yaml
+# playbook_loopback_ospf.yaml
+---
+- name: Configure multiple loopback interfaces and add to OSPF
+  hosts: all
+  gather_facts: false # No need to gather facts for this configuration task
+
+  vars:
+    # Define the OSPF process ID and area as requested
+    ospf_process_id: 1
+    ospf_area: 0
+    # Define a list of dictionaries for the loopback interfaces
+    # Each dictionary contains the interface ID and its IP address
+    loopback_interfaces:
+      - { id: 101, ip: "192.168.1.1" }
+      - { id: 102, ip: "192.168.1.2" }
+      - { id: 103, ip: "192.168.1.3" }
+      - { id: 104, ip: "192.168.1.4" }
+      - { id: 105, ip: "192.168.1.5" }
+      - { id: 106, ip: "192.168.1.6" }
+      - { id: 107, ip: "192.168.1.7" }
+      - { id: 108, ip: "192.168.1.8" }
+      - { id: 109, ip: "192.168.1.9" }
+      - { id: 110, ip: "192.168.1.10" }
+
+  tasks:
+    - name: Configure loopback interfaces with IP addresses
+      ios_config:
+        # The 'lines' parameter takes a list of configuration commands.
+        # 'item.id' and 'item.ip' refer to the current item in the loopback_interfaces list.
+        lines:
+          - "interface Loopback{{ item.id }}"
+          - "  ip address {{ item.ip }} 255.255.255.255" # /32 subnet mask for loopbacks
+        provider: "{{ lookup('vars', 'ansible_network_cli_connection') }}"
+        save_when: changed # Save configuration if any changes are made
+      loop: "{{ loopback_interfaces }}" # Iterate over the 'loopback_interfaces' list
+      loop_control:
+        label: "Loopback{{ item.id }}" # Provides more readable output during playbook execution
+
+    - name: Add loopback networks to OSPF process {{ ospf_process_id }} in area {{ ospf_area }}
+      ios_config:
+        # Configure OSPF by entering router ospf mode and adding network statements.
+        # The 'network' command uses a /32 wildcard mask (0.0.0.0) for loopbacks.
+        lines:
+          - "router ospf {{ ospf_process_id }}"
+          - "  network {{ item.ip }} 0.0.0.0 area {{ ospf_area }}"
+        provider: "{{ lookup('vars', 'ansible_network_cli_connection') }}"
+        save_when: changed # Save configuration if any changes are made
+      loop: "{{ loopback_interfaces }}" # Iterate over the same list of loopback interfaces
+      loop_control:
+        label: "OSPF network {{ item.ip }}" # Provides more readable output
+```
+Save `playbook_loopback_ospf.yaml`.
+
+Explanation of the Playbook:
+
+*   `vars` section: Defines `ospf_process_id`, `ospf_area`, and `loopback_interfaces`. The `loopback_interfaces` variable is a list of dictionaries, where each dictionary represents a single loopback interface and contains its `id` and `ip` address.
+*   `Configure loopback interfaces` task:
+    *   Uses the `ios_config` module to apply configuration to the Cisco IOS XE device.
+    *   The `lines` parameter dynamically constructs the interface and IP address commands using `{{ item.id }}` and `{{ item.ip }}`, which are populated from the current item in the `loopback_interfaces` list during each iteration.
+    *   `loop: "{{ loopback_interfaces }}"` tells Ansible to run this task once for each item in the `loopback_interfaces` list.
+    *   `loop_control: label:` makes the output during playbook execution more informative.
+*   `Add loopback networks to OSPF` task:
+    *   Similar to the previous task, it uses `ios_config` and `loop` to iterate through the `loopback_interfaces`.
+    *   It adds the `router ospf` command and then the `network` command for each loopback's IP address, using a `0.0.0.0` wildcard mask to advertise only the specific /32 host route, within OSPF process 1 and area 0.
+
+### Task 4.2: Run the Loopback and OSPF Configuration Playbook
+
+Ensure you have updated `config.py` with your real device details and set environment variables for credentials (as done in Task 1.2).
+
+Run the playbook from your `module7_ansible_lab` directory:
+```bash
+ansible-playbook -i inventory.yaml playbook_loopback_ospf.yaml
+```
+Expected Output (if successful):
+
+You will see output indicating that Ansible is configuring each loopback interface and adding each network statement to OSPF. The `changed` status should be true for each iteration if the configuration is new.
+```bash
+PLAY [Configure multiple loopback interfaces and add to OSPF] ******************
+
+TASK [Configure loopback interfaces with IP addresses] *************************
+changed: [YOUR_IOSXE_IP] => (item=Loopback101)
+changed: [YOUR_IOSXE_IP] => (item=Loopback102)
+...
+changed: [YOUR_IOSXE_IP] => (item=Loopback110)
+
+TASK [Add loopback networks to OSPF process 1 in area 0] ***********************
+changed: [YOUR_IOSXE_IP] => (item=OSPF network 192.168.1.1)
+changed: [YOUR_IOSXE_IP] => (item=OSPF network 192.168.1.2)
+...
+changed: [YOUR_IOSXE_IP] => (item=OSPF network 192.168.1.10)
+
+PLAY RECAP *********************************************************************
+YOUR_IOSXE_IP              : ok=2    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+Manual Verification:
+
+Log in to your IOS XE router via SSH/console and verify the configurations:
+
+1.  Verify Loopback Interfaces and IP Addresses:
+```bash
+show ip interface brief | include Loopback
+```
+You should see Loopback101 through Loopback110 listed with their assigned IP addresses.
+
+2. Verify OSPF Configuration for Loopbacks:
+```bash
+show run | section router ospf 1
+```
+You should see the router ospf 1 block, including network 192.168.1.1 0.0.0.0 area 0 up to network 192.168.1.10 0.0.0.0 area 0.
+
+3. Verify OSPF Neighbor Adjacencies (if applicable) and Interface Status:
+```bash
+show ip ospf interface brief
+```
+This command will show the OSPF status of all interfaces, including your new loopbacks.
 
 ## Conclusion
 
@@ -404,6 +533,7 @@ You've now completed Module 7 and gained valuable experience with Ansible! You c
 *   Automate basic device configuration using Ansible playbooks.
 *   Integrate Ansible playbooks into your Python scripts.
 *   Configure multiple services on a Cisco IOS XE router using Ansible.
+*   Leverage Ansible loops for efficient, repetitive network configurations.
 
 Ansible is an indispensable tool in the network automation landscape, complementing your Python scripting skills for scalable and declarative infrastructure management.
 
