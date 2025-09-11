@@ -65,11 +65,11 @@ network_automation_labs/
     ```bash
     cd module9_console_lab
     ```
-3.  Install the `netmiko` library:
+3.  Install the `netmiko` and `ntc-template` library:
     ```bash
-    pip install netmiko
+    pip install netmiko ntc-templates
     ```
-    *Expected Observation:* `netmiko` and its dependencies will be installed. You should see "Successfully installed..." messages.
+    *Expected Observation:* `netmiko`, `ntc-templates` and there dependencies will be installed. You should see "Successfully installed..." messages.
 
 ### Task 0.2: Populate `config.py`
 
@@ -115,7 +115,7 @@ This file will contain reusable functions for switch operations using Netmiko.
     from netmiko import ConnectHandler
     from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoBaseException
     import logging
-    import re # For regular expressions to parse output
+    from ntc_templates.parse import parse_output # Import ntc_templates for parsing
 
     # Configure logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -136,53 +136,48 @@ This file will contain reusable functions for switch operations using Netmiko.
             return None
 
     def get_vlan_brief(net_connect):
-        """Retrieves and parses 'show vlan brief' output."""
+        """Retrieves and parses 'show vlan brief' output using ntc_templates."""
         try:
             output = net_connect.send_command("show vlan brief")
-            vlans = []
-            # Regex to parse VLAN ID, Name, Status, and Ports
-            # Example line: 10   VLAN_DATA                        active    Fa0/1, Fa0/2
-            vlan_pattern = re.compile(r"(\d+)\s+([a-zA-Z0-9_-]+)\s+(active|act/unsup|suspended)\s*(.*)")
+            # Use ntc_templates to parse the output
+            # The template name for 'show vlan brief' on Cisco IOS is 'cisco_ios_show_vlan_brief'
+            parsed_output = parse_output(platform="cisco_ios", command="show vlan brief", data=output)
             
-            for line in output.splitlines():
-                match = vlan_pattern.match(line.strip())
-                if match:
-                    vlan_id = match.group(1)
-                    vlan_name = match.group(2)
-                    vlan_status = match.group(3)
-                    vlan_ports = [p.strip() for p in match.group(4).split(',') if p.strip()]
-                    vlans.append({
-                        "id": vlan_id,
-                        "name": vlan_name,
-                        "status": vlan_status,
-                        "ports": vlan_ports
-                    })
+            vlans = []
+            for vlan_data in parsed_output:
+                # Map ntc_templates keys to the structure expected by management_console.py
+                vlans.append({
+                    "id": vlan_data.get('vlan_id'),
+                    "name": vlan_data.get('name'),
+                    "status": vlan_data.get('status'),
+                    "ports": vlan_data.get('interfaces', []) # ntc_templates names it 'interfaces'
+                })
             return vlans
         except Exception as e:
             logging.error(f"Error getting VLAN brief: {e}")
             return []
 
     def get_interface_vlan_assignment(net_connect, interface_name):
-        """Retrieves and parses 'show interfaces <interface> switchport' output."""
+        """Retrieves and parses 'show interfaces <interface> switchport' output using ntc_templates."""
         try:
             output = net_connect.send_command(f"show interfaces {interface_name} switchport")
+            # Use ntc_templates to parse the output
+            # The template name for 'show interfaces switchport' on Cisco IOS is 'cisco_ios_show_interfaces_switchport'
+            parsed_output = parse_output(platform="cisco_ios", command="show interfaces switchport", data=output)
+            
             vlan_assignment = {}
+            if parsed_output:
+                # ntc_templates usually returns a list with one dictionary for this command
+                interface_data = parsed_output[0]
+                
+                # Map ntc_templates keys to the structure expected by management_console.py
+                if 'access_vlan' in interface_data:
+                    vlan_assignment["access_vlan"] = interface_data['access_vlan']
+                if 'administrative_mode' in interface_data:
+                    vlan_assignment["admin_mode"] = interface_data['administrative_mode']
+                if 'operational_mode' in interface_data:
+                    vlan_assignment["oper_mode"] = interface_data['operational_mode']
             
-            # Regex to find Access Mode VLAN
-            access_vlan_match = re.search(r"Access Mode VLAN:\s+(\d+)", output)
-            if access_vlan_match:
-                vlan_assignment["access_vlan"] = access_vlan_match.group(1)
-            
-            # Regex to find Administrative Mode
-            admin_mode_match = re.search(r"Administrative Mode:\s+(\w+)", output)
-            if admin_mode_match:
-                vlan_assignment["admin_mode"] = admin_mode_match.group(1)
-            
-            # Regex to find Operational Mode
-            oper_mode_match = re.search(r"Operational Mode:\s+(\w+)", output)
-            if oper_mode_match:
-                vlan_assignment["oper_mode"] = oper_mode_match.group(1)
-
             return vlan_assignment
         except Exception as e:
             logging.error(f"Error getting interface {interface_name} VLAN assignment: {e}")
@@ -221,7 +216,8 @@ This file will contain reusable functions for switch operations using Netmiko.
     if __name__ == '__main__':
         from config import MANAGED_SWITCHES
         if MANAGED_SWITCHES:
-            test_device = MANAGED_SWITCHES
+            # Use the first device in the list for testing
+            test_device = MANAGED_SWITCHES[0] 
             print(f"--- Testing switch_ops.py functions on {test_device['host']} ---")
             net_conn = get_switch_connection(test_device)
             if net_conn:
@@ -231,7 +227,7 @@ This file will contain reusable functions for switch operations using Netmiko.
                 for vlan in vlans:
                     print(f"VLAN ID: {vlan['id']}, Name: {vlan['name']}, Ports: {', '.join(vlan['ports'])}")
                 
-                # Test create_vlan
+                # Test create_vlan (ensure VLAN 999 doesn't conflict or clean up later)
                 print("\n--- Creating VLAN 999 ---")
                 create_vlan(net_conn, 999, "TEST_VLAN_999")
 
