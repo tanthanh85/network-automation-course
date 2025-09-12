@@ -766,7 +766,42 @@ You'll explore these in more detail in later modules and labs!
 
 ---
 
-## 10. Q&A and Next Steps
+## 10. Object-Oriented Programming (OOP) in Python
+-----------------------------------------------
+
+Object-Oriented Programming (OOP) is a programming paradigm that uses "objects" to design applications and computer programs. These objects are instances of "classes," which serve as blueprints for creating objects. OOP aims to increase the flexibility and maintainability of programs.
+
+### Core Concepts of OOP:
+
+1.  Classes: A blueprint or a template for creating objects. It defines a set of attributes (data) and methods (functions) that the objects created from the class will have.
+    *   _Example:_ A `NetworkDevice` class could define attributes like `hostname`, `ip_address`, `vendor`, and methods like `connect()`, `send_command()`.
+2.  Objects: An instance of a class. When a class is defined, no memory is allocated until an object is created from it.
+    *   _Example:_ `router1 = NetworkDevice("R1", "10.0.0.1", "Cisco")` creates an object `router1` from the `NetworkDevice` class.
+3.  Attributes: Variables that belong to an object. They represent the state or characteristics of the object.
+    *   _Example:_ `router1.hostname` would give "R1".
+4.  Methods: Functions that belong to an object. They define the behaviors or actions that an object can perform.
+    *   _Example:_ `router1.connect()` would initiate a connection to `router1`.
+5.  Encapsulation: The bundling of data (attributes) and methods that operate on the data into a single unit (the class). It also restricts direct access to some of an object's components, which is a means of preventing accidental or unauthorized tampering with the data.
+6.  Inheritance: A mechanism that allows a new class (subclass/child class) to inherit attributes and methods from an existing class (superclass/parent class). This promotes code reusability.
+    *   _Example:_ `IOSRouter` and `NXOSSwitch` could inherit from `NetworkDevice`, inheriting common connection methods but having their own specific configuration methods.
+7.  Polymorphism: The ability of objects of different classes to respond to the same method call in a way that is specific to their class.
+    *   _Example:_ Both an `IOSRouter` object and an `NXOSSwitch` object might have a `get_version()` method, but the underlying commands they send to retrieve the version might be different.
+
+### OOP in Network Automation Projects:
+
+OOP can be very powerful for large-scale network automation projects, especially when dealing with diverse device types or building complex frameworks. It allows you to:
+
+*   Model Network Devices: Represent devices as objects, making your code more intuitive and aligned with real-world network components.
+*   Abstract Complexity: Hide the low-level details of device interaction within methods, exposing a simpler interface to the automation scripts.
+*   Promote Reusability: Create base classes for common network device functionalities and extend them for specific vendors or device roles.
+*   Improve Maintainability: Changes to how a specific device type is managed can be confined to its class, minimizing impact on other parts of the code.
+
+### Note on OOP for This Course:
+
+While Object-Oriented Programming is a fundamental and powerful concept in Python, this introductory course will primarily focus on procedural and functional programming paradigms to keep the learning curve manageable and the examples straightforward. We will use Python's basic data structures (lists, dictionaries), control flow, and functions to build our automation scripts. Understanding OOP is valuable for building more complex, scalable, and maintainable automation frameworks in the future, but it is not a prerequisite for getting started with network automation. Learners are encouraged to explore OOP concepts in Python after completing this course if they wish to advance their programming skills for larger projects.
+
+
+## 11. Q&A and Next Steps
 
 *   **Questions?**
     *   This module covered a lot of ground. Don't worry if everything isn't perfectly clear yet. Practice is key!

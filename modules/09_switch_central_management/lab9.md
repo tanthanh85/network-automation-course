@@ -53,12 +53,12 @@ For this module, we will keep the project structure simple with a few files.
 Your directory structure should now look like this:
 ```
 network_automation_labs/
-└── module9_console_lab/
-├── config.py
-├── switch_ops.py
-└── management_console.py
+    └── module9_console_lab/
+        ├── config.py
+        ├── switch_ops.py
+        └── management_console.py
 ```
-### Task 0.1: Install `netmiko`
+### Task 0.1: Install `netmiko` and `ntc-templates`
 
 1.  Ensure your `na_env` virtual environment is active (from `network_automation_labs` directory).
 2.  Navigate into your `module9_console_lab` directory:
@@ -69,7 +69,7 @@ network_automation_labs/
     ```bash
     pip install netmiko ntc-templates
     ```
-    *Expected Observation:* `netmiko`, `ntc-templates` and there dependencies will be installed. You should see "Successfully installed..." messages.
+    *Expected Observation:* `netmiko`, `ntc-templates` and their dependencies will be installed. You should see "Successfully installed..." messages.
 
 ### Task 0.2: Populate `config.py`
 
