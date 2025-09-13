@@ -96,32 +96,101 @@ Before you can use Netmiko, you need to install it and understand how to tell it
 Once connected, Netmiko provides methods to send commands and push configurations.
 
 *   **3.1 `send_command()`: Executing `show` Commands**
-    *   Used to send a single command to the device and capture its output. This is perfect for collecting information (e.g., `show version`, `show ip interface brief`).
-    *   It returns the command output as a string.
-    *   **Arguments:**
-        *   `command_string`: The command to send.
-        *   `use_textfsm`: (Optional) If `True` (and `textfsm` is installed: `pip install textfsm`), Netmiko will try to parse the output into structured data (a list of dictionaries), which is much easier to work with than raw text.
-        *   `delay_factor`: (Optional) Multiplier for default delays (useful for slow devices).
-        *   `strip_prompt`: (Optional) Removes the command prompt from the output (default: `True`).
-        *   `strip_command`: (Optional) Removes the command itself from the output (default: `True`).
+    The `send_command()` method is designed to execute a single command on the connected device and retrieve its output. It's primarily used for "show" commands to gather operational status and configuration details.
 
-    **Example:**
+    A key feature of `send_command()` is its ability to integrate with TextFSM for intelligent parsing of command output into structured data. This transforms raw, human-readable text into easily consumable Python data structures (like lists of dictionaries), making automation tasks significantly more efficient and reliable.
+
+    How TextFSM Works: TextFSM is a Python module that uses predefined templates to parse semi-structured text output into structured data. For common network commands (e.g., `show ip interface brief`, `show version`), Netmiko often ships with built-in TextFSM templates or can utilize community-contributed ones. When `use_textfsm=True`, Netmiko attempts to match the command output against an appropriate TextFSM template and returns the parsed data.
+
+    Key Arguments:
+
+    *   `command_string` (required): The exact command to be sent to the device (e.g., `"show version"`).
+    *   `use_textfsm` (optional, default: `False`): If set to `True`, Netmiko will attempt to parse the command output using TextFSM templates. Note: TextFSM must be installed (`pip install textfsm`). When `True`, the return type changes from a string to a list of dictionaries (or a dictionary for single-entry outputs).
+    *   `delay_factor` (optional): A multiplier applied to Netmiko's internal delays, useful for slower devices or complex commands that take longer to execute.
+    *   `strip_prompt` (optional, default: `True`): Removes the device's command prompt from the output.
+    *   `strip_command` (optional, default: `True`): Removes the command itself from the output, returning only the command's response.
+
+    Example: Retrieving and Parsing Interface Information
+
+    Let's illustrate how `send_command()` works, particularly highlighting the benefit of `use_textfsm`.
+
     ```python
-    # Assuming net_connect is an active connection
-    output = net_connect.send_command("show ip interface brief")
-    print(output)
+    import os
+    from netmiko import ConnectHandler
+    from getpass import getpass
 
-    # Example with TextFSM (requires 'pip install textfsm')
-    # output_parsed = net_connect.send_command("show version", use_textfsm=True)
-    # print(output_parsed['hostname']) # Access parsed data
+    # Device details (replace with your actual device info)
+    device = {
+        "device_type": "cisco_ios",
+        "host": os.getenv("NETMIKO_HOSTNAME"), # Using environment variables for security
+        "username": os.getenv("NETMIKO_USERNAME"),
+        "password": os.getenv("NETMIKO_PASSWORD"),
+        "secret": os.getenv("NETMIKO_SECRET", getpass("Enter enable password: ")), # Optional enable password
+    }
+
+    net_connect = None
+    try:
+        # Establish the SSH connection
+        print(f"Connecting to {device['host']}...")
+        net_connect = ConnectHandler(**device)
+        print("Connection successful!")
+
+        # --- Example 1: Raw Output (without TextFSM) ---
+        print("\n--- Raw Output: show ip interface brief ---")
+        raw_output = net_connect.send_command("show ip interface brief")
+        print(raw_output)
+        print(f"Type of raw_output: {type(raw_output)}")
+
+        # --- Example 2: Parsed Output (with TextFSM) ---
+        print("\n--- Parsed Output (TextFSM): show ip interface brief ---")
+        # Requires 'pip install textfsm'
+        parsed_output = net_connect.send_command("show ip interface brief", use_textfsm=True)
+        
+        # The parsed output is typically a list of dictionaries
+        print(parsed_output)
+        print(f"Type of parsed_output: {type(parsed_output)}")
+
+        # Accessing structured data is much easier
+        print("\n--- Accessing Specific Parsed Data ---")
+        for interface_data in parsed_output:
+            print(f"Interface: {interface_data['intf']}, IP Address: {interface_data['ipaddr']}, Status: {interface_data['status']}")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        if net_connect:
+            net_connect.disconnect()
+            print("Disconnected from device.")
     ```
-    **Expected Output (example):**
-    ```
+    Expected Output (Illustrative):
+    ```bash
+    Connecting to 192.168.1.10...
+    Connection successful!
+
+    --- Raw Output: show ip interface brief ---
     Interface              IP-Address      OK? Method Status        Protocol
     GigabitEthernet0/0     192.168.1.1     YES manual up            up
     Loopback0              1.1.1.1         YES manual up            up
     Vlan1                  unassigned      YES unset  down          down
+    Type of raw_output: <class 'str'>
+
+    --- Parsed Output (TextFSM): show ip interface brief ---
+    [
+        {'intf': 'GigabitEthernet0/0', 'ipaddr': '192.168.1.1', 'ok': 'YES', 'method': 'manual', 'status': 'up', 'proto': 'up'},
+        {'intf': 'Loopback0', 'ipaddr': '1.1.1.1', 'ok': 'YES', 'method': 'manual', 'status': 'up', 'proto': 'up'},
+        {'intf': 'Vlan1', 'ipaddr': 'unassigned', 'ok': 'YES', 'method': 'unset', 'status': 'down', 'proto': 'down'}
+    ]
+    Type of parsed_output: <class 'list'>
+
+    --- Accessing Specific Parsed Data ---
+    Interface: GigabitEthernet0/0, IP Address: 192.168.1.1, Status: up
+    Interface: Loopback0, IP Address: 1.1.1.1, Status: up
+    Interface: Vlan1, IP Address: unassigned, Status: down
+
+    Disconnected from device.
     ```
+    As demonstrated, use_textfsm=True transforms the raw string output into a list of dictionaries, where each dictionary represents a row of data with clearly defined keys (e.g., intf, ipaddr, status). This structured format is vastly superior for programmatic access, filtering, and further automation logic compared to parsing raw text with regular expressions.
+
 
 *   **3.2 `send_config_set()`: Pushing Configuration Changes**
     *   Used to send a list of configuration commands to the device. Netmiko handles entering and exiting configuration mode.
