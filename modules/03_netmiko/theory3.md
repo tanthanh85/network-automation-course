@@ -96,6 +96,7 @@ Before you can use Netmiko, you need to install it and understand how to tell it
 Once connected, Netmiko provides methods to send commands and push configurations.
 
 *   **3.1 `send_command()`: Executing `show` Commands**
+    
     The `send_command()` method is designed to execute a single command on the connected device and retrieve its output. It's primarily used for "show" commands to gather operational status and configuration details.
 
     A key feature of `send_command()` is its ability to integrate with TextFSM for intelligent parsing of command output into structured data. This transforms raw, human-readable text into easily consumable Python data structures (like lists of dictionaries), making automation tasks significantly more efficient and reliable.
