@@ -69,6 +69,7 @@ Let's start exploring APIs and Flask!
 
 
 Lab Setup: Project Structure
+----------------------------
 
 For this module, we will structure our project for better organization.
 
