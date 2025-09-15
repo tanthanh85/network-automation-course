@@ -112,7 +112,7 @@ network_automation_labs/
     └── static/
         └── style.css
 ```
-Task 0.1: Populate config.py
+### Task 0.1: Populate config.py
 
 This file will store your IOS XE RESTCONF and NETCONF connection details.
 
