@@ -534,16 +534,16 @@ Examples for this Lab (Manual Derivation):
 NETCONF uses XML-based RPCs (Remote Procedure Calls) to interact with devices. To retrieve specific data, you construct an XML filter that mirrors the YANG data model you want.
 
 General NETCONF XML Filter Structure:
-    ```xml
-    <top-level-container xmlns="<YANG_NAMESPACE_URI>">
-        <nested-container>
-            <list-entry>
-                <key-leaf>value</key-leaf> <!-- To filter a specific list item -->
-                <data-leaf/> <!-- Request this specific leaf -->
-            </list-entry>
-        </nested-container>
-    </top-level-container>
-    ```
+```xml
+<top-level-container xmlns="<YANG_NAMESPACE_URI>">
+    <nested-container>
+        <list-entry>
+            <key-leaf>value</key-leaf> <!-- To filter a specific list item -->
+            <data-leaf/> <!-- Request this specific leaf -->
+        </list-entry>
+    </nested-container>
+</top-level-container>
+```
 Key points for XML filters:
 
 *   Namespaces (`xmlns`): Each top-level element (and sometimes nested ones) must specify its YANG namespace URI. This URI is defined within the YANG model itself (e.g., `namespace "http://cisco.com/ns/yang/Cisco-IOS-XE-process-cpu-oper";`).
