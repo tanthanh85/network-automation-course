@@ -75,16 +75,19 @@ For this module, we will structure our project for better organization.
 
 
 Navigate to your main network_automation_labs directory.
+
 Create a new directory for this module's labs:
     ```bash
     mkdir module5_api_lab
     cd module5_api_lab
     ```
+
 Inside module5_api_lab, create the following directories:
     ```bash
     mkdir templates
     mkdir static
     ```
+
 Inside module5_api_lab, create the following empty Python files:
     ```bash
     touch __init__.py
@@ -92,15 +95,19 @@ Inside module5_api_lab, create the following empty Python files:
     touch iosxe_api_functions.py
     touch app.py
     ```
+
 Inside the templates directory, create an empty HTML file:
+    
     ```bash
     touch templates/index.html
     ```
 Inside the static directory, create an empty CSS file:
+    
     ```bash
     touch static/style.css
     ```
 Your directory structure should now look like this:
+
 ```
 network_automation_labs/
 └── module5_api_lab/
