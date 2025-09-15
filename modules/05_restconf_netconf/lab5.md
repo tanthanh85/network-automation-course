@@ -433,7 +433,7 @@ Now, execute the `iosxe_api_functions.py` script. Its `if __name__ == '__main__'
     python iosxe_api_functions.py
     ```
 Expected Output (console - partial, focusing on capabilities):
-    ```
+    ```console
     --- Testing iosxe_api_functions.py (Capabilities, RESTCONF & NETCONF) ---
     Note: This will attempt to connect to the IOS XE router defined in config.py.
 
@@ -1134,7 +1134,7 @@ Ensure your `na_env` virtual environment is active and you are in the `module5_a
 Expected Output (if dummy IOS XE info is not replaced or APIs are not enabled): You will see various error messages indicating connection refused or authentication failures for both RESTCONF and NETCONF attempts. This is normal if the router details are incorrect or the APIs are not properly configured.
 
 Expected Output (if you replace with real, reachable IOS XE info and both APIs are enabled):
-```
+```console
 --- Testing iosxe_api_functions.py (Capabilities, RESTCONF & NETCONF) ---
 Note: This will attempt to connect to the IOS XE router defined in config.py.
 ... (Output from capability discovery) ...
