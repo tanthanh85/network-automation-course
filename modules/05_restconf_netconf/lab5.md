@@ -77,35 +77,31 @@ For this module, we will structure our project for better organization.
 Navigate to your main network_automation_labs directory.
 
 Create a new directory for this module's labs:
-    ```bash
-    mkdir module5_api_lab
-    cd module5_api_lab
-    ```
-
+```bash
+mkdir module5_api_lab
+cd module5_api_lab
+```
 Inside module5_api_lab, create the following directories:
-    ```bash
-    mkdir templates
-    mkdir static
-    ```
-
+```bash
+mkdir templates
+mkdir static
+```
 Inside module5_api_lab, create the following empty Python files:
-    ```bash
-    touch __init__.py
-    touch config.py
-    touch iosxe_api_functions.py
-    touch app.py
-    ```
-
-Inside the templates directory, create an empty HTML file:
-    
-    ```bash
-    touch templates/index.html
-    ```
+```bash
+touch __init__.py
+touch config.py
+touch iosxe_api_functions.py
+touch app.py
+```
+Inside the templates directory, create an empty HTML file:    
+```bash
+touch templates/index.html
+```
 Inside the static directory, create an empty CSS file:
     
-    ```bash
-    touch static/style.css
-    ```
+```bash
+touch static/style.css
+```
 Your directory structure should now look like this:
 
 ```
@@ -427,48 +423,48 @@ Save `iosxe_api_functions.py`.
 ### Task 0.4: Install Libraries
 
 Ensure your `na_env` virtual environment is active (from `network_automation_labs` directory). Navigate into your `module5_api_lab` directory:
-    ```bash
-    cd module5_api_lab
-    ```
+```bash
+cd module5_api_lab
+```
 Install the necessary libraries:
-    ```bash
-    pip install requests ncclient xmltodict flask
-    ```
+```bash
+pip install requests ncclient xmltodict flask
+```
 ### Task 0.5: Run Standalone Script to Discover Capabilities
 
 Now, execute the `iosxe_api_functions.py` script. Its `if __name__ == '__main__':` block is configured to first run the capability discovery functions and then the data retrieval functions.
-    ```bash
-    python iosxe_api_functions.py
-    ```
+```bash
+python iosxe_api_functions.py
+```
 Expected Output (console - partial, focusing on capabilities):
-    ```console
-    --- Testing iosxe_api_functions.py (Capabilities, RESTCONF & NETCONF) ---
-    Note: This will attempt to connect to the IOS XE router defined in config.py.
+```console
+--- Testing iosxe_api_functions.py (Capabilities, RESTCONF & NETCONF) ---
+Note: This will attempt to connect to the IOS XE router defined in config.py.
 
-    --- Discovering Capabilities ---
-    Connecting to YOUR_IOSXE_IP:443 for RESTCONF capabilities discovery...
-    RESTCONF Supported Modules:
-    - Cisco-IOS-XE-acl
-    - Cisco-IOS-XE-aaa
-    - Cisco-IOS-XE-process-cpu-oper  # Look for this one!
-    - Cisco-IOS-XE-memory-oper     # Look for this one!
-    ... (many more modules) ...
-    - ietf-interfaces              # Look for this one!
-    - ietf-restconf-monitoring
-    ...
+--- Discovering Capabilities ---
+Connecting to YOUR_IOSXE_IP:443 for RESTCONF capabilities discovery...
+RESTCONF Supported Modules:
+- Cisco-IOS-XE-acl
+- Cisco-IOS-XE-aaa
+- Cisco-IOS-XE-process-cpu-oper  # Look for this one!
+- Cisco-IOS-XE-memory-oper     # Look for this one!
+... (many more modules) ...
+- ietf-interfaces              # Look for this one!
+- ietf-restconf-monitoring
+...
 
-    Connecting to YOUR_IOSXE_IP:830 for NETCONF capabilities discovery...
-    Successfully connected to YOUR_IOSXE_IP for NETCONF capabilities. Retrieving capabilities.
-    NETCONF Supported Modules:
-    - Cisco-IOS-XE-acl
-    - Cisco-IOS-XE-aaa
-    - Cisco-IOS-XE-process-cpu-oper  # Look for this one!
-    - Cisco-IOS-XE-memory-oper     # Look for this one!
-    ... (many more modules) ...
-    - ietf-interfaces              # Look for this one!
-    - ietf-netconf
-    ...
-    ```
+Connecting to YOUR_IOSXE_IP:830 for NETCONF capabilities discovery...
+Successfully connected to YOUR_IOSXE_IP for NETCONF capabilities. Retrieving capabilities.
+NETCONF Supported Modules:
+- Cisco-IOS-XE-acl
+- Cisco-IOS-XE-aaa
+- Cisco-IOS-XE-process-cpu-oper  # Look for this one!
+- Cisco-IOS-XE-memory-oper     # Look for this one!
+... (many more modules) ...
+- ietf-interfaces              # Look for this one!
+- ietf-netconf
+...
+```
 _Note: The list of modules will be extensive and vary slightly based on your IOS XE version. The important part is to confirm that modules like `Cisco-IOS-XE-process-cpu-oper`, `Cisco-IOS-XE-memory-oper`, and `ietf-interfaces` are present, as these are used in the data retrieval tasks._
 
 * * *
@@ -1136,9 +1132,9 @@ Objective: Verify that your API functions can retrieve the specific data points 
 After completing Lab 0 and verifying capability discovery, proceed to run the full standalone test. This will execute the data retrieval functions for CPU, Memory, and GigabitEthernet1 utilization.
 
 Ensure your `na_env` virtual environment is active and you are in the `module5_api_lab` directory.
-    ```bash
-    python iosxe_api_functions.py
-    ```
+```bash
+python iosxe_api_functions.py
+```
 Expected Output (if dummy IOS XE info is not replaced or APIs are not enabled): You will see various error messages indicating connection refused or authentication failures for both RESTCONF and NETCONF attempts. This is normal if the router details are incorrect or the APIs are not properly configured.
 
 Expected Output (if you replace with real, reachable IOS XE info and both APIs are enabled):
