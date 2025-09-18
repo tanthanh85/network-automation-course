@@ -31,16 +31,16 @@ IaC is the practice of managing and provisioning infrastructure (like networks, 
 
 ---
 
-## 2. Describing Complex Configuration Data with Nested YAML
+## 2. Describing Complex Configuration Data by YAML
 
 For IaC, you need a way to describe your network configuration in a structured, human-readable format. **YAML (YAML Ain't Markup Language)** is a popular choice because it excels at representing complex, nested data.
 
-*   **Why Nested YAML?**
+*   **Simple or Nested YAML?**
     *   Simple flat YAML works for single parameters (like a hostname).
     *   For real-world network devices, configurations involve multiple interfaces, VLANs, routing protocols, and services, each with many parameters. Nested YAML allows you to logically group and organize this complex data.
     *   It maps directly to Python dictionaries and lists, making it easy to process.
 
-*   **Example Nested YAML Data for Multiple Routers with Interfaces and OSPF:**
+*   **Example Nested YAML Data for Multiple Routers with Interfaces and OSPF routing:**
     ```yaml
     # network_data.yaml
     routers:
@@ -92,7 +92,7 @@ For IaC, you need a way to describe your network configuration in a structured, 
 
 ---
 
-## 3. Generating Configuration with Jinja2 Templates (Advanced)
+## 3. Generating Configuration with Jinja2 Templates
 
 Once you have your complex configuration data (in nested YAML), you need to turn it into actual device commands. **Jinja2** is perfectly suited for this, especially with its looping and conditional capabilities.
 
@@ -134,7 +134,7 @@ Once you have your complex configuration data (in nested YAML), you need to turn
 
 ## 4. Configuration Push: Deploying the Desired State with Netmiko
 
-After generating the configuration, the next crucial step in IaC is to push it to the network devices. This is the "Deploy" stage of your pipeline. We will use **Netmiko** for this, as you've learned in Module 3.
+After generating the configuration, the next crucial step in IaC is to push it to the network devices by SSH (e.g. Netmiko), Restconf, Netconf, Cisco NSO,... This is the "Deploy" stage of your pipeline. We will use **Netmiko** for this, as you've learned in Module 3.
 
 *   **Why Netmiko for IaC (in this context)?**
     *   **Simplicity:** It's straightforward to use for pushing CLI configurations.
