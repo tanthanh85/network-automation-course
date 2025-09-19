@@ -91,26 +91,26 @@ Your directory structure should now look like this:
 ```
 network_automation_labs/
 └── module10_router_console/
-├── init.py
-├── config.py
-├── app.py
-├── database/
-│ ├── init.py
-│ └── db_ops.py
-├── network_functions/
-│ ├── init.py
-│ ├── netmiko_ops.py
-│ └── restconf_ops.py
-├── templates/
-│ ├── index.html
-│ ├── inventory.html
-│ ├── router_actions.html
-│ ├── monitor_interface.html
-│ └── logs_display.html
-├── static/
-│ └── style.css
-├── backups/ <-- New directory
-└── logs/ <-- New directory
+    ├── init.py
+    ├── config.py
+    ├── app.py
+    ├── database/
+    │   ├── init.py
+    │   └── db_ops.py
+    ├── network_functions/
+    │   ├── init.py
+    │   ├── netmiko_ops.py
+    │   └── restconf_ops.py
+    ├── templates/
+    │   ├── index.html
+    │   ├── inventory.html
+    │   ├── router_actions.html
+    │   ├── monitor_interface.html
+    │   └── logs_display.html
+    ├── static/
+    │   └── style.css
+    ├── backups/ <-- New directory
+    └── logs/ <-- New directory
 ```
 ### Task 0.1: Install Required Libraries
 
