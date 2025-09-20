@@ -14,9 +14,10 @@ In previous modules, you've learned to automate individual tasks on single or mu
 **What is a Centralized Console?**
 It's a web-based (or sometimes CLI-based) application that allows network administrators to:
 *   Manage an inventory of network devices.
-*   Perform common operational tasks (e.g., reboot, backup, collect logs).
+*   Perform common operational tasks (e.g., reboot, backup, collect logs,...).
 *   Monitor device status and performance.
 *   Receive automated alerts.
+*   Trigger external API calls (Webex, Slack, Zalo...)
 
 **Why build a Python Flask-based Console?**
 *   **Unified Interface:** A single pane of glass for multiple tasks.
@@ -28,12 +29,12 @@ It's a web-based (or sometimes CLI-based) application that allows network admini
 
 ---
 
-## 2. Console Architecture Overview (Python Flask)
+## 2. Console Architecture Overview
 
-Our console will be built using **Python Flask**, a lightweight web framework.
+Our console for this course will be built using **Python Flask**, a lightweight web framework.
 
 *   **Flask Application:** The core Python script that acts as a web server.
-*   **Routes:** Specific URLs (e.g., `/`, `/reboot`, `/backup`) that trigger Python functions when accessed by a web browser.
+*   **Routes:** Specific URLs (e.g., `/`, `/reboot`, `/backup`,...) that trigger Python functions when accessed by a web browser.
 *   **HTML Templates:** Flask uses Jinja2 (which you've seen in Module 6) to render dynamic HTML pages. These define the layout and display data fetched by the Python backend.
 *   **Static Files:** CSS for styling, JavaScript for interactive elements.
 *   **Backend Logic:** Python functions (using Netmiko, `requests`, `sqlite3`) to perform network operations, manage inventory, and process data.
@@ -54,9 +55,9 @@ Our console will be built using **Python Flask**, a lightweight web framework.
 ```
 ---
 
-## 3. Inventory Management (using SQLite)
+## 3. Inventory Management
 
-A centralized console needs a robust way to store and manage information about the network devices it controls.
+A centralized console needs a robust way to store and manage information about the network devices it controls. In this course, we will be storing the network inventory in SQLite.
 
 *   **Why SQLite?**
     *   **File-based Database:** SQLite is a self-contained, serverless, zero-configuration, transactional SQL database engine. It stores data in a single `.db` file, making it easy to set up and manage for smaller applications.
@@ -72,7 +73,7 @@ A centralized console needs a robust way to store and manage information about t
 
 ---
 
-## 4. Router Control: Automating Operations
+## 4. Router Control - Automating Operations
 
 We'll leverage Netmiko (from Module 3) for CLI-based operations.
 
