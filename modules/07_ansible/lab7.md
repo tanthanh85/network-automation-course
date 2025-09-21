@@ -107,7 +107,7 @@ This file will define your network devices for Ansible.
     # inventory.yaml
     all:
       hosts:
-        YOUR_IOSXE_IP: # Replace with your router's IP
+        router1:
           ansible_host: YOUR_IOSXE_IP # Redundant but good for clarity
           # Using environment variables for credentials is more secure.
           # Ansible will look for ANSIBLE_USER, ANSIBLE_PASSWORD, ANSIBLE_ENABLE_PASS
@@ -180,7 +180,6 @@ Note: These variables will only be set for the current CMD session.
           ios_config:
             lines:
               - hostname {{ new_hostname }} # Use the variable
-            provider: "{{ lookup('vars', 'ansible_network_cli_connection') }}" # Use connection details from inventory
             save_when: changed # Save config if changes are made
           register: hostname_result # Store task result for inspection
           
@@ -210,12 +209,12 @@ Note: These variables will only be set for the current CMD session.
     changed: [YOUR_IOSXE_IP] => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python"}, "changed": true, "commands": ["hostname Ansible-Managed-Router"], "diff": [...], "invocation": {...}, "stderr": "", "stderr_lines": [], "stdout": "configure terminal\nhostname Ansible-Managed-Router\nend\n", "stdout_lines": ["configure terminal", "hostname Ansible-Managed-Router", "end"]}
 
     TASK [Print hostname change result] ********************************************
-    ok: [YOUR_IOSXE_IP] => {
-        "msg": "Hostname configuration result: {'changed': True, 'stdout': 'configure terminal\\nhostname Ansible-Managed-Router\\nend\\n', ...}"
+    ok: [router1] => {
+        "msg": "Hostname configuration result: {'changed': False, 'failed': False}"
     }
 
     PLAY RECAP *********************************************************************
-    YOUR_IOSXE_IP              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    router1              : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
     ```
     *Expected Output (if failed, e.g., connection/auth error):*
     ```
@@ -361,41 +360,53 @@ Note: These variables will only be set for the current CMD session.
 2.  Add the following YAML content:
     ```yaml
     # playbook_full_config.yaml
-    ---
     - name: Configure Router with Hostname, NTP, and OSPF
-      hosts: all
+      hosts: router1
       gather_facts: false
       
       vars:
-        router_hostname: "Full-Config-Router"
+        router_hostname: "OSPF-Router"
         ntp_server_ip: "10.0.0.254"
-        ospf_process_id: 10
-        ospf_network: "10.0.0.0"
-        ospf_wildcard: "0.0.0.255"
-        ospf_area: 0
+        process_id: "10"
 
       tasks:
         - name: Set router hostname
-          ios_config:
+          cisco.ios.ios_config:
             lines:
               - hostname {{ router_hostname }}
-            provider: "{{ lookup('vars', 'ansible_network_cli_connection') }}"
             save_when: changed
 
         - name: Configure NTP server
-          ios_config:
+          cisco.ios.ios_config:
             lines:
               - ntp server {{ ntp_server_ip }}
-            provider: "{{ lookup('vars', 'ansible_network_cli_connection') }}"
             save_when: changed
 
-        - name: Configure OSPF
-          ios_config:
-            lines:
-              - router ospf {{ ospf_process_id }}
-              -   network {{ ospf_network }} {{ ospf_wildcard }} area {{ ospf_area }}
-            provider: "{{ lookup('vars', 'ansible_network_cli_connection') }}"
-            save_when: changed
+        - name: Configure OSPF on GigabitEthernet2
+          cisco.ios.ios_ospf_interfaces:
+            config:
+              - name: GigabitEthernet2
+                address_family:
+                  - afi: ipv4
+                    process:
+                      id: "{{ process_id }}"
+                      area_id: 30
+                    adjacency: true
+                    bfd: true
+                    cost:
+                      interface_cost: 5
+                    dead_interval:
+                      time: 5
+                    demand_circuit:
+                      ignore: true
+                    network:
+                      broadcast: true
+                    priority: 25
+                    resync_timeout: 10
+                    shutdown: true
+                    ttl_security:
+                      hops: 50
+            state: merged
     ```
 3.  Save `playbook_full_config.yaml`.
 
