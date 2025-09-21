@@ -198,6 +198,94 @@ Example: Conditional based on task results
     msg: "GigabitEthernet1 is down on {{ inventory_hostname }}!"
   when: "'down' in interface_status_output.stdout[0]"
 ```
+### 2.6 Common Used Ansible Syntaxes
+--------------------------------
+
+Beyond modules and basic playbook structure, several common syntaxes and features are frequently used to build robust and dynamic Ansible playbooks.
+
+### 2.6.1 Variables (`vars`, `{{ var_name }}`)
+
+Variables are placeholders for values that can change. They make playbooks reusable and easier to maintain.
+
+*   Definition:
+    *   In `vars` section of a playbook, play, or task.
+    *   In separate variable files (`group_vars/`, `host_vars/`).
+    *   Passed via command line (`-e "key=value"`).
+*   Usage: Accessed using Jinja2 templating syntax: `{{ var_name }}`.
+
+Example:
+```yaml
+- name: Configure device with dynamic values
+  hosts: my_devices
+  vars:
+    device_hostname: "MyRouter-{{ inventory_hostname }}"
+    loopback_ip: "192.168.2.{{ ansible_loopback_id }}" # Example using a hypothetical fact
+  tasks:
+    - name: Set hostname
+      cisco.ios.ios_config:
+        lines:
+          - "hostname {{ device_hostname }}"
+```
+### 2.6.2 Jinja2 Templating
+
+Ansible uses the Jinja2 templating engine for processing variables and expressions. This allows for dynamic content generation within playbooks, templates, and conditional statements.
+
+*   Syntax: `{{ variable_name }}` for variables, `{% expression %}` for control structures (like `if`, `for`).
+*   Filters: Jinja2 provides filters to transform data (e.g., `| upper`, `| default('fallback')`).
+
+Example:
+```yaml
+- name: Create a configuration file from a template
+  ansible.builtin.template:
+    src: router_config.j2
+    dest: /tmp/{{ inventory_hostname }}_config.txt
+```
+Where router_config.j2 might contain:
+```jinja2
+hostname {{ device_hostname | upper }}
+ip address {{ loopback_ip }} 255.255.255.255
+{% if ntp_server_ip is defined %}
+ntp server {{ ntp_server_ip }}
+{% endif %}
+```
+### 2.6.3 Lists and Dictionaries
+
+YAML, the language for playbooks, natively supports lists and dictionaries, which are fundamental for organizing data and iterating with loops.
+
+*   Lists: Ordered collections of items. Used for `loop` iterations.
+    ```yaml
+    my_list:
+    - item1
+    - item2
+    ```
+*   Dictionaries: Key-value pairs. Used for structured data, often within lists for complex loops.
+    ```yaml
+    my_list:
+        - item1
+        - item2
+    ```
+*   Dictionaries: Key-value pairs. Used for structured data, often within lists for complex loops.
+    ```yaml
+    my_dict:
+        key1: value1
+        key2: value2
+    ```
+### 2.7.4 register and debug
+These are crucial for troubleshooting and understanding playbook execution.
+
+*   `register`: Captures the output of a task into a variable. This variable can then be used in subsequent tasks, conditionals, or for debugging.
+```yaml
+    - name: Get running configuration
+    cisco.ios.ios_command:
+        commands: "show running-config"
+    register: running_config_output
+```
+*   `debug`: Prints messages or the contents of variables to the console during playbook execution. Invaluable for verifying data and task results.
+    ```yaml
+      - name: Display running config
+        ansible.builtin.debug:
+            var: running_config_output.stdout_lines
+    ```
 
 ---
 
