@@ -597,9 +597,9 @@ This file will contain RESTCONF-specific operations for monitoring.
 
         # Test get_interface_stats_restconf (requires RESTCONF enabled on router)
         if interfaces:
-            print("\nTesting get_interface_stats_restconf for first interface...")
-            # Ensure interfaces list is not empty before accessing
-            first_interface = interfaces if interfaces else "GigabitEthernet1" 
+            print("\nTesting get_interface_stats_restconf for first interface GigabitEthernet1...")
+            
+            first_interface = "GigabitEthernet1" 
             interface_stats = get_interface_stats_restconf(test_router_info, first_interface)
             if interface_stats:
                 print(f"Stats for {first_interface}:", interface_stats)
