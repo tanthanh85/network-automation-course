@@ -54,13 +54,12 @@ For this module, we will create a dedicated project structure for our Flask appl
     mkdir network_functions
     mkdir templates
     mkdir static
-    mkdir backups # For config backups
-    mkdir logs # For downloaded logs
+    mkdir backups
+    mkdir logs
     ```
 4.  **Inside `module10_router_console`, create the following empty Python files:**
     ```bash
     touch __init__.py
-    touch config.py
     touch app.py
     ```
 5.  **Inside the `database` directory, create the following empty Python files:**
@@ -92,7 +91,6 @@ Your directory structure should now look like this:
 network_automation_labs/
 └── module10_router_console/
     ├── init.py
-    ├── config.py
     ├── app.py
     ├── database/
     │   ├── init.py
@@ -109,8 +107,8 @@ network_automation_labs/
     │   └── logs_display.html
     ├── static/
     │   └── style.css
-    ├── backups/ <-- New directory
-    └── logs/ <-- New directory
+    ├── backups/
+    └── logs/
 ```
 ### Task 0.1: Install Required Libraries
 
@@ -125,41 +123,7 @@ network_automation_labs/
     ```
     *Expected Observation:* Libraries and their dependencies will be installed.
 
-### Task 0.2: Populate `config.py`
-
-This file will store your router's connection details and paths for the database and directories.
-
-1.  Open `config.py` in your code editor.
-2.  Add the following Python code. **REPLACE THE DUMMY VALUES WITH YOUR ACTUAL LAB IOS XE ROUTER DETAILS!**
-    ```python
-    # config.py
-
-    # --- IOS XE Router Information (REPLACE WITH YOUR ACTUAL LAB DETAILS) ---
-    # This router should be reachable via SSH and RESTCONF.
-    # We'll use this as a template for new inventory entries.
-    DEFAULT_ROUTER_INFO = {
-        "device_type": "cisco_ios", # For Netmiko
-        "host": "YOUR_ROUTER_IP", # e.g., 10.10.20.40
-        "username": "YOUR_ROUTER_USERNAME",
-        "password": "YOUR_ROUTER_PASSWORD",
-        "secret": "YOUR_ROUTER_ENABLE_PASSWORD", # For Netmiko enable mode
-        "port": 22, # Default SSH port for Netmiko
-        "restconf_port": 443, # Default HTTPS port for RESTCONF
-        "verify_ssl": False # Set to True in production if you have proper CA certificates
-    }
-
-    # SQLite Database file path
-    DB_FILE = "database/inventory.db" # Database file inside 'database' folder
-
-    # Directory to store configuration backups
-    BACKUP_DIR = "backups"
-
-    # Directory to store logs
-    LOGS_DIR = "logs"
-    ```
-3.  Save `config.py`.
-
-### Task 0.3: Populate `database/db_ops.py`
+### Task 0.2: Populate `database/db_ops.py`
 
 This file will handle all SQLite database operations for the inventory.
 
@@ -170,7 +134,19 @@ This file will handle all SQLite database operations for the inventory.
     import sqlite3
     import logging
     import os
-    from ..config import DB_FILE # Import DB_FILE from parent config
+    
+    DB_FILE = "database/inventory.db"
+
+    DEFAULT_ROUTER_INFO = {
+        "device_type": "cisco_ios", # For Netmiko
+        "host": "10.10.200.148", # e.g., 10.10.20.40
+        "username": "developer",
+        "password": "abcd",
+        "secret": "abcd", # For Netmiko enable mode
+        "port": 22, # Default SSH port for Netmiko
+        "restconf_port": 443, # Default HTTPS port for RESTCONF
+        "verify_ssl": False # Set to True in production if you have proper CA certificates
+    }
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -276,7 +252,7 @@ This file will handle all SQLite database operations for the inventory.
 
     # Standalone test for functions (only runs when this file is executed directly)
     if __name__ == '__main__':
-        from ..config import DEFAULT_ROUTER_INFO # Import from parent config
+        
         print("--- Testing db_ops.py functions ---")
         
         test_router_name = "TestRouterDB"
@@ -307,7 +283,7 @@ This file will handle all SQLite database operations for the inventory.
     ```
 3.  Save `database/db_ops.py`.
 
-### Task 0.4: Populate `network_functions/netmiko_ops.py`
+### Task 0.3: Populate `network_functions/netmiko_ops.py`
 
 This file will contain Netmiko-specific operations.
 
@@ -320,7 +296,24 @@ This file will contain Netmiko-specific operations.
     import datetime
     from netmiko import ConnectHandler
     from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
-    from ..config import BACKUP_DIR, LOGS_DIR # Import from parent config
+    # Directory to store configuration backups
+    BACKUP_DIR = "backups"
+
+    # Directory to store logs
+    LOGS_DIR = "logs"
+
+    DB_FILE = "database/inventory.db"
+
+    DEFAULT_ROUTER_INFO = {
+        "device_type": "cisco_ios", # For Netmiko
+        "host": "10.10.200.148", # e.g., 10.10.20.40
+        "username": "developer",
+        "password": "abcd",
+        "secret": "abcd", # For Netmiko enable mode
+        "port": 22, # Default SSH port for Netmiko
+        "restconf_port": 443, # Default HTTPS port for RESTCONF
+        "verify_ssl": False # Set to True in production if you have proper CA certificates
+    }
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -425,7 +418,7 @@ This file will contain Netmiko-specific operations.
 
     # Standalone test for functions (only runs when this file is executed directly)
     if __name__ == '__main__':
-        from ..config import DEFAULT_ROUTER_INFO # Import from parent config
+        
         print("--- Testing netmiko_ops.py functions ---")
         
         # Ensure backup/logs directories exist for testing
@@ -462,7 +455,7 @@ This file will contain Netmiko-specific operations.
     ```
 3.  Save `network_functions/netmiko_ops.py`.
 
-### Task 0.5: Populate `network_functions/restconf_ops.py`
+### Task 0.4: Populate `network_functions/restconf_ops.py`
 
 This file will contain RESTCONF-specific operations for monitoring.
 
@@ -477,6 +470,18 @@ This file will contain RESTCONF-specific operations for monitoring.
     # No need to import BACKUP_DIR, LOGS_DIR here, as they are not used in this module.
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    DB_FILE = "database/inventory.db"
+
+    DEFAULT_ROUTER_INFO = {
+        "device_type": "cisco_ios", # For Netmiko
+        "host": "10.10.200.148", # e.g., 10.10.20.40
+        "username": "developer",
+        "password": "abcd",
+        "secret": "abcd", # For Netmiko enable mode
+        "port": 22, # Default SSH port for Netmiko
+        "restconf_port": 443, # Default HTTPS port for RESTCONF
+        "verify_ssl": False # Set to True in production if you have proper CA certificates
+    }
 
     def get_restconf_data(router_info, path):
         """
@@ -576,7 +581,7 @@ This file will contain RESTCONF-specific operations for monitoring.
 
     # Standalone test for functions (only runs when this file is executed directly)
     if __name__ == '__main__':
-        from ..config import DEFAULT_ROUTER_INFO # Import from parent config
+        
         print("--- Testing restconf_ops.py functions ---")
         
         test_router_info = DEFAULT_ROUTER_INFO.copy()
@@ -607,7 +612,7 @@ This file will contain RESTCONF-specific operations for monitoring.
     ```
 3.  Save `network_functions/restconf_ops.py`.
 
-### Task 0.6: Populate HTML Templates
+### Task 0.5: Populate HTML Templates
 
 These files define the structure and content of your web pages.
 
@@ -926,7 +931,7 @@ These files define the structure and content of your web pages.
     ```
 15. Save `templates/monitor_interface.html`.
 
-### Task 0.7: Populate `static/style.css`
+### Task 0.6: Populate `static/style.css`
 
 This file defines the styling for your web dashboard.
 
@@ -1078,7 +1083,7 @@ This file defines the styling for your web dashboard.
     ```
 3.  Save `static/style.css`.
 
-### Task 0.8: Populate `app.py`
+### Task 0.7: Populate `app.py`
 
 This is the main Flask application file that will bring everything together.
 
@@ -1325,22 +1330,22 @@ This is the main Flask application file that will bring everything together.
         ```
 4.  **Run the Flask application:**
     ```bash
-    flask run --host=0.0.0.0 --port=5000 --debug
+    flask run --host=0.0.0.0 --port=5001 --debug
     ```
     *Expected Output (console):*
     ```
      * Debug mode: on
-     * Running on http://0.0.0.0:5000
+     * Running on http://0.0.0.0:5001
     Press CTRL+C to quit
      * Restarting with stat
     Press CTRL+C to quit
     ```
-    *(Note the `Running on http://0.0.0.0:5000` line, confirming it's running correctly.)*
-5.  **Open your web browser** and navigate to `http://127.0.0.1:5000` (or `http://localhost:5000`).
+    *(Note the `Running on http://0.0.0.0:5001` line, confirming it's running correctly.)*
+5.  **Open your web browser** and navigate to `http://127.0.0.1:5001` (or `http://localhost:5001`).
 
 ### Task 1.2: Add a Router to Inventory
 
-1.  In your web browser, navigate to the **"Inventory Management"** link (or go directly to `http://127.0.0.1:5000/inventory`).
+1.  In your web browser, navigate to the **"Inventory Management"** link (or go directly to `http://127.0.0.1:5001/inventory`).
 2.  Fill out the "Add New Router" form. Use the information from `config.py` (your actual lab router details).
     *   **Name:** `MyLabRouter` (or any name you like)
     *   **Host:** `YOUR_ROUTER_IP`
@@ -1372,7 +1377,7 @@ This is the main Flask application file that will bring everything together.
 
 ### Task 2.1: Backup Configuration
 
-1.  In your web browser, navigate to the **"Router Actions"** link (or go directly to `http://127.0.0.1:5000/actions`).
+1.  In your web browser, navigate to the **"Router Actions"** link (or go directly to `http://127.0.0.1:5001/actions`).
 2.  Select the checkbox next to your router's name.
 3.  Click **"Backup Config Selected"**.
     *Expected Web Output:* A green "Backup initiated for MyLabRouter in background. Check 'backups' folder." message.
@@ -1404,7 +1409,7 @@ This is the main Flask application file that will bring everything together.
 
 ### Task 3.1: Select Interfaces to Monitor
 
-1.  In your web browser, navigate to the **"Monitor Interfaces"** link (or go directly to `http://127.0.0.1:5000/monitor`).
+1.  In your web browser, navigate to the **"Monitor Interfaces"** link (or go directly to `http://127.0.0.1:5001/monitor`).
 2.  You should see your router listed. Select the checkboxes next to one or more interfaces you wish to monitor (e.g., `GigabitEthernet1`).
 3.  Click **"Update Monitored Interfaces"**.
     *Expected Web Output:* The page will refresh, and a new table titled "Live Interface Utilization" will appear, showing data for your selected interfaces. The page will automatically refresh every 10 seconds.
