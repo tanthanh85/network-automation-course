@@ -253,39 +253,39 @@ ntp server {{ ntp_server_ip }}
 YAML, the language for playbooks, natively supports lists and dictionaries, which are fundamental for organizing data and iterating with loops.
 
 *   Lists: Ordered collections of items. Used for `loop` iterations.
-    ```yaml
-    my_list:
+```yaml
+my_list:
+- item1
+- item2
+```
+*   Dictionaries: Key-value pairs. Used for structured data, often within lists for complex loops.
+```yaml
+my_list:
     - item1
     - item2
-    ```
+```
 *   Dictionaries: Key-value pairs. Used for structured data, often within lists for complex loops.
-    ```yaml
-    my_list:
-        - item1
-        - item2
-    ```
-*   Dictionaries: Key-value pairs. Used for structured data, often within lists for complex loops.
-    ```yaml
-    my_dict:
-        key1: value1
-        key2: value2
-    ```
+```yaml
+my_dict:
+    key1: value1
+    key2: value2
+```
 ### 2.7.4 register and debug
 These are crucial for troubleshooting and understanding playbook execution.
 
 *   `register`: Captures the output of a task into a variable. This variable can then be used in subsequent tasks, conditionals, or for debugging.
 ```yaml
-    - name: Get running configuration
-    cisco.ios.ios_command:
-        commands: "show running-config"
-    register: running_config_output
+- name: Get running configuration
+cisco.ios.ios_command:
+    commands: "show running-config"
+register: running_config_output
 ```
 *   `debug`: Prints messages or the contents of variables to the console during playbook execution. Invaluable for verifying data and task results.
-    ```yaml
-      - name: Display running config
-        ansible.builtin.debug:
-            var: running_config_output.stdout_lines
-    ```
+```yaml
+    - name: Display running config
+    ansible.builtin.debug:
+        var: running_config_output.stdout_lines
+```
 
 ---
 
