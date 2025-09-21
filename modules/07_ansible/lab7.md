@@ -410,7 +410,7 @@ Note: These variables will only be set for the current CMD session.
     ```
 3.  Save `playbook_hostname_ntp_ospf_config.yaml`.
 
-### Task 3.2: Run the Full Configuration Playbook
+### Task 3.2: Run Complex Playbook
 
 1.  **Ensure you have updated `config.py` with your real device details and set environment variables for credentials.**
 2.  **Run the playbook** from your `module7_ansible_lab` directory:
@@ -419,19 +419,20 @@ Note: These variables will only be set for the current CMD session.
     ```
     *Expected Output (if successful):*
     ```
-    PLAY [Configure Router with Hostname, NTP, and OSPF] ***************************
+    PLAY [Configure Router with Hostname, NTP, and OSPF] ****************************************
 
-    TASK [Set router hostname] *****************************************************
-    changed: [YOUR_IOSXE_IP] => {"changed": true, "commands": ["hostname Full-Config-Router"], ...}
+    TASK [Set router hostname] ******************************************************************
+    [WARNING]: ansible-pylibssh not installed, falling back to paramiko
+    ok: [router1]
 
-    TASK [Configure NTP server] ****************************************************
-    changed: [YOUR_IOSXE_IP] => {"changed": true, "commands": ["ntp server 10.0.0.254"], ...}
+    TASK [Configure NTP server] *****************************************************************
+    ok: [router1]
 
-    TASK [Configure OSPF] **********************************************************
-    changed: [YOUR_IOSXE_IP] => {"changed": true, "commands": ["router ospf 10", "network 10.0.0.0 0.0.0.255 area 0"], ...}
+    TASK [Configure OSPF on GigabitEthernet2] ***************************************************
+    ok: [router1]
 
-    PLAY RECAP *********************************************************************
-    YOUR_IOSXE_IP              : ok=3    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    PLAY RECAP **********************************************************************************
+    router1                    : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0     
     ```
 3.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify the configurations:
     *   `show hostname` (should be `OSPF-Router`)
