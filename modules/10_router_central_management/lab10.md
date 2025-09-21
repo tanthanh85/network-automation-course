@@ -533,11 +533,11 @@ This file will contain RESTCONF-specific operations for monitoring.
 
     def get_interface_list(router_info):
         """Queries and returns a list of interface names from IOS XE via RESTCONF."""
-        path = "ietf-interfaces:interfaces-state/interface"
+        path = "ietf-interfaces:interfaces"
         data = get_restconf_data(router_info, path)
         interfaces = []
         if data:
-            iface_list = data.get('ietf-interfaces:interfaces-state', {}).get('interface', [])
+            iface_list = data.get('ietf-interfaces:interfaces', {}).get('interface', [])
             for iface in iface_list:
                 name = iface.get('name')
                 if name:
@@ -561,7 +561,7 @@ This file will contain RESTCONF-specific operations for monitoring.
             # Let's assume the API returns the specific interface object directly if queried by name.
             
             stats = data.get('ietf-interfaces:statistics', {})
-            oper_status_data = get_restconf_data(router_info, f"ietf-interfaces:interfaces/interface={interface_name}/oper-status")
+            oper_status_data = get_restconf_data(router_info, f"ietf-interfaces:interfaces-state/interface={interface_name}/oper-status")
             oper_status = oper_status_data.get('ietf-interfaces:oper-status') if oper_status_data else "unknown"
 
             return {
@@ -571,7 +571,7 @@ This file will contain RESTCONF-specific operations for monitoring.
             }
         
         # If data fetching failed, try to get just oper-status
-        oper_status_path = f"ietf-interfaces:interfaces/interface={interface_name}/oper-status"
+        oper_status_path = f"ietf-interfaces:interfaces-state/interface={interface_name}/oper-status"
         oper_status_data = get_restconf_data(router_info, oper_status_path)
         if oper_status_data:
             status = oper_status_data.get('ietf-interfaces:oper-status')
