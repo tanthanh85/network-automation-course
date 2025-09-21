@@ -1101,7 +1101,11 @@ This is the main Flask application file that will bring everything together.
     from .database.db_ops import load_inventory, add_router_to_inventory, delete_router_from_inventory, get_router_by_name
     from .network_functions.netmiko_ops import reboot_router, backup_config, get_show_logging
     from .network_functions.restconf_ops import get_interface_list, get_interface_stats_restconf
-    from .config import DEFAULT_ROUTER_INFO, BACKUP_DIR, LOGS_DIR
+    # Directory to store configuration backups
+    BACKUP_DIR = "backups"
+
+    # Directory to store logs
+    LOGS_DIR = "logs"
 
     app = Flask(__name__)
     app.secret_key = 'supersecretkey' # Needed for flash messages. CHANGE THIS IN PRODUCTION!
