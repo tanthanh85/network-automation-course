@@ -1,0 +1,19 @@
+# inventory.yaml
+all:
+  hosts:
+    router1: # Replace with your router's IP
+      ansible_host: 10.10.20.48 # Redundant but good for clarity
+      # Using environment variables for credentials is more secure.
+      # Ansible will look for ANSIBLE_USER, ANSIBLE_PASSWORD, ANSIBLE_ENABLE_PASS
+      # in the environment where ansible-playbook is run.
+      # Fallback to dummy values if env vars are not set (for testing purposes).
+      ansible_user: "{{ lookup('env', 'ANSIBLE_USER') | default('dummy_user') }}"
+      ansible_password: "{{ lookup('env', 'ANSIBLE_PASSWORD') | default('dummy_password') }}"
+      ansible_become: yes # Use 'enable' mode for configuration
+      ansible_become_method: enable
+      ansible_become_pass: "{{ lookup('env', 'ANSIBLE_ENABLE_PASS') | default('dummy_enable') }}"
+      ansible_network_os: cisco.ios.ios
+      ansible_connection: network_cli # Use network_cli connection plugin
+      ansible_port: 22 # Explicitly define SSH port
+      # ansible_user: "developer"
+      # nsible_password:  "C1sco12345"

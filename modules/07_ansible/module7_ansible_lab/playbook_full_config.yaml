@@ -1,0 +1,50 @@
+# playbook_full_config.yaml
+---
+- name: Configure Router with Hostname, NTP, and OSPF
+  hosts: router1
+  gather_facts: false
+  
+  vars:
+    router_hostname: "OSPF-Router"
+    ntp_server_ip: "10.0.0.254"
+    process_id: "10"
+
+  tasks:
+    - name: Set router hostname
+      cisco.ios.ios_config:
+        lines:
+          - hostname {{ router_hostname }}
+        save_when: changed
+
+    - name: Configure NTP server
+      cisco.ios.ios_config:
+        lines:
+          - ntp server {{ ntp_server_ip }}
+        save_when: changed
+
+    - name: Configure OSPF on GigabitEthernet2
+      cisco.ios.ios_ospf_interfaces:
+        config:
+          - name: GigabitEthernet2
+            address_family:
+              - afi: ipv4
+                process:
+                  id: "{{ process_id }}"
+                  area_id: 30
+                adjacency: true
+                bfd: true
+                cost:
+                  interface_cost: 5
+                dead_interval:
+                  time: 5
+                demand_circuit:
+                  ignore: true
+                network:
+                  broadcast: true
+                priority: 25
+                resync_timeout: 10
+                shutdown: true
+                ttl_security:
+                  hops: 50
+        state: merged
+              
