@@ -411,10 +411,6 @@ Ansible is a powerful, agentless automation engine that simplifies configuration
 *   Ansible Core: Agentless automation engine using Inventory, Modules, and Playbooks (YAML).
 *   IaC Big Picture: Ansible is the engine that applies the desired state defined in Git.
 *   Dynamic Automation: Leverage loops (`loop` keyword) for repetitive tasks and conditionals (`when` clause) for intelligent, state-aware execution.
-*   Precise Configuration with `ios_config`:
-    *   `parents`: Essential for applying commands within specific hierarchical configuration modes (e.g., `interface`, `router ospf`).
-    *   `save_when`: Controls when configuration changes are saved to startup (default `changed` is recommended).
-    *   `state`: Defines the desired configuration state (`present`, `absent`, `merged`, `replaced`) for idempotent operations.
 *   Flexible Playbook Syntax:
     *   Variables (`vars`, `{{ var_name }}`): Make playbooks reusable and maintainable.
     *   Jinja2 Templating: Enables dynamic content generation and powerful data manipulation.
