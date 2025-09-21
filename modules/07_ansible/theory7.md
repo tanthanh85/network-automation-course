@@ -134,6 +134,71 @@ Roles provide a standardized way to organize related playbooks, variables, templ
 *   **Structure:** A role is a directory with a predefined structure (e.g., `tasks/`, `vars/`, `templates/`, `handlers/`).
 *   **Usage:** You can apply a role to hosts in a playbook, and Ansible automatically finds the relevant files within the role.
 
+
+### 2.5 Advanced Playbook Control: Loops and Conditionals
+
+Ansible playbooks are declarative, but they also offer powerful control flow mechanisms like loops and conditionals to handle dynamic data and execute tasks selectively.
+
+### 2.5.1 Loops in Ansible
+
+Loops allow you to repeat a task multiple times, applying different input values each time. This is incredibly useful for configuring multiple interfaces, users, VLANs, or any repetitive configuration block.
+
+Modern Loop Syntax (`loop` keyword): The `loop` keyword is the preferred and most flexible way to implement loops in Ansible. It can iterate over lists, dictionaries, sequences, and even the results of other tasks.
+
+Example: Configuring Multiple Loopback Interfaces (as seen in the previous lab)
+```yaml
+- name: Configure multiple loopback interfaces with IP addresses
+  cisco.ios.ios_config:
+    parents: "interface Loopback{{ item.id }}"
+    lines:
+      - "ip address {{ item.ip }} 255.255.255.255"
+      - "no shutdown"
+  loop: "{{ loopback_interfaces }}" # Iterates over the list defined in 'vars'
+  loop_control:
+    label: "Loopback{{ item.id }}" # Customizes the output during playbook execution
+```
+In this example:
+
+*   `loop: "{{ loopback_interfaces }}"` tells Ansible to iterate over the `loopback_interfaces` list.
+*   During each iteration, the current item from the list is accessible via the special `item` variable.
+*   `item.id` and `item.ip` are used to access the keys within each dictionary in the `loopback_interfaces` list.
+*   `loop_control.label` provides more descriptive output in the terminal, making it easier to track which specific item is being processed.
+
+### 2.5.2 Conditionals in Ansible
+
+Conditionals allow you to execute tasks only when certain conditions are met. This is essential for creating intelligent and adaptive playbooks that can respond to different network states or requirements. The primary conditional keyword is `when`.
+
+The `when` Clause: The `when` clause takes a Jinja2 expression. If the expression evaluates to `True`, the task is executed; otherwise, it's skipped.
+
+Example: Apply configuration only if a variable is defined
+```yaml
+- name: Configure NTP server if ntp_server_ip is defined
+  cisco.ios.ios_config:
+    lines:
+      - "ntp server {{ ntp_server_ip }}"
+  when: ntp_server_ip is defined and ntp_server_ip != ""
+```
+Example: Apply configuration based on device hostname (using facts)
+```yaml
+- name: Set specific banner for router1
+  cisco.ios.ios_config:
+    lines:
+      - "banner login ^CUnauthorized access prohibited^C"
+  when: ansible_hostname == "router1" # Assumes facts were gathered or set
+```
+Example: Conditional based on task results
+```yaml
+- name: Check if interface GigabitEthernet1 is up
+  cisco.ios.ios_command:
+    commands: "show interface GigabitEthernet1 | include protocol"
+  register: interface_status_output
+
+- name: Send alert if interface is down
+  debug:
+    msg: "GigabitEthernet1 is down on {{ inventory_hostname }}!"
+  when: "'down' in interface_status_output.stdout[0]"
+```
+
 ---
 
 ## 3. Ansible in the IaC
