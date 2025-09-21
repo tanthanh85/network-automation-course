@@ -415,8 +415,6 @@ Ansible is a powerful, agentless automation engine that simplifies configuration
     *   Variables (`vars`, `{{ var_name }}`): Make playbooks reusable and maintainable.
     *   Jinja2 Templating: Enables dynamic content generation and powerful data manipulation.
     *   `register` and `debug`: Critical for capturing task output, troubleshooting, and verifying playbook execution.
-    *   `delegate_to` and `run_once`: Control task execution location and frequency for advanced orchestration.
-    *   `ignore_errors`: Allows tasks to proceed even if a non-critical error occurs (use with caution).
 *   Ansible vs. Terraform: Ansible for config management/orchestration; Terraform for provisioning/lifecycle management. Often complementary.
 *   Ansible vs. Python (Netmiko): Ansible is higher-level (orchestrator); Python/Netmiko is lower-level (granular control). Often used together.
 *   Workflows Automated: Configuration management, basic provisioning, operational tasks, orchestration.
