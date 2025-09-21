@@ -1319,22 +1319,11 @@ This is the main Flask application file that will bring everything together.
     ```bash
     cd module10_router_console
     ```
-3.  **Set the `FLASK_APP` environment variable.** This tells Flask where your application is located.
-    *   **Linux/macOS:**
-        ```bash
-        export FLASK_APP=app.py
-        ```
-    *   **Windows (Command Prompt):**
-        ```cmd
-        set FLASK_APP=app.py
-        ```
-    *   **Windows (PowerShell):**
-        ```powershell
-        $env:FLASK_APP="app.py"
-        ```
-4.  **Run the Flask application:**
+3.  Run app.py
     ```bash
-    flask run --host=0.0.0.0 --port=5001 --debug
+    python app.py
+    ```
+
     ```
     *Expected Output (console):*
     ```
