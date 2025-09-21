@@ -1391,8 +1391,10 @@ This is the main Flask application file that will bring everything together.
 1.  In your web browser, navigate to the **"Router Actions"** page again.
 2.  Select the checkbox next to your router's name.
 3.  Click **"Reboot Selected"**.
-    *Expected Web Output:* A green "Reboot command sent to MyLabRouter in background." message.
-    *Verification:* Observe your router (via console or ping). It should start the reboot process. This will take some time.
+    *Expected Web Output:* 
+    A green "Reboot command sent to MyLabRouter in background." message.
+    *Verification:* 
+    Observe your router (via console or ping). It should start the reboot process. This will take some time.
 
 ---
 
@@ -1405,7 +1407,10 @@ This is the main Flask application file that will bring everything together.
 1.  In your web browser, navigate to the **"Monitor Interfaces"** link (or go directly to `http://127.0.0.1:5001/monitor`).
 2.  You should see your router listed. Select the checkboxes next to one or more interfaces you wish to monitor (e.g., `GigabitEthernet1`).
 3.  Click **"Update Monitored Interfaces"**.
-    *Expected Web Output:* The page will refresh, and a new table titled "Live Interface Utilization" will appear, showing data for your selected interfaces. The page will automatically refresh every 10 seconds.
+    
+    *Expected Web Output:* 
+    The page will refresh, and a new table titled "Live Interface Utilization" will appear, showing data for your selected interfaces. The page will automatically refresh every 10 seconds.
+    
     *Observation:* The "In-Utilization (bps)" and "Out-Utilization (bps)" values will likely be very low or zero unless there is actual traffic flowing through those interfaces. These are calculated based on current octet counts, not historical data for true bandwidth.
 
 ---
