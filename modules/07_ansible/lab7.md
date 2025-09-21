@@ -47,7 +47,7 @@ For this module, we will create a dedicated project structure.
     touch config.py
     touch inventory.yaml
     touch playbook_hostname.yaml
-    touch playbook_full_config.yaml
+    touch playbook_hostname_ntp_ospf_config.yaml
     touch python_ansible_deploy.py
     touch playbook_loopback_ospf.yaml
     ```
@@ -59,7 +59,7 @@ network_automation_labs/
     ├── config.py
     ├── inventory.yaml
     ├── playbook_hostname.yaml
-    ├── playbook_full_config.yaml
+    ├── playbook_hostname_ntp_ospf_config.yaml
     ├── playbook_loopback_ospf.yaml
     └── python_ansible_deploy.py
 ```
@@ -350,13 +350,13 @@ Note: These variables will only be set for the current CMD session.
 
 ---
 
-## Lab 3: Workflows Automated with Ansible (Full Configuration)
+## Lab 3: More complex automated workflow with Ansible
 
 **Objective:** Use Ansible to configure multiple services (hostname, NTP, OSPF) on your Cisco IOS XE router in one playbook.
 
-### Task 3.1: Create Ansible Playbook for Full Configuration
+### Task 3.1: Create More Complex Ansible Playbook
 
-1.  Open `playbook_full_config.yaml` in your code editor.
+1.  Open `playbook_hostname_ntp_ospf_config.yaml` in your code editor.
 2.  Add the following YAML content:
     ```yaml
     # playbook_full_config.yaml
@@ -382,7 +382,7 @@ Note: These variables will only be set for the current CMD session.
               - ntp server {{ ntp_server_ip }}
             save_when: changed
 
-        - name: Configure OSPF on GigabitEthernet2
+        - name: Configure OSPF on GigabitEthernet2 using a dedicated Ansible module for ospf interface configuration
           cisco.ios.ios_ospf_interfaces:
             config:
               - name: GigabitEthernet2
@@ -408,14 +408,14 @@ Note: These variables will only be set for the current CMD session.
                       hops: 50
             state: merged
     ```
-3.  Save `playbook_full_config.yaml`.
+3.  Save `playbook_hostname_ntp_ospf_config.yaml`.
 
 ### Task 3.2: Run the Full Configuration Playbook
 
 1.  **Ensure you have updated `config.py` with your real device details and set environment variables for credentials.**
 2.  **Run the playbook** from your `module7_ansible_lab` directory:
     ```bash
-    ansible-playbook -i inventory.yaml playbook_full_config.yaml
+    ansible-playbook -i inventory.yaml playbook_hostname_ntp_ospf_config.yaml
     ```
     *Expected Output (if successful):*
     ```
@@ -434,9 +434,9 @@ Note: These variables will only be set for the current CMD session.
     YOUR_IOSXE_IP              : ok=3    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
     ```
 3.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify the configurations:
-    *   `show hostname` (should be `Full-Config-Router`)
+    *   `show hostname` (should be `OSPF-Router`)
     *   `show run | section ntp` (should show `ntp server 10.0.0.254`)
-    *   `show run | section ospf` (should show `router ospf 10` and `network 10.0.0.0 0.0.0.255 area 0`)
+    *   `sh run interface loopback101` (should show all related ospf configuration)
 
 ---
 ### Lab 4: Automating with Ansible Loops
@@ -531,8 +531,8 @@ Explanation of the Playbook:
     *   `loop: "{{ loopback_interfaces }}"` tells Ansible to run this task once for each item in the `loopback_interfaces` list.
     *   `loop_control: label:` makes the output during playbook execution more informative.
 *   `Add loopback networks to OSPF` task:
-    *   Similar to the previous task, it uses `ios_config` and `loop` to iterate through the `loopback_interfaces`.
-    *   It adds the `router ospf` command and then the `network` command for each loopback's IP address, using a `0.0.0.0` wildcard mask to advertise only the specific /32 host route, within OSPF process 1 and area 0.
+    *   Similar to the previous task, it uses `cisco.ios.ios_ospf_interfaces` and `loop` to iterate through the `loopback_interfaces`.
+
 
 ### Task 4.2: Run the Loopback and OSPF Configuration Playbook
 
@@ -546,22 +546,37 @@ Expected Output (if successful):
 
 You will see output indicating that Ansible is configuring each loopback interface and adding each network statement to OSPF. The `changed` status should be true for each iteration if the configuration is new.
 ```bash
-PLAY [Configure multiple loopback interfaces and add to OSPF] ******************
+PLAY [Configure multiple loopback interfaces and add them to OSPF on router1] ***************
 
-TASK [Configure loopback interfaces with IP addresses] *************************
-changed: [YOUR_IOSXE_IP] => (item=Loopback101)
-changed: [YOUR_IOSXE_IP] => (item=Loopback102)
-...
-changed: [YOUR_IOSXE_IP] => (item=Loopback110)
+TASK [Configure loopback interfaces with IP addresses] **************************************
+[WARNING]: ansible-pylibssh not installed, falling back to paramiko
+changed: [router1] => (item=Create loopback101 and assign ip 192.168.100.1)
+changed: [router1] => (item=Create loopback102 and assign ip 192.168.100.2)
+changed: [router1] => (item=Create loopback103 and assign ip 192.168.100.3)
+changed: [router1] => (item=Create loopback104 and assign ip 192.168.100.4)
+changed: [router1] => (item=Create loopback105 and assign ip 192.168.100.5)
+changed: [router1] => (item=Create loopback106 and assign ip 192.168.100.6)
+changed: [router1] => (item=Create loopback107 and assign ip 192.168.100.7)
+changed: [router1] => (item=Create loopback108 and assign ip 192.168.100.8)
+changed: [router1] => (item=Create loopback109 and assign ip 192.168.100.9)
+changed: [router1] => (item=Create loopback110 and assign ip 192.168.100.10)
+[WARNING]: To ensure idempotency and correct diff the input configuration lines should be
+similar to how they appear if present in the running configuration on device
 
-TASK [Add loopback networks to OSPF process 1 in area 0] ***********************
-changed: [YOUR_IOSXE_IP] => (item=OSPF network 192.168.1.1)
-changed: [YOUR_IOSXE_IP] => (item=OSPF network 192.168.1.2)
-...
-changed: [YOUR_IOSXE_IP] => (item=OSPF network 192.168.1.10)
+TASK [Configure OSPF on loopback interfaces] ************************************************
+changed: [router1] => (item=Config OSPF on Loopback101)
+changed: [router1] => (item=Config OSPF on Loopback102)
+changed: [router1] => (item=Config OSPF on Loopback103)
+changed: [router1] => (item=Config OSPF on Loopback104)
+changed: [router1] => (item=Config OSPF on Loopback105)
+changed: [router1] => (item=Config OSPF on Loopback106)
+changed: [router1] => (item=Config OSPF on Loopback107)
+changed: [router1] => (item=Config OSPF on Loopback108)
+changed: [router1] => (item=Config OSPF on Loopback109)
+changed: [router1] => (item=Config OSPF on Loopback110)
 
-PLAY RECAP *********************************************************************
-YOUR_IOSXE_IP              : ok=2    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+PLAY RECAP **********************************************************************************
+router1                    : ok=2    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0  
 ```
 Manual Verification:
 
@@ -575,15 +590,24 @@ You should see Loopback101 through Loopback110 listed with their assigned IP add
 
 2. Verify OSPF Configuration for Loopbacks:
 ```bash
-show run | section router ospf 1
+show run interface loopback 101
 ```
-You should see the router ospf 1 block, including network 192.168.1.1 0.0.0.0 area 0 up to network 192.168.1.10 0.0.0.0 area 0.
+you show see the following configuration
+```
+interface Loopback101
+ ip address 192.168.100.1 255.255.255.255
+ ip ospf resync-timeout 10
+ ip ospf dead-interval 5
+ ip ospf demand-circuit ignore
+ ip ospf bfd
+ ip ospf adjacency stagger disable
+ ip ospf ttl-security hops 50
+ ip ospf shutdown
+ ip ospf 10 area 30
+ ip ospf cost 5
+```
+you should get similar outputs for the loopback 102 to 110
 
-3. Verify OSPF Neighbor Adjacencies (if applicable) and Interface Status:
-```bash
-show ip ospf interface brief
-```
-This command will show the OSPF status of all interfaces, including your new loopbacks.
 
 ## Conclusion
 
