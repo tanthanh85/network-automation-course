@@ -169,7 +169,7 @@ Note: These variables will only be set for the current CMD session.
     # playbook_hostname.yaml
     ---
     - name: Configure hostname on Cisco IOS XE
-      hosts: all # Apply to all hosts in inventory
+      hosts: router1 # Apply to all hosts in inventory
       gather_facts: false # No need to gather facts for this simple task
       
       vars:
@@ -454,55 +454,71 @@ Open `playbook_loopback_ospf.yaml` in your code editor. Add the following YAML c
 
 ```yaml
 # playbook_loopback_ospf.yaml
+# playbook_loopback_ospf.yaml
 ---
-- name: Configure multiple loopback interfaces and add to OSPF
-  hosts: all
+- name: Configure multiple loopback interfaces and add them to OSPF on router1
+  hosts: router1
   gather_facts: false # No need to gather facts for this configuration task
 
   vars:
     # Define the OSPF process ID and area as requested
-    ospf_process_id: 1
-    ospf_area: 0
+    # ospf_process_id: 1
+    # ospf_area: 0
     # Define a list of dictionaries for the loopback interfaces
     # Each dictionary contains the interface ID and its IP address
     loopback_interfaces:
-      - { id: 101, ip: "192.168.1.1" }
-      - { id: 102, ip: "192.168.1.2" }
-      - { id: 103, ip: "192.168.1.3" }
-      - { id: 104, ip: "192.168.1.4" }
-      - { id: 105, ip: "192.168.1.5" }
-      - { id: 106, ip: "192.168.1.6" }
-      - { id: 107, ip: "192.168.1.7" }
-      - { id: 108, ip: "192.168.1.8" }
-      - { id: 109, ip: "192.168.1.9" }
-      - { id: 110, ip: "192.168.1.10" }
+      - { id: 101, ip: "192.168.100.1" }
+      - { id: 102, ip: "192.168.100.2" }
+      - { id: 103, ip: "192.168.100.3" }
+      - { id: 104, ip: "192.168.100.4" }
+      - { id: 105, ip: "192.168.100.5" }
+      - { id: 106, ip: "192.168.100.6" }
+      - { id: 107, ip: "192.168.100.7" }
+      - { id: 108, ip: "192.168.100.8" }
+      - { id: 109, ip: "192.168.100.9" }
+      - { id: 110, ip: "192.168.100.10" }
 
   tasks:
     - name: Configure loopback interfaces with IP addresses
       ios_config:
         # The 'lines' parameter takes a list of configuration commands.
         # 'item.id' and 'item.ip' refer to the current item in the loopback_interfaces list.
+        parents: "interface Loopback{{ item.id }}"
         lines:
-          - "interface Loopback{{ item.id }}"
-          - "  ip address {{ item.ip }} 255.255.255.255" # /32 subnet mask for loopbacks
-        provider: "{{ lookup('vars', 'ansible_network_cli_connection') }}"
+          - "ip address {{ item.ip }} 255.255.255.255" # /32 subnet mask for loopbacks
         save_when: changed # Save configuration if any changes are made
       loop: "{{ loopback_interfaces }}" # Iterate over the 'loopback_interfaces' list
       loop_control:
-        label: "Loopback{{ item.id }}" # Provides more readable output during playbook execution
+        label: "Create loopback{{ item.id }} and assign ip {{ item.ip }}" # Provides more readable output during playbook execution
 
-    - name: Add loopback networks to OSPF process {{ ospf_process_id }} in area {{ ospf_area }}
-      ios_config:
-        # Configure OSPF by entering router ospf mode and adding network statements.
-        # The 'network' command uses a /32 wildcard mask (0.0.0.0) for loopbacks.
-        lines:
-          - "router ospf {{ ospf_process_id }}"
-          - "  network {{ item.ip }} 0.0.0.0 area {{ ospf_area }}"
-        provider: "{{ lookup('vars', 'ansible_network_cli_connection') }}"
-        save_when: changed # Save configuration if any changes are made
-      loop: "{{ loopback_interfaces }}" # Iterate over the same list of loopback interfaces
+    - name: Configure OSPF on loopback interfaces
+      cisco.ios.ios_ospf_interfaces:
+        config:
+          - name: Loopback{{ item.id }}
+            address_family:
+              - afi: ipv4
+                process:
+                  id: 10
+                  area_id: 30
+                adjacency: true
+                bfd: true
+                cost:
+                  interface_cost: 5
+                dead_interval:
+                  time: 5
+                demand_circuit:
+                  ignore: true
+                network:
+                  broadcast: true
+                priority: 25
+                resync_timeout: 10
+                shutdown: true
+                ttl_security:
+                  hops: 50
+        state: merged
+      loop: "{{ loopback_interfaces }}" # Iterate over the 'loopback_interfaces' list
       loop_control:
-        label: "OSPF network {{ item.ip }}" # Provides more readable output
+        label: "Config OSPF on Loopback{{ item.id }}" # Provides more readable output during playbook execution
 ```
 Save `playbook_loopback_ospf.yaml`.
 
