@@ -1091,16 +1091,17 @@ This is the main Flask application file that will bring everything together.
 2.  Add the following Python code:
     ```python
     # app.py
-    from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
+    # app.py
+    from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, session # ADD session
     import time
     import threading
     import os
     import json # For parsing JSON from RESTCONF
 
     # Import functions and configurations from our modules
-    from .database.db_ops import load_inventory, add_router_to_inventory, delete_router_from_inventory, get_router_by_name
-    from .network_functions.netmiko_ops import reboot_router, backup_config, get_show_logging
-    from .network_functions.restconf_ops import get_interface_list, get_interface_stats_restconf
+    from database.db_ops import load_inventory, add_router_to_inventory, delete_router_from_inventory, get_router_by_name
+    from network_functions.netmiko_ops import reboot_router, backup_config, get_show_logging
+    from network_functions.restconf_ops import get_interface_list, get_interface_stats_restconf
     # Directory to store configuration backups
     BACKUP_DIR = "backups"
 
@@ -1108,7 +1109,7 @@ This is the main Flask application file that will bring everything together.
     LOGS_DIR = "logs"
 
     app = Flask(__name__)
-    app.secret_key = 'supersecretkey' # Needed for flash messages. CHANGE THIS IN PRODUCTION!
+    app.secret_key = 'supersecretkey' # Needed for flash messages and session. CHANGE THIS IN PRODUCTION!
 
     # Ensure directories exist
     os.makedirs(BACKUP_DIR, exist_ok=True)
@@ -1245,25 +1246,48 @@ This is the main Flask application file that will bring everything together.
         """Handles interface monitoring dashboard."""
         routers = load_inventory()
         all_interfaces = {} # Store {router_name: [interface_names]}
-        selected_interfaces_names = {} # Store {router_name: [selected_iface_names]}
         monitored_data = [] # Store live stats
 
-        # Populate all_interfaces for display in the form
+        # Retrieve previously selected interfaces from session or initialize an empty list
+        # This list will store strings like "router_name|interface_name"
+        monitored_interfaces_from_session = session.get('monitored_interfaces', [])
+
+        # If the form was submitted (POST request), update the session with the new selection
+        if request.method == 'POST':
+            # Get the new selection from the form
+            new_selection = request.form.getlist('selected_interfaces')
+            # Store the new selection in the session
+            session['monitored_interfaces'] = new_selection
+            # Redirect to the GET version of the monitor page to prevent re-submission on refresh
+            # and ensure the page loads from the session data.
+            return redirect(url_for('monitor_interfaces'))
+
+        # Prepare selected_interfaces_for_template for checking checkboxes in the HTML
+        # This dictionary will be {router_name: [iface1, iface2], ...}
+        selected_interfaces_for_template = {}
+        for selected_iface_str in monitored_interfaces_from_session:
+            try:
+                # Split only on the first '|' to handle interface names that might contain '|'
+                router_name, iface_name = selected_iface_str.split('|', 1)
+                if router_name not in selected_interfaces_for_template:
+                    selected_interfaces_for_template[router_name] = []
+                selected_interfaces_for_template[router_name].append(iface_name)
+            except ValueError:
+                # Log a warning if an interface string in the session is malformed
+                app.logger.warning(f"Invalid interface string in session: {selected_iface_str}")
+
+
+        # Populate all_interfaces for display in the form (available interfaces)
         for router in routers:
-            # This is a blocking call, for many routers, it would need threading
-            # For simplicity in monitoring interface selection, we keep it direct.
             interfaces_list = get_interface_list(router) 
             all_interfaces[router['name']] = interfaces_list
-            # Initialize selected interfaces from session or form submission
-            selected_interfaces_names[router['name']] = request.form.getlist('selected_interfaces') if request.method == 'POST' else []
-        
-        if request.method == 'POST':
-            # Process form submission for selected interfaces
-            for selected_iface_str in request.form.getlist('selected_interfaces'):
-                router_name, iface_name = selected_iface_str.split('|')
+
+        # Fetch live stats for the interfaces currently stored in the session
+        for selected_iface_str in monitored_interfaces_from_session:
+            try:
+                router_name, iface_name = selected_iface_str.split('|', 1)
                 router_info = get_router_by_name(router_name)
                 if router_info:
-                    # Fetch live stats for selected interface
                     stats = get_interface_stats_restconf(router_info, iface_name)
                     if stats:
                         # Corrected: Convert octets to int before division
@@ -1284,12 +1308,14 @@ This is the main Flask application file that will bring everything together.
                             "in_util_bps": in_util_bps,
                             "out_util_bps": out_util_bps
                         })
+            except ValueError:
+                app.logger.warning(f"Skipping monitoring for invalid interface string: {selected_iface_str}")
         
         return render_template(
             'monitor_interface.html', 
             routers=routers, 
             all_interfaces=all_interfaces,
-            selected_interfaces_names=selected_interfaces_names,
+            selected_interfaces_names=selected_interfaces_for_template, # Use the prepared dict here
             monitored_data=monitored_data,
             current_time=time.strftime("%Y-%m-%d %H:%M:%S")
         )
@@ -1300,9 +1326,9 @@ This is the main Flask application file that will bring everything together.
         # Set FLASK_APP environment variable first:
         # export FLASK_APP=app.py (Linux/macOS)
         # $env:FLASK_APP="app.py" (Windows PowerShell)
-        # Then run: flask run --host=0.0.0.0 --port=5000 --debug
+        # Then run: flask run --host=0.0.0.0 --port=5001 --debug
         # Or for simple testing, you can run it directly like this:
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        app.run(debug=True, host='0.0.0.0', port=5001)
     ```
 3.  Save `app.py`.
 
@@ -1319,7 +1345,7 @@ This is the main Flask application file that will bring everything together.
     ```bash
     cd module10_router_console
     ```
-3.  Run app.py
+3.  while in module10_router_console folder run app.py
     ```bash
     python app.py
     ```
@@ -1410,7 +1436,7 @@ This is the main Flask application file that will bring everything together.
     
     *Expected Web Output:* 
     The page will refresh, and a new table titled "Live Interface Utilization" will appear, showing data for your selected interfaces. The page will automatically refresh every 10 seconds.
-    
+
     *Observation:* The "In-Utilization (bps)" and "Out-Utilization (bps)" values will likely be very low or zero unless there is actual traffic flowing through those interfaces. These are calculated based on current octet counts, not historical data for true bandwidth.
 
 ---
