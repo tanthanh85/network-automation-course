@@ -52,6 +52,7 @@ This section focuses on setting up the core IaC components (YAML data, Jinja2 te
     touch config.py
     touch netmiko_iac_ops.py
     touch deploy_config.py
+    tourch .gitignore
     ```
 5.  **Inside `module6_iac_lab`, create the following data and template files:**
     ```bash
@@ -68,9 +69,16 @@ network_automation_labs/
     ├── netmiko_iac_ops.py
     ├── deploy_config.py
     ├── network_data.yaml
+    ├── .gitignore
     └── templates/
         └── hostname.j2
 ```
+### Task 0.0: Populate `.gitignore`
+add the following text to the file
+```
+na_env
+```
+
 ### Task 0.1: Populate `config.py`
 
 This file will store your IOS XE Netmiko connection details.
@@ -179,10 +187,11 @@ This file will contain functions for Netmiko operations (push config and get hos
             with ConnectHandler(**IOSXE_NETMIKO_INFO) as net_connect:
                 logging.info(f"Connected to {host}. Getting hostname...")
                 
-                output = net_connect.send_command("show hostname")
+                output = net_connect.send_command("show run | in hostname")
                 # For a simple 'show hostname', the output is usually just the hostname.
                 # We strip whitespace to clean it up.
-                hostname = output.strip()
+                import re
+                hostname = re.search(r"hostname\s+(.*)", output)    
                 
                 logging.info(f"Retrieved hostname: {hostname}")
                 return hostname
