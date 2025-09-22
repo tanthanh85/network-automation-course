@@ -378,7 +378,7 @@ This section guides you through the actual IaC workflow using Git and your Pytho
 
 ### Task 1.3: Change the hostname to MyRouter1
 1.  Open `network_data.yaml` in your code editor.
-2.  Add the following YAML content:
+2.  Update the hostname from Myrouter to MyRouter1:
     ```yaml
     # network_data.yaml
     router_hostname: MyRouter1
@@ -433,9 +433,9 @@ It's good practice to make changes in a separate branch.
     ```
     *Expected Output:* `Switched to a new branch 'feature/change-hostname'`
 
-### Task 1.4: Modify Configuration Data
+### Task 1.4: Change the hostname to MyRouter2
 
-Now, let's change the desired hostname in your `network_data.yaml`.
+Now, let's change the desired hostname one more time in your `network_data.yaml`.
 
 1.  Open `network_data.yaml` in your code editor.
 2.  **Change the hostname** from `MyRouter1` to `MyRouter2`:
@@ -481,7 +481,7 @@ In a real CI/CD pipeline, this merge would trigger automated deployment. Here, w
     Successfully loaded data from network_data.yaml.
     Configuration generated from template hostname.j2.
     Generated config payload (CLI):
-    ['hostname MyRouter-New']
+    ['hostname MyRouter2']
     Connecting to YOUR_IOSXE_IP via Netmiko...
     Connected to YOUR_IOSXE_IP. Pushing configuration...
     Configuration push output:
@@ -524,7 +524,7 @@ Imagine `MyRouter2` caused an unexpected issue. We need to revert to `MyRouter1`
 
 ### Task 1.8: Deploy Rolled Back Configuration
 
-1.  **Run the deployment script again.** This will pick up the `MyRouter-Initial` hostname from the reverted `network_data.yaml` and push it to the router.
+1.  **Run the deployment script again.** This will pick up the `MyRouter1` hostname from the reverted `network_data.yaml` and push it to the router.
     ```bash
     python deploy_config.py
     ```
@@ -534,13 +534,13 @@ Imagine `MyRouter2` caused an unexpected issue. We need to revert to `MyRouter1`
     Successfully loaded data from network_data.yaml.
     Configuration generated from template hostname.j2.
     Generated config payload (CLI):
-    ['hostname MyRouter-Initial']
+    ['hostname MyRouter1']
     Connecting to YOUR_IOSXE_IP via Netmiko...
     Connected to YOUR_IOSXE_IP. Pushing configuration...
     Configuration push output:
     config terminal
     Enter configuration commands, one per line.  End with CNTL/Z.
-    YOUR_IOSXE_PROMPT(config)#hostname MyRouter-Initial
+    YOUR_IOSXE_PROMPT(config)#hostname MyRouter1
     YOUR_IOSXE_PROMPT(config)#end
     YOUR_IOSXE_PROMPT#
     Configuration successfully pushed to YOUR_IOSXE_IP.
