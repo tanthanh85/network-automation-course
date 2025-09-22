@@ -92,10 +92,10 @@ This file will store your IOS XE Netmiko connection details.
     # This router should be reachable and have SSH enabled.
     IOSXE_NETMIKO_INFO = {
         "device_type": "cisco_ios",
-        "host": "YOUR_IOSXE_IP", # e.g., 10.10.20.48 (from Cisco DevNet Sandbox)
-        "username": "YOUR_IOSXE_USERNAME", # e.g., developer
-        "password": "YOUR_IOSXE_PASSWORD", # e.g., C1sco12345
-        "secret": "YOUR_IOSXE_ENABLE_PASSWORD", # For enable mode if needed
+        "host": "10.10.20.48", # e.g., 10.10.20.48 (from Cisco DevNet Sandbox)
+        "username": "developer", # e.g., developer
+        "password": "C1sco12345", # e.g., C1sco12345
+        "secret": "C1sco12345", # For enable mode if needed
         "port": 22, # Default SSH port
     }
     ```
