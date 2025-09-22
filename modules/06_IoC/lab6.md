@@ -356,11 +356,17 @@ This section guides you through the actual IaC workflow using Git and your Pytho
     ```bash
     git init
     ```
-2.  **Add all current files** to the Git staging area:
+2.  **Tell git who you are**
+    ```bash
+    git config --global user.name "Your Name"
+    git config --global user.email "your.email@example.com"
+    ```
+
+3.  **Add all current files** to the Git staging area:
     ```bash
     git add .
     ```
-3.  **Commit the initial state** of your IaC project:
+4.  **Commit the initial state** of your IaC project:
     ```bash
     git commit -m "Initial deployment of router hostname: MyRouter-Initial"
     ```
