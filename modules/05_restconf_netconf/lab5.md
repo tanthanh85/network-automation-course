@@ -684,6 +684,12 @@ import xml.etree.ElementTree as ET
 import xmltodict # For easier XML to dict conversion
 import logging
 
+import urllib3
+urllib3.disable_warnings()
+
+ncclient_logger = logging.getLogger('ncclient')
+ncclient_logger.setLevel(logging.WARNING)
+
 from config import IOSXE_DEVICE_INFO # Import device info from config.py
 
 # Configure logging
