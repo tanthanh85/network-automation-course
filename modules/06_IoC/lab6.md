@@ -327,26 +327,26 @@ This section guides you through the actual IaC workflow using Git and your Pytho
     Successfully loaded data from network_data.yaml.
     Configuration generated from template hostname.j2.
     Generated config payload (CLI):
-    ['hostname MyRouter-Initial']
+    ['hostname MyRouter']
     Connecting to YOUR_IOSXE_IP via Netmiko...
     Connected to YOUR_IOSXE_IP. Pushing configuration...
     Configuration push output:
     config terminal
     Enter configuration commands, one per line.  End with CNTL/Z.
-    YOUR_IOSXE_PROMPT(config)#hostname MyRouter-Initial
+    YOUR_IOSXE_PROMPT(config)#hostname MyRouter
     YOUR_IOSXE_PROMPT(config)#end
     YOUR_IOSXE_PROMPT#
     Configuration successfully pushed to YOUR_IOSXE_IP.
     Verifying current hostname on device...
     Connecting to YOUR_IOSXE_IP via Netmiko to get hostname...
     Connected to YOUR_IOSXE_IP. Getting hostname...
-    Retrieved hostname: MyRouter-Initial
+    Retrieved hostname: MyRouter
     --- Deployment COMPLETED SUCCESSFULLY ---
-    Verification: Hostname matches. Actual: 'MyRouter-Initial', Expected: 'MyRouter-Initial'
+    Verification: Hostname matches. Actual: 'MyRouter', Expected: 'MyRouter'
     ```
 4.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify that its hostname is now `MyRouter`.
     ```
-    Router# show hostname
+    MyRouter# show run | in hostname
     MyRouter
     ```
 
@@ -356,7 +356,7 @@ This section guides you through the actual IaC workflow using Git and your Pytho
     ```bash
     git init
     ```
-2.  **Tell git who you are**
+2.  **Tell git who you are (if you have not done so)**
     ```bash
     git config --global user.name "Your Name"
     git config --global user.email "your.email@example.com"
@@ -395,13 +395,13 @@ This section guides you through the actual IaC workflow using Git and your Pytho
     Successfully loaded data from network_data.yaml.
     Configuration generated from template hostname.j2.
     Generated config payload (CLI):
-    ['hostname MyRouter-Initial']
+    ['hostname MyRouter1']
     Connecting to YOUR_IOSXE_IP via Netmiko...
     Connected to YOUR_IOSXE_IP. Pushing configuration...
     Configuration push output:
     config terminal
     Enter configuration commands, one per line.  End with CNTL/Z.
-    YOUR_IOSXE_PROMPT(config)#hostname MyRouter-Initial
+    YOUR_IOSXE_PROMPT(config)#hostname MyRouter1
     YOUR_IOSXE_PROMPT(config)#end
     YOUR_IOSXE_PROMPT#
     Configuration successfully pushed to YOUR_IOSXE_IP.
