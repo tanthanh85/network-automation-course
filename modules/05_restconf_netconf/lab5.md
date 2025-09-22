@@ -170,6 +170,11 @@ from ncclient.operations import RPCError
 import xml.etree.ElementTree as ET
 import xmltodict # For easier XML to dict conversion
 import logging
+import urllib3
+urllib3.disable_warnings()
+
+ncclient_logger = logging.getLogger('ncclient')
+ncclient_logger.setLevel(logging.WARNING)
 
 from config import IOSXE_DEVICE_INFO # Import device info from config.py
 
@@ -318,7 +323,7 @@ def get_cpu_utilization_restconf():
     data = _make_restconf_get_request(path)
     if data:
         try:
-            cpu_total = data.get('Cisco-IOS-XE-process-cpu-oper:cpu-usage', {}).get('cpu-utilization', {}).get('five-seconds')
+            cpu_total = data.get('Cisco-IOS-XE-process-cpu-oper:cpu-utilization', {}).get('five-seconds')
             return int(cpu_total) if cpu_total is not None else "N/A"
         except (TypeError, ValueError) as e:
             logging.error(f"Error parsing RESTCONF CPU data: {e}")
@@ -428,7 +433,7 @@ cd module5_api_lab
 ```
 Install the necessary libraries:
 ```bash
-pip install requests ncclient xmltodict flask
+pip install requests ncclient xmltodict flask urllib3
 ```
 ### Task 0.5: Run Standalone Script to Discover Capabilities
 
@@ -1083,7 +1088,7 @@ Open `app.py` in your code editor. Add the following Python code:
 # app.py
 from flask import Flask, render_template
 import time
-from .iosxe_api_functions import (
+from iosxe_api_functions import (
     get_cpu_utilization_restconf, get_memory_utilization_restconf,
     get_gigabitethernet1_utilization_netconf
 )
@@ -1118,7 +1123,7 @@ def index():
     )
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)
 ```
 Save `app.py`.
 
@@ -1189,7 +1194,7 @@ Press CTRL+C to quit
  * Restarting with stat
 Press CTRL+C to quit
 ```
-Open your web browser and navigate to `http://127.0.0.1:5000` (or `http://localhost:5000`). If you are running this on a remote server, use that server's IP address.
+Open your web browser and navigate to `http://127.0.0.1:5001` (or `http://localhost:5001`). If you are running this on a remote server, use that server's IP address.
 
 Observation: The web page will display the current metrics from your router, with CPU and Memory sourced from RESTCONF, and GigabitEthernet1 utilization sourced from NETCONF. It will automatically refresh every 5 seconds, fetching new data via both API methods. If your router's CPU goes above 75%, you will see a "(HIGH)" alert next to the CPU utilization.
 
