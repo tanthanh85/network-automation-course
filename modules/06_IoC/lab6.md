@@ -63,13 +63,13 @@ Your directory structure should now look like this:
 ```
 network_automation_labs/
 └── module6_iac_lab/
-├── init.py
-├── config.py
-├── netmiko_iac_ops.py
-├── deploy_config.py
-├── network_data.yaml
-└── templates/
-└── hostname.j2
+    ├── __init__.py
+    ├── config.py
+    ├── netmiko_iac_ops.py
+    ├── deploy_config.py
+    ├── network_data.yaml
+    └── templates/
+        └── hostname.j2
 ```
 ### Task 0.1: Populate `config.py`
 
@@ -84,9 +84,9 @@ This file will store your IOS XE Netmiko connection details.
     # This router should be reachable and have SSH enabled.
     IOSXE_NETMIKO_INFO = {
         "device_type": "cisco_ios",
-        "host": "YOUR_IOSXE_IP", # e.g., 10.10.20.40 (from Cisco DevNet Sandbox)
+        "host": "YOUR_IOSXE_IP", # e.g., 10.10.20.48 (from Cisco DevNet Sandbox)
         "username": "YOUR_IOSXE_USERNAME", # e.g., developer
-        "password": "YOUR_IOSXE_PASSWORD", # e.g., C!sco12345
+        "password": "YOUR_IOSXE_PASSWORD", # e.g., C1sco12345
         "secret": "YOUR_IOSXE_ENABLE_PASSWORD", # For enable mode if needed
         "port": 22, # Default SSH port
     }
@@ -134,9 +134,9 @@ This file will contain functions for Netmiko operations (push config and get hos
     ```python
     # netmiko_iac_ops.py
     from netmiko import ConnectHandler
-    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException
+    from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoBaseException
     import logging
-    from .config import IOSXE_NETMIKO_INFO # Import device info
+    from config import IOSXE_NETMIKO_INFO # Import device info
 
     # Configure logging for better visibility
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -160,7 +160,7 @@ This file will contain functions for Netmiko operations (push config and get hos
                 logging.info(f"Configuration successfully pushed to {host}.")
                 return True
 
-        except (NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException) as e:
+        except (NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoBaseException) as e:
             logging.error(f"Netmiko Error pushing config to {host}: {e}")
             return False
         except Exception as e:
@@ -187,7 +187,7 @@ This file will contain functions for Netmiko operations (push config and get hos
                 logging.info(f"Retrieved hostname: {hostname}")
                 return hostname
 
-        except (NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoException) as e:
+        except (NetmikoTimeoutException, NetmikoAuthenticationException, NetmikoBaseException) as e:
             logging.error(f"Netmiko Error getting hostname from {host}: {e}")
             return None
         except Exception as e:
@@ -210,7 +210,7 @@ This is the script that will load data, generate config, and push it to the rout
     import os
     import time
 
-    from .netmiko_iac_ops import push_config_netmiko, get_hostname_netmiko
+    from netmiko_iac_ops import push_config_netmiko, get_hostname_netmiko
 
     # Configure logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
