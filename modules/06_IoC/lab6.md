@@ -191,7 +191,7 @@ This file will contain functions for Netmiko operations (push config and get hos
                 # For a simple 'show hostname', the output is usually just the hostname.
                 # We strip whitespace to clean it up.
                 import re
-                hostname = re.search(r"hostname\s+(.*)", output)    
+                hostname = re.search(r"hostname\s+(.*)", output).group(1).strip()     
                 
                 logging.info(f"Retrieved hostname: {hostname}")
                 return hostname
