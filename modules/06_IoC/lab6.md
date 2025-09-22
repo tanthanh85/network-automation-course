@@ -188,8 +188,7 @@ This file will contain functions for Netmiko operations (push config and get hos
                 logging.info(f"Connected to {host}. Getting hostname...")
                 
                 output = net_connect.send_command("show run | in hostname")
-                # For a simple 'show hostname', the output is usually just the hostname.
-                # We strip whitespace to clean it up.
+                
                 import re
                 hostname = re.search(r"hostname\s+(.*)", output).group(1).strip()     
                 
