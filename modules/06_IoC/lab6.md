@@ -109,7 +109,7 @@ This file will define the initial desired hostname for your router.
 2.  Add the following YAML content:
     ```yaml
     # network_data.yaml
-    router_hostname: MyRouter-Initial
+    router_hostname: MyRouter
     ```
 3.  Save `network_data.yaml`.
 
@@ -344,10 +344,10 @@ This section guides you through the actual IaC workflow using Git and your Pytho
     --- Deployment COMPLETED SUCCESSFULLY ---
     Verification: Hostname matches. Actual: 'MyRouter-Initial', Expected: 'MyRouter-Initial'
     ```
-4.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify that its hostname is now `MyRouter-Initial`.
+4.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify that its hostname is now `MyRouter`.
     ```
     Router# show hostname
-    MyRouter-Initial
+    MyRouter
     ```
 
 ### Task 1.2: Git Initialization and Initial Commit
@@ -372,11 +372,58 @@ This section guides you through the actual IaC workflow using Git and your Pytho
     ```
 4.  **Commit the initial state** of your IaC project:
     ```bash
-    git commit -m "Initial deployment of router hostname: MyRouter-Initial"
+    git commit -m "Initial deployment of router hostname: MyRouter"
     ```
     *Expected Output:* Git will report that it created a new commit and list the files added.
 
-### Task 1.3: Create a New Feature Branch
+### Task 1.3: Change the hostname to MyRouter1
+1.  Open `network_data.yaml` in your code editor.
+2.  Add the following YAML content:
+    ```yaml
+    # network_data.yaml
+    router_hostname: MyRouter1
+    ```
+3.  Save `network_data.yaml`.
+
+4.  **Run the deployment script:**
+    ```bash
+    python deploy_config.py
+    ```
+    *Expected Output (console):*
+    ```
+    --- Starting Deployment Workflow ---
+    Successfully loaded data from network_data.yaml.
+    Configuration generated from template hostname.j2.
+    Generated config payload (CLI):
+    ['hostname MyRouter-Initial']
+    Connecting to YOUR_IOSXE_IP via Netmiko...
+    Connected to YOUR_IOSXE_IP. Pushing configuration...
+    Configuration push output:
+    config terminal
+    Enter configuration commands, one per line.  End with CNTL/Z.
+    YOUR_IOSXE_PROMPT(config)#hostname MyRouter-Initial
+    YOUR_IOSXE_PROMPT(config)#end
+    YOUR_IOSXE_PROMPT#
+    Configuration successfully pushed to YOUR_IOSXE_IP.
+    Verifying current hostname on device...
+    Connecting to YOUR_IOSXE_IP via Netmiko to get hostname...
+    Connected to YOUR_IOSXE_IP. Getting hostname...
+    Retrieved hostname: MyRouter1
+    --- Deployment COMPLETED SUCCESSFULLY ---
+    Verification: Hostname matches. Actual: 'MyRouter1', Expected: 'MyRouter1'
+    ```
+5.  **Add all current files** to the Git staging area:
+    ```bash
+    git add .
+    ```
+6.  **Commit the the new change** of your IaC project:
+    ```bash
+    git commit -m "Change router hostname: MyRouter1"
+    ```
+    *Expected Output:* Git will report that it created a new commit and list the files added.
+
+
+### Task 1.4: Create a New Feature Branch
 
 It's good practice to make changes in a separate branch.
 
@@ -391,10 +438,10 @@ It's good practice to make changes in a separate branch.
 Now, let's change the desired hostname in your `network_data.yaml`.
 
 1.  Open `network_data.yaml` in your code editor.
-2.  **Change the hostname** from `MyRouter-Initial` to `MyRouter-New`:
+2.  **Change the hostname** from `MyRouter1` to `MyRouter2`:
     ```yaml
     # network_data.yaml
-    router_hostname: MyRouter-New
+    router_hostname: MyRouter2
     ```
 3.  Save `network_data.yaml`.
 
@@ -406,7 +453,7 @@ Now, let's change the desired hostname in your `network_data.yaml`.
     ```
 2.  **Commit the change** to your `feature/change-hostname` branch:
     ```bash
-    git commit -m "Feature: Change router hostname to MyRouter-New"
+    git commit -m "Feature: Change router hostname to MyRouter2"
     ```
     *Expected Output:* Git will report that it created a new commit.
 
@@ -440,32 +487,32 @@ In a real CI/CD pipeline, this merge would trigger automated deployment. Here, w
     Configuration push output:
     config terminal
     Enter configuration commands, one per line.  End with CNTL/Z.
-    YOUR_IOSXE_PROMPT(config)#hostname MyRouter-New
+    YOUR_IOSXE_PROMPT(config)#hostname MyRouter2
     YOUR_IOSXE_PROMPT(config)#end
     YOUR_IOSXE_PROMPT#
     Configuration successfully pushed to YOUR_IOSXE_IP.
     Verifying current hostname on device...
     Connecting to YOUR_IOSXE_IP via Netmiko to get hostname...
     Connected to YOUR_IOSXE_IP. Getting hostname...
-    Retrieved hostname: MyRouter-New
+    Retrieved hostname: MyRouter2
     --- Deployment COMPLETED SUCCESSFULLY ---
-    Verification: Hostname matches. Actual: 'MyRouter-New', Expected: 'MyRouter-New'
+    Verification: Hostname matches. Actual: 'MyRouter2', Expected: 'MyRouter2'
     ```
-4.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify that its hostname is now `MyRouter-New`.
+4.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify that its hostname is now `MyRouter2`.
     ```
-    Router# show hostname
-    MyRouter-New
+    MyRouter2# show run | in hostname
+    MyRouter2
     ```
 
 ### Task 1.7: Simulate Rollback
 
-Imagine `MyRouter-New` caused an unexpected issue. We need to revert to `MyRouter-Initial`.
+Imagine `MyRouter2` caused an unexpected issue. We need to revert to `MyRouter1`.
 
-1.  **Find the commit hash** of the commit where you set the hostname to `MyRouter-Initial`.
+1.  **Find the commit hash** of the commit where you set the hostname to `MyRouter1`.
     ```bash
     git log --oneline
     ```
-    *Expected Output:* You'll see a list of commits. Find the one with message "Initial deployment of router hostname: MyRouter-Initial". Copy its 7-character hash (e.g., `a1b2c3d`).
+    *Expected Output:* You'll see a list of commits. Find the one with message "Feature: Change router hostname to MyRouter2". Copy its 7-character hash (e.g., `a1b2c3d`).
 
 2.  **Revert to that commit:**
     ```bash
@@ -473,7 +520,7 @@ Imagine `MyRouter-New` caused an unexpected issue. We need to revert to `MyRoute
     ```
     *Example:* `git revert a1b2c3d`
     *Expected Output:* Git will open your default text editor (like Vim or Nano) to allow you to edit the commit message for the revert. Just save and close the file without changes (or add a note like "Revert to initial hostname"). Git will then report that it created a new commit.
-    *Observation:* If you now open `network_data.yaml`, you'll see its content has automatically changed back to `router_hostname: MyRouter-Initial`.
+    *Observation:* If you now open `network_data.yaml`, you'll see its content has automatically changed back to `router_hostname: MyRouter1`.
 
 ### Task 1.8: Deploy Rolled Back Configuration
 
@@ -500,14 +547,14 @@ Imagine `MyRouter-New` caused an unexpected issue. We need to revert to `MyRoute
     Verifying current hostname on device...
     Connecting to YOUR_IOSXE_IP via Netmiko to get hostname...
     Connected to YOUR_IOSXE_IP. Getting hostname...
-    Retrieved hostname: MyRouter-Initial
+    Retrieved hostname: MyRouter1
     --- Deployment COMPLETED SUCCESSFULLY ---
-    Verification: Hostname matches. Actual: 'MyRouter-Initial', Expected: 'MyRouter-Initial'
+    Verification: Hostname matches. Actual: 'MyRouter1', Expected: 'MyRouter1
     ```
-2.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify that its hostname is now `MyRouter-Initial` again.
+2.  **Manual Verification:** Log in to your IOS XE router via SSH/console and verify that its hostname is now `MyRouter1` again.
     ```
-    Router# show hostname
-    MyRouter-Initial
+    MyRouter# show run | in hostname
+    MyRouter1
     ```
 
 ---
