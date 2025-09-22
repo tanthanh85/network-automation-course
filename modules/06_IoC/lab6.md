@@ -52,7 +52,7 @@ This section focuses on setting up the core IaC components (YAML data, Jinja2 te
     touch config.py
     touch netmiko_iac_ops.py
     touch deploy_config.py
-    tourch .gitignore
+    touch .gitignore
     ```
 5.  **Inside `module6_iac_lab`, create the following data and template files:**
     ```bash
@@ -360,6 +360,10 @@ This section guides you through the actual IaC workflow using Git and your Pytho
     ```bash
     git config --global user.name "Your Name"
     git config --global user.email "your.email@example.com"
+    ```
+    Then check your config
+    ```bash
+    git config --list
     ```
 
 3.  **Add all current files** to the Git staging area:
