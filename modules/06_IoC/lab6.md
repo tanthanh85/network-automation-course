@@ -518,9 +518,17 @@ Imagine `MyRouter2` caused an unexpected issue. We need to revert to `MyRouter1`
     git revert <paste_the_commit_hash_here>
     ```
     *Example:* `git revert a1b2c3d`
-    *Expected Output:* Git will open your default text editor (like Vim or Nano) to allow you to edit the commit message for the revert. Just save and close the file without changes (or add a note like "Revert hostname to MyRouter1"). Git will then report that it created a new commit.
-    *Observation:* If you now open `network_data.yaml`, you'll see its content has automatically changed back to `router_hostname: MyRouter1`.
 
+    *Expected Output:* 
+    ```
+    Git will open your default text editor (like Vim or Nano) to allow you to edit the commit message for the revert. Just save and close the file without changes (or add a note like "Revert hostname to MyRouter1"). Git will then report that it created a new commit.
+    ```
+
+
+    *Observation:* 
+    ```
+    If you now open `network_data.yaml`, you'll see its content has automatically changed back to `router_hostname: MyRouter1`.
+    ```
 ### Task 1.8: Deploy Rolled Back Configuration
 
 1.  **Run the deployment script again.** This will pick up the `MyRouter1` hostname from the reverted `network_data.yaml` and push it to the router.
