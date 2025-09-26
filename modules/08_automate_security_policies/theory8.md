@@ -45,8 +45,20 @@ The **Firepower Device Manager (FDM) API** is a RESTful API built directly into 
 ### 3.1 FDM API Authentication
 
 The FDM API uses a token-based authentication:
-1.  Send a `POST` request to the `/api/fdm/v6/token` endpoint with username/password in the JSON body.
+1.  Send a `POST` request to the `/api/fdm/v6/token` endpoint with username/password in the JSON body. for example: https://10.10.20.65/api/fdm/v6/fdm/token
 2.  The response contains an `access_token` in the JSON body, which you use for subsequent requests in the `Authorization: Bearer <access_token>` header.
+    Response example:
+    ```json
+    {
+    "access_token": "eyJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTg4NjM1NjksInN1YiI6ImFkbWluIiwianRpIjoiNzIzZTRjNzgtOWE5Ny0xMWYwLWI5NmQtNWY4Yzg2NTI3ZTY1IiwibmJmIjoxNzU4ODYzNTY5LCJleHAiOjE3NTg4NjUzNjksInJlZnJlc2hUb2tlbkV4cGlyZXNBdCI6MTc1ODg2NTk2OTU5MSwidG9rZW5UeXBlIjoiSldUX0FjY2VzcyIsInVzZXJVdWlkIjoiMjA2NjgzODQtOTk1Mi0xMWVjLWJlMjQtYTViMTQxNjFmMzA3IiwidXNlclJvbGUiOiJST0xFX0FETUlOIiwib3JpZ2luIjoicGFzc3dvcmQiLCJ1c2VybmFtZSI6ImFkbWluIn0.ZO7SPQmIYnUarBKsrzntLzFr_q-S45QTPfSb1kjQ3F4",
+    "expires_in": 1800,
+    "token_type": "Bearer",
+    "refresh_token": "eyJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NTg4NjM1NjksInN1YiI6ImFkbWluIiwianRpIjoiNzIzZTRjNzgtOWE5Ny0xMWYwLWI5NmQtNWY4Yzg2NTI3ZTY1IiwibmJmIjoxNzU4ODYzNTY5LCJleHAiOjE3NTg4NjU5NjksImFjY2Vzc1Rva2VuRXhwaXJlc0F0IjoxNzU4ODY1MzY5NTkxLCJyZWZyZXNoQ291bnQiOi0xLCJ0b2tlblR5cGUiOiJKV1RfUmVmcmVzaCIsInVzZXJVdWlkIjoiMjA2NjgzODQtOTk1Mi0xMWVjLWJlMjQtYTViMTQxNjFmMzA3IiwidXNlclJvbGUiOiJST0xFX0FETUlOIiwib3JpZ2luIjoicGFzc3dvcmQiLCJ1c2VybmFtZSI6ImFkbWluIn0.hD-Wqxm1_GL4k21NKSmLAsyxhPvyEnbaIV_AfCuvhx4",
+    "refresh_expires_in": 2400
+    }
+    ```
+
+
 3.  Tokens typically expire after a short period (e.g., 30 minutes), so you need to refresh them.
 
 ### 3.2 Key FDM API Endpoints for ACL Automation

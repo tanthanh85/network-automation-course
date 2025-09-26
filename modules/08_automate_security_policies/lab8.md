@@ -49,10 +49,10 @@ For this module, we will keep the project structure simple with a few files.
 Your directory structure should now look like this:
 ```
 network_automation_labs/
-└── module8_security_lab/
-├── config.py
-├── ftd_fdm_api_ops.py
-└── security_automation_main.py
+    └── module8_security_lab/
+        ├── config.py
+        ├── ftd_fdm_api_ops.py
+        └── security_automation_main.py
 ```
 ### Task 0.1: Install `requests`
 
@@ -99,7 +99,9 @@ This file will contain reusable functions for FDM API interactions.
     import requests
     import json
     import time
-    from .config import FTD_FDM_API_INFO # Import FDM API info from config.py
+    from config import FTD_FDM_API_INFO # Import FDM API info from config.py
+    import urllib3
+    urllib3.disable_warnings()
 
     # Base URL for FDM API
     FDM_BASE_URL = f"https://{FTD_FDM_API_INFO['host']}:{FTD_FDM_API_INFO['port']}/api/fdm/v6"
@@ -120,11 +122,12 @@ This file will contain reusable functions for FDM API interactions.
             # print("Using cached FDM token.") # Uncomment for debugging
             return _FDM_AUTH_DATA["token"]
 
-        auth_url = f"{FDM_BASE_URL}/token"
+        auth_url = f"{FDM_BASE_URL}/fdm/token"
         headers = {"Content-Type": "application/json"}
         payload = {
             "username": FTD_FDM_API_INFO['username'],
-            "password": FTD_FDM_API_INFO['password']
+            "password": FTD_FDM_API_INFO['password'],
+            "grant_type": "password"
         }
         
         print("Attempting to get FDM token...")
@@ -206,17 +209,14 @@ This file will contain reusable functions for FDM API interactions.
     def get_access_policies():
         """Retrieves all Access Policies."""
         print("Retrieving Access Policies...")
-        return make_fdm_api_call('GET', 'accesspolicies')
+        return make_fdm_api_call('GET', 'policy/accesspolicies')
 
-    def get_network_objects(name=None):
+    def get_network_objects():
         """
-        Retrieves network objects. If 'name' is provided, it filters the results in-code.
+        Retrieves list of network objects. 
         """
-        print(f"Retrieving network objects (name='{name}' if provided)...")
-        # FDM API supports 'name' as a query parameter for filtering
-        query_params = {'name': name} if name else None
         
-        response = make_fdm_api_call('GET', 'object/networks', query_params=query_params)
+        response = make_fdm_api_call('GET', 'object/networks')
         
         if response and response.get('items'):
             return response # Return the full response with 'items'
@@ -290,16 +290,15 @@ This file will contain reusable functions for FDM API interactions.
             else:
                 print("\nNo Access Policies found or error.")
 
-            # 3. Test Get Network Objects (with name filter)
-            # This will now correctly filter using the 'name' query parameter on FDM API.
-            # If the FDM API version does not support 'name' query param, this will return all and filter in-code.
-            networks = get_network_objects(name="any") # Search for a common object like "any"
+            # 3. get network object list then print out
+            networks = get_network_objects()
             if networks and networks.get('items'):
                 if len(networks['items']) > 0:
-                    # Accessing the first item in the list of filtered results
-                    print(f"\nFound 'any' object. UUID: {networks['items'].get('id')}")
+                    
+                    for net in networks['items']:
+                        print(f"\nFound {net['name']} network object. UUID: {net['id']}")
                 else:
-                    print("\n'any' object not found after filtering.")
+                    print("\n no network found.")
             else:
                 print("\nError retrieving network objects.")
 
