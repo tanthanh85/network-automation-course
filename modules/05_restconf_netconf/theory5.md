@@ -446,14 +446,14 @@ Displaying Data with Other Tools (e.g., Grafana): For more advanced, scalable, a
 
 * * *
 
-8\.Summary and Key Takeaways
-----------------------------
+8\. Summary and Key Takeaways
+-----------------------------
 **Summary**
 
 APIs provide a powerful, structured way to interact with network devices and controllers, moving beyond the limitations of CLI parsing. RESTCONF (HTTP + YANG) offers structured access directly to devices like Cisco IOS XE routers, leveraging standard HTTP methods and JSON/XML data formats. NETCONF (SSH + YANG) provides a robust, transactional, XML-based protocol for managing network devices, ideal for configuration and operational data retrieval.
 
 
-These APIs enable programmatic access to performance data (CPU, memory, interfaces) and are ideal for building monitoring tools. Python's requests library is perfectly suited for interacting with RESTCONF APIs, simplifying HTTP requests and JSON parsing. For NETCONF, the ncclient library provides a comprehensive client for establishing sessions, sending XML RPCs, and parsing responses. Both approaches, demonstrated with practical examples for Cisco IOS XE, are crucial for modern network automation. These automated data collection methods can be easily displayed using a web framework like Python Flask or integrated into larger monitoring systems like Grafana. Understanding YANG models and tools like YangSuite is key to effective API interaction.
+These APIs enable programmatic access to performance data (CPU, memory, interfaces) and are ideal for building monitoring tools. Python's requests library is perfectly suited for interacting with RESTCONF APIs, simplifying HTTP requests and JSON parsing. For NETCONF, the ncclient library provides a comprehensive client for establishing sessions, sending XML RPCs, and parsing responses. The xmltodict library further enhances NETCONF parsing by converting complex XML structures into easy-to-use Python dictionaries. Both approaches, demonstrated with practical examples for Cisco IOS XE, are crucial for modern network automation. These automated data collection methods can be easily displayed using a web framework like Python Flask or integrated into larger monitoring systems like Grafana. Understanding YANG models and tools like YangSuite is key to effective API interaction.
 
 
 **Key Takeaways**
@@ -470,6 +470,7 @@ These APIs enable programmatic access to performance data (CPU, memory, interfac
 * YANG Filtering: For RESTCONF, done by precise URI path; for NETCONF, using XML <filter> elements within RPCs.
 * Cisco YangSuite: An essential tool for exploring YANG models, building filters/URIs, and testing API calls.
 * requests Library: Your primary Python tool for making HTTP requests to RESTCONF APIs, handling authentication and JSON responses.
-* ncclient Library: The go-to Python library for establishing NETCONF sessions, sending XML RPCs, and parsing XML responses.
-* Practical Examples: Demonstrated how to use requests for RESTCONF (e.g., CPU utilization) and ncclient for NETCONF (e.g., interface operational status) on Cisco IOS XE.
-Monitoring Tools: APIs enable efficient polling and data collection for building monitoring dashboards with Flask or integrating with advanced systems like Grafana.
+* ncclient Library: The go-to Python library for establishing NETCONF sessions and sending XML RPCs.
+* xmltodict Library: Simplifies parsing NETCONF XML responses by converting them into Python dictionaries, making data extraction more intuitive.
+* Practical Examples: Demonstrated how to use requests for RESTCONF (e.g., CPU utilization) and ncclient with xmltodict for NETCONF (e.g., interface operational status) on Cisco IOS XE.
+* Monitoring Tools: APIs enable efficient polling and data collection for building monitoring dashboards with Flask or integrating with advanced systems like Grafana.
