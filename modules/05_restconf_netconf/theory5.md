@@ -462,7 +462,7 @@ These APIs enable programmatic access to performance data (CPU, memory, interfac
 * NETCONF/YANG: A protocol (NETCONF) and data model (YANG) for structured device management, typically over SSH with XML data.
 * RESTCONF: A RESTful interface to YANG-modeled data, using HTTP and JSON/XML, often found directly on devices like IOS XE.
 * YANG Syntax: Defines data hierarchy using constructs like module, container, list, leaf, type, config, and description.
-* nYANG Model Types:
+* YANG Model Types:
     * Native: Vendor-specific (e.g., Cisco-IOS-XE-native), reflects CLI, not portable.
     * IETF: Standardized, covers basic functions, highly portable.
     * OpenConfig: Industry-driven, operationally rich, vendor-neutral, designed for scale.
