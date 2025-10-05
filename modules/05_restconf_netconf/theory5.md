@@ -21,7 +21,7 @@ You've learned to automate network devices using the Command Line Interface (CLI
 *   **Built for Programs:** Reliable communication, less prone to breaking.
 *   **Consistent:** Can offer a unified way to get data across different systems.
 
-### 1.1 Cisco APIs: REST, NETCONF/YANG, RESTCONF
+### 1.1 Cisco APIs - REST, NETCONF/YANG, RESTCONF
 
 Cisco provides various APIs:
 
@@ -95,7 +95,7 @@ module example-interfaces {
   }
 }
 ```
-### 2.2 Available YANG Models: Native, IETF, OpenConfig
+### 2.2 Available YANG Models - Native, IETF, OpenConfig
 
 YANG models are categorized by their origin and purpose:
 
@@ -120,16 +120,16 @@ YANG models are categorized by their origin and purpose:
 
 * * *
 
-3\. Querying Cisco IOS XE Router Performance Data
--------------------------------------------------
+3\. Querying Performance Data via RESTCONF
+------------------------------------------
 
-To query performance data from a Cisco IOS XE router, you'll use RESTCONF with specific YANG models.
+To query performance data form network devices (for example: from a Cisco IOS XE router), you'll use RESTCONF with specific YANG models.
 
 ### 3.1 Building RESTCONF URIs (Uniform Resource Identifiers)
 
 A RESTCONF URI is constructed to point to a specific node in the YANG data tree. The basic structure is: `https:/{host}/:{port}/restconf/data/{yangpath}`
 
-*   {host}: The IP address or hostname of your router.
+*   {host}: The IP address or hostname of your device.
 *   {port}: Usually 443 for HTTPS.
 *   `/restconf/data/`: This is the base path for accessing data nodes defined by YANG models.
 *   {yangpath}: This is the critical part. It specifies the path to the desired data within the YANG model hierarchy. It uses a specific format:
@@ -235,8 +235,8 @@ YangSuite simplifies the process of understanding YANG models and constructing A
 
 * * *
 
-5\. Python `requests` for RESTCONF on Cisco IOS XE
--------------------------------------------------
+5\. Using Python `requests` library for RESTCONF on Cisco IOS XE devices
+------------------------------------------------------------------------
 
 The `requests` library is a simple yet powerful HTTP library for Python, making it ideal for interacting with RESTCONF APIs. Before you can use RESTCONF on a Cisco IOS XE device, ensure it is properly configured. This typically involves enabling AAA, configuring a local user, enabling the secure HTTP server, and enabling RESTCONF itself.
 
@@ -320,9 +320,9 @@ except json.JSONDecodeError:
 This script first imports necessary libraries, then defines device connection parameters and the specific RESTCONF URI for CPU utilization. It sets the Accept and Content-Type headers to application/yang-data+json to indicate that it expects and sends JSON formatted YANG data. After making a GET request with basic authentication, it parses the JSON response and extracts relevant CPU utilization statistics.
 
 * * *
-6\. Python ncclient for NETCONF on Cisco IOS XE
------------------------------------------------
-The ncclient library is a Python client for NETCONF, enabling programmatic interaction with network devices using XML-based RPCs. NETCONF typically runs over SSH on port 830. To enable NETCONF on Cisco IOS XE, you usually need the netconf-yang command in global configuration mode. The xmltodict library simplifies XML parsing by converting it into Python dictionaries.
+6\. Using Python `ncclient` library for NETCONF on Cisco IOS XE devices 
+-----------------------------------------------------------------------
+The ncclient library is a Python client for NETCONF, enabling programmatic interaction with network devices using XML-based RPCs. NETCONF typically runs over SSH on port 830. To enable NETCONF on Cisco IOS XE devices, you usually need the netconf-yang command in global configuration mode. The xmltodict library simplifies XML parsing by converting it into Python dictionaries.
 
 
 *** Cisco IOS XE Configuration for NETCONF (Example): ***
