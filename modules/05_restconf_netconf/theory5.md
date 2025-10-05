@@ -256,27 +256,189 @@ Displaying Data with Other Tools (e.g., Grafana): For more advanced, scalable, a
 
 * * *
 
-6\. Summary and Key Takeaways
------------------------------
+6\. Python `requests` for RESTCONF on Cisco IOS XE
+-------------------------------------------------
 
-### Summary
+The `requests` library is a simple yet powerful HTTP library for Python, making it ideal for interacting with RESTCONF APIs. Before you can use RESTCONF on a Cisco IOS XE device, ensure it is properly configured. This typically involves enabling AAA, configuring a local user, enabling the secure HTTP server, and enabling RESTCONF itself.
 
-APIs provide a powerful, structured way to interact with network devices and controllers, moving beyond the limitations of CLI parsing. RESTCONF (HTTP + YANG) offers structured access directly to devices like Cisco IOS XE routers. These APIs enable programmatic access to performance data (CPU, memory, interfaces) and are ideal for building monitoring tools, which can be easily displayed using a web framework like Python Flask or integrated into larger monitoring systems like Grafana. Understanding YANG models and tools like YangSuite is key to effective API interaction.
+**Cisco IOS XE Configuration for RESTCONF (Example):**
+```bash
+aaa new-model
+username admin privilege 15 password 0 admin_password
+aaa authentication login default local
+aaa authorization exec default local
+ip http secure-server
+ip http authentication local
+restconf
+```
+**Example: Retrieving CPU Utilization via RESTCONF**
 
-### Key Takeaways
+This example demonstrates how to use the `requests` library to fetch the CPU utilization from a Cisco IOS XE device using the `Cisco-IOS-XE-process-cpu-oper` YANG model.
 
-*   APIs vs. CLI: APIs offer structured data, more reliable automation.
-*   REST APIs: Standard web methods (GET, POST), JSON data.
-*   NETCONF/YANG: Protocol (NETCONF) and data model (YANG) for structured device management (XML).
-*   RESTCONF: RESTful interface to YANG-modeled data (HTTP, JSON/XML), found directly on IOS XE.
-*   YANG Syntax: Defines data hierarchy using `module`, `container`, `list`, `leaf`, `type`, `config`, `description`.
-*   YANG Model Types:
-    *   Native: Vendor-specific, reflects CLI, not portable.
-    *   IETF: Standardized, basic functions, portable.
-    *   OpenConfig: Industry-driven, operationally rich, vendor-neutral.
-*   Building RESTCONF URIs: Use `https:/{host}/:{port}/restconf/data/{yangpath}`. YANG path uses `module-name:container/list=key/leaf` format.
-*   YANG Filtering: Done by precise URI path for RESTCONF; XML `` for NETCONF.
-*   Cisco YangSuite: Tool to explore YANG models, build filters/URIs, and test API calls.
-*   `requests` Library: Your primary tool for making HTTP requests to REST APIs.
-*   Python Flask: A lightweight web framework for building simple web applications, ideal for displaying monitoring data.
-*   Monitoring Tools: APIs enable polling, thresholding, and displaying real-time network health data. Consider Grafana for advanced visualization.
+```python
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+
+# Suppress SSL warnings for lab environments (use with caution in production)
+requests.packages.urllib3.disable_warnings()
+
+# Device details
+HOST = 'your_iosxe_device_ip'
+PORT = 443  # Default HTTPS port for RESTCONF
+USER = 'admin'
+PASS = 'admin_password'
+
+# RESTCONF URI for CPU utilization
+# YANG Path: Cisco-IOS-XE-process-cpu-oper:cpu-usage/cpu-utilization
+URI = f"https://{HOST}:{PORT}/restconf/data/Cisco-IOS-XE-process-cpu-oper:cpu-usage/cpu-utilization"
+
+# Set up HTTP headers for JSON data
+HEADERS = {
+    "Accept": "application/yang-data+json",
+    "Content-Type": "application/yang-data+json"
+}
+
+try:
+    # Make the GET request
+    response = requests.get(
+        url=URI,
+        headers=HEADERS,
+        auth=HTTPBasicAuth(USER, PASS),
+        verify=False  # Do not verify SSL certificate (for lab)
+    )
+
+    # Check for successful response
+    response.raise_for_status() # Raises HTTPError for bad responses (4xx or 5xx)
+
+    # Parse the JSON response
+    cpu_data = response.json()
+
+    # Print the raw JSON response (for inspection)
+    print("Raw JSON Response:")
+    print(json.dumps(cpu_data, indent=2))
+
+    # Extract and display specific CPU utilization metrics
+    if "Cisco-IOS-XE-process-cpu-oper:cpu-usage" in cpu_data and \
+       "cpu-utilization" in cpu_data["Cisco-IOS-XE-process-cpu-oper:cpu-usage"]:
+        cpu_util = cpu_data["Cisco-IOS-XE-process-cpu-oper:cpu-usage"]["cpu-utilization"]
+        print(f"\nCPU Utilization (5 seconds): {cpu_util.get('five-seconds')}%")
+        print(f"CPU Utilization (1 minute): {cpu_util.get('one-minute')}%")
+        print(f"CPU Utilization (5 minutes): {cpu_util.get('five-minutes')}%")
+        print(f"Total CPU Utilization: {cpu_util.get('cpu-total-utilization')}%")
+    else:
+        print("CPU utilization data not found in response.")
+
+except requests.exceptions.RequestException as e:
+    print(f"Error making RESTCONF request: {e}")
+    if hasattr(e, 'response') and e.response is not None:
+        print(f"Response status code: {e.response.status_code}")
+        print(f"Response text: {e.response.text}")
+except json.JSONDecodeError:
+    print("Error decoding JSON response.")
+    print(f"Response text: {response.text}")
+```
+This script first imports necessary libraries, then defines device connection parameters and the specific RESTCONF URI for CPU utilization. It sets the Accept and Content-Type headers to application/yang-data+json to indicate that it expects and sends JSON formatted YANG data. After making a GET request with basic authentication, it parses the JSON response and extracts relevant CPU utilization statistics.
+
+* * *
+7\. Python ncclient for NETCONF on Cisco IOS XE
+-----------------------------------------------
+The ncclient library is a Python client for NETCONF, enabling programmatic interaction with network devices using XML-based RPCs. NETCONF typically runs over SSH on port 830. To enable NETCONF on Cisco IOS XE, you usually need the netconf-yang command in global configuration mode.
+
+
+**Cisco IOS XE Configuration for NETCONF (Example):**
+```bash
+netconf-yang
+```
+
+**Example Retrieving Interface Operational Status via NETCONF:**
+
+This example uses ncclient to connect to a Cisco IOS XE device and retrieve the operational status of a specific interface (e.g., GigabitEthernet1) using an IETF YANG model.
+```python
+from ncclient import manager
+import xml.etree.ElementTree as ET
+
+# Device details
+HOST = 'your_iosxe_device_ip'
+PORT = 830  # Default NETCONF port
+USER = 'admin'
+PASS = 'admin_password'
+
+# XML filter to retrieve operational status of GigabitEthernet1
+# Using ietf-interfaces YANG model
+NETCONF_FILTER = """
+<filter type="subtree">
+  <interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces">
+    <interface>
+      <name>GigabitEthernet1</name>
+      <oper-status/>
+    </interface>
+  </interfaces>
+</filter>
+"""
+
+try:
+    # Establish NETCONF session
+    with manager.connect(host=HOST,
+                         port=PORT,
+                         username=USER,
+                         password=PASS,
+                         hostkey_verify=False, # Set to True in production with proper host keys
+                         device_params={'name': 'csr'}) as m: # 'csr' for Cisco IOS XE devices
+        print(f"Connected to {HOST} via NETCONF.")
+
+        # Perform a 'get' operation with the filter
+        # The 'get' operation retrieves both configuration and operational data
+        # 'get_config' would only retrieve configuration data
+        result = m.get(NETCONF_FILTER)
+
+        # Print the raw XML response (for inspection)
+        print("\nRaw XML Response:")
+        print(result.xml_pretty())
+
+        # Parse the XML response to extract operational status
+        root = ET.fromstring(result.xml)
+        # Define the namespace for ietf-interfaces
+        ns = {'if': 'urn:ietf:params:xml:ns:yang:ietf-interfaces'}
+
+        oper_status_element = root.find(".//if:oper-status", ns)
+        if oper_status_element is not None:
+            oper_status = oper_status_element.text
+            print(f"\nOperational status of GigabitEthernet1: {oper_status}")
+        else:
+            print("Operational status not found for GigabitEthernet1.")
+
+except Exception as e:
+    print(f"Error connecting or retrieving data via NETCONF: {e}")
+```
+This script begins by importing manager from ncclient and ElementTree for XML parsing. It then defines connection details and an XML filter to specifically request the oper-status of GigabitEthernet1 from the ietf-interfaces YANG model. A NETCONF session is established, and the m.get() method is used with the XML filter to retrieve the data. The response, which is in XML format, is then parsed using ElementTree to extract the interface's operational status.
+
+* * *
+
+8\.Summary and Key Takeaways
+----------------------------
+**Summary**
+
+APIs provide a powerful, structured way to interact with network devices and controllers, moving beyond the limitations of CLI parsing. RESTCONF (HTTP + YANG) offers structured access directly to devices like Cisco IOS XE routers, leveraging standard HTTP methods and JSON/XML data formats. NETCONF (SSH + YANG) provides a robust, transactional, XML-based protocol for managing network devices, ideal for configuration and operational data retrieval.
+
+
+These APIs enable programmatic access to performance data (CPU, memory, interfaces) and are ideal for building monitoring tools. Python's requests library is perfectly suited for interacting with RESTCONF APIs, simplifying HTTP requests and JSON parsing. For NETCONF, the ncclient library provides a comprehensive client for establishing sessions, sending XML RPCs, and parsing responses. Both approaches, demonstrated with practical examples for Cisco IOS XE, are crucial for modern network automation. These automated data collection methods can be easily displayed using a web framework like Python Flask or integrated into larger monitoring systems like Grafana. Understanding YANG models and tools like YangSuite is key to effective API interaction.
+
+
+**Key Takeaways**
+* APIs vs. CLI: APIs offer structured data and more reliable automation than text-based CLI.
+* REST APIs: Utilize standard web methods (GET, POST) over HTTP, primarily with JSON data.
+* NETCONF/YANG: A protocol (NETCONF) and data model (YANG) for structured device management, typically over SSH with XML data.
+* RESTCONF: A RESTful interface to YANG-modeled data, using HTTP and JSON/XML, often found directly on devices like IOS XE.
+* YANG Syntax: Defines data hierarchy using constructs like module, container, list, leaf, type, config, and description.
+* nYANG Model Types:
+    * Native: Vendor-specific (e.g., Cisco-IOS-XE-native), reflects CLI, not portable.
+    * IETF: Standardized, covers basic functions, highly portable.
+    * OpenConfig: Industry-driven, operationally rich, vendor-neutral, designed for scale.
+* Building RESTCONF URIs: Constructed as https://{host}:{port}/restconf/data/{yangpath}, where {yangpath} follows module-name:container/list=key/leaf format.
+* YANG Filtering: For RESTCONF, done by precise URI path; for NETCONF, using XML <filter> elements within RPCs.
+* Cisco YangSuite: An essential tool for exploring YANG models, building filters/URIs, and testing API calls.
+* requests Library: Your primary Python tool for making HTTP requests to RESTCONF APIs, handling authentication and JSON responses.
+* ncclient Library: The go-to Python library for establishing NETCONF sessions, sending XML RPCs, and parsing XML responses.
+* Practical Examples: Demonstrated how to use requests for RESTCONF (e.g., CPU utilization) and ncclient for NETCONF (e.g., interface operational status) on Cisco IOS XE.
+Monitoring Tools: APIs enable efficient polling and data collection for building monitoring dashboards with Flask or integrating with advanced systems like Grafana.
