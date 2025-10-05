@@ -452,4 +452,3 @@ These APIs enable programmatic access to performance data (CPU, memory, interfac
 * ncclient Library: The go-to Python library for establishing NETCONF sessions and sending XML RPCs.
 * xmltodict Library: Simplifies parsing NETCONF XML responses by converting them into Python dictionaries, making data extraction more intuitive.
 * Practical Examples: Demonstrated how to use requests for RESTCONF (e.g., CPU utilization) and ncclient with xmltodict for NETCONF (e.g., interface operational status) on Cisco IOS XE.
-* Monitoring Tools: APIs enable efficient polling and data collection for building monitoring dashboards with Flask or integrating with advanced systems like Grafana.
