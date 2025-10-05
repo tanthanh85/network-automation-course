@@ -325,11 +325,11 @@ This script first imports necessary libraries, then defines device connection pa
 The ncclient library is a Python client for NETCONF, enabling programmatic interaction with network devices using XML-based RPCs. NETCONF typically runs over SSH on port 830. To enable NETCONF on Cisco IOS XE devices, you usually need the netconf-yang command in global configuration mode. The xmltodict library simplifies XML parsing by converting it into Python dictionaries.
 
 
-*** Cisco IOS XE Configuration for NETCONF (Example): ***
+**Cisco IOS XE Configuration for NETCONF (Example):**
 ```bash
 netconf-yang
 ```
-*** Example: Retrieving Interface Operational Status via NETCONF ***
+**Example: Retrieving Interface Operational Status via NETCONF**
 This example uses ncclient to connect to a Cisco IOS XE device and retrieve the operational status of a specific interface (e.g., GigabitEthernet1) using an IETF YANG model. It then uses xmltodict to parse the XML response into a Python dictionary for easier data access.
 
 
@@ -337,6 +337,7 @@ First, ensure you have xmltodict installed:
 ```bash
 pip install xmltodict
 ```
+Then write python code
 
 ```python
 from ncclient import manager
