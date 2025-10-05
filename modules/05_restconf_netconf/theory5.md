@@ -424,29 +424,7 @@ This script begins by importing manager from ncclient and xmltodict for XML pars
 
 * * *
 
-7\. Building a Simple Monitoring Tool with Python Flask
--------------------------------------------------------
-
-Python Flask is a lightweight web framework. It allows you to create simple web applications that can display data in a web browser. This is perfect for building a basic monitoring dashboard.
-
-How it works:
-
-1.  Flask Application: A Python script that runs a small web server.
-2.  Routes: Define specific URLs (e.g., `/`, `/metrics`) that trigger Python functions.
-3.  Data Retrieval: Inside these functions, you'll use `requests` to query your Cisco IOS XE router's RESTCONF API.
-4.  HTML/JSON Response: Flask sends back either an HTML page (for the dashboard view) or JSON data (for a data API endpoint).
-5.  Web Browser: Users open the Flask app's URL in their browser to see the monitoring data. The browser can periodically refresh the page or fetch new data using JavaScript.
-
-Displaying Data with Other Tools (e.g., Grafana): For more advanced, scalable, and visually rich monitoring, organizations often use dedicated monitoring stacks. Your Python script can be a crucial part of this by acting as a data collector.
-
-*   Data Collection: Your Python script (using `requests` for RESTCONF, or other libraries for NETCONF/gRPC telemetry) fetches metrics.
-*   Data Storage: The collected metrics are then pushed to a time-series database (e.g., Prometheus, InfluxDB). These databases are optimized for storing and querying time-stamped data.
-*   Data Visualization: Tools like Grafana connect to these time-series databases. Grafana allows you to build highly customizable, interactive dashboards with graphs, charts, and alerts. Your Python script feeds the data, and Grafana makes it beautiful and actionable.
-
-
-* * *
-
-8\. Summary and Key Takeaways
+7\. Summary and Key Takeaways
 -----------------------------
 **Summary**
 
