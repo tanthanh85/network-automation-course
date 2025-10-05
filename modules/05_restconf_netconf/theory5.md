@@ -322,20 +322,26 @@ This script first imports necessary libraries, then defines device connection pa
 * * *
 6\. Python ncclient for NETCONF on Cisco IOS XE
 -----------------------------------------------
-The ncclient library is a Python client for NETCONF, enabling programmatic interaction with network devices using XML-based RPCs. NETCONF typically runs over SSH on port 830. To enable NETCONF on Cisco IOS XE, you usually need the netconf-yang command in global configuration mode.
+The ncclient library is a Python client for NETCONF, enabling programmatic interaction with network devices using XML-based RPCs. NETCONF typically runs over SSH on port 830. To enable NETCONF on Cisco IOS XE, you usually need the netconf-yang command in global configuration mode. The xmltodict library simplifies XML parsing by converting it into Python dictionaries.
 
 
-**Cisco IOS XE Configuration for NETCONF (Example):**
+*** Cisco IOS XE Configuration for NETCONF (Example): ***
 ```bash
 netconf-yang
 ```
+*** Example: Retrieving Interface Operational Status via NETCONF ***
+This example uses ncclient to connect to a Cisco IOS XE device and retrieve the operational status of a specific interface (e.g., GigabitEthernet1) using an IETF YANG model. It then uses xmltodict to parse the XML response into a Python dictionary for easier data access.
 
-**Example Retrieving Interface Operational Status via NETCONF:**
 
-This example uses ncclient to connect to a Cisco IOS XE device and retrieve the operational status of a specific interface (e.g., GigabitEthernet1) using an IETF YANG model.
+First, ensure you have xmltodict installed:
+```bash
+pip install xmltodict
+```
+
 ```python
 from ncclient import manager
-import xml.etree.ElementTree as ET
+import xmltodict
+import json # Used for pretty printing the dictionary
 
 # Device details
 HOST = 'your_iosxe_device_ip'
@@ -375,14 +381,37 @@ try:
         print("\nRaw XML Response:")
         print(result.xml_pretty())
 
-        # Parse the XML response to extract operational status
-        root = ET.fromstring(result.xml)
-        # Define the namespace for ietf-interfaces
-        ns = {'if': 'urn:ietf:params:xml:ns:yang:ietf-interfaces'}
+        # Parse the XML response to a Python dictionary using xmltodict
+        data_dict = xmltodict.parse(result.xml)
 
-        oper_status_element = root.find(".//if:oper-status", ns)
-        if oper_status_element is not None:
-            oper_status = oper_status_element.text
+        # Print the dictionary (for inspection)
+        print("\nParsed Dictionary Response:")
+        print(json.dumps(data_dict, indent=2))
+
+        # Extract operational status from the dictionary
+        # Navigating through the dictionary structure based on the YANG model
+        # Note: xmltodict often adds ordereddict keys like 'rpc-reply', 'data', etc.
+        # It also handles XML namespaces by default, often prefixing with '@' or just using the tag name.
+        oper_status = None
+        try:
+            # Adjust path based on actual XML structure and namespaces
+            # Example path for ietf-interfaces:
+            # rpc-reply -> data -> interfaces -> interface (which is a list) -> oper-status
+            interfaces = data_dict['rpc-reply']['data']['interfaces']['interface']
+            # If there's only one interface matching the filter, it might not be a list
+            if isinstance(interfaces, list):
+                for iface in interfaces:
+                    if iface['name'] == 'GigabitEthernet1':
+                        oper_status = iface['oper-status']
+                        break
+            else: # Single interface returned
+                if interfaces['name'] == 'GigabitEthernet1':
+                    oper_status = interfaces['oper-status']
+
+        except KeyError as ke:
+            print(f"Could not find key in dictionary: {ke}. Check XML structure.")
+            
+        if oper_status:
             print(f"\nOperational status of GigabitEthernet1: {oper_status}")
         else:
             print("Operational status not found for GigabitEthernet1.")
@@ -390,7 +419,8 @@ try:
 except Exception as e:
     print(f"Error connecting or retrieving data via NETCONF: {e}")
 ```
-This script begins by importing manager from ncclient and ElementTree for XML parsing. It then defines connection details and an XML filter to specifically request the oper-status of GigabitEthernet1 from the ietf-interfaces YANG model. A NETCONF session is established, and the m.get() method is used with the XML filter to retrieve the data. The response, which is in XML format, is then parsed using ElementTree to extract the interface's operational status.
+This script begins by importing manager from ncclient and xmltodict for XML parsing. It then defines connection details and an XML filter to specifically request the oper-status of GigabitEthernet1 from the ietf-interfaces YANG model. A NETCONF session is established, and the m.get() method is used with the XML filter to retrieve the data. The response, which is in XML format, is then parsed using xmltodict.parse() into a Python dictionary. The script then demonstrates how to navigate this dictionary to extract the interface's operational status, providing a more Pythonic way to access the data compared to direct XML tree traversal.
+
 
 * * *
 
