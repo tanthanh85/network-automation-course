@@ -235,28 +235,7 @@ YangSuite simplifies the process of understanding YANG models and constructing A
 
 * * *
 
-5\. Building a Simple Monitoring Tool with Python Flask
--------------------------------------------------------
-
-Python Flask is a lightweight web framework. It allows you to create simple web applications that can display data in a web browser. This is perfect for building a basic monitoring dashboard.
-
-How it works:
-
-1.  Flask Application: A Python script that runs a small web server.
-2.  Routes: Define specific URLs (e.g., `/`, `/metrics`) that trigger Python functions.
-3.  Data Retrieval: Inside these functions, you'll use `requests` to query your Cisco IOS XE router's RESTCONF API.
-4.  HTML/JSON Response: Flask sends back either an HTML page (for the dashboard view) or JSON data (for a data API endpoint).
-5.  Web Browser: Users open the Flask app's URL in their browser to see the monitoring data. The browser can periodically refresh the page or fetch new data using JavaScript.
-
-Displaying Data with Other Tools (e.g., Grafana): For more advanced, scalable, and visually rich monitoring, organizations often use dedicated monitoring stacks. Your Python script can be a crucial part of this by acting as a data collector.
-
-*   Data Collection: Your Python script (using `requests` for RESTCONF, or other libraries for NETCONF/gRPC telemetry) fetches metrics.
-*   Data Storage: The collected metrics are then pushed to a time-series database (e.g., Prometheus, InfluxDB). These databases are optimized for storing and querying time-stamped data.
-*   Data Visualization: Tools like Grafana connect to these time-series databases. Grafana allows you to build highly customizable, interactive dashboards with graphs, charts, and alerts. Your Python script feeds the data, and Grafana makes it beautiful and actionable.
-
-* * *
-
-6\. Python `requests` for RESTCONF on Cisco IOS XE
+5\. Python `requests` for RESTCONF on Cisco IOS XE
 -------------------------------------------------
 
 The `requests` library is a simple yet powerful HTTP library for Python, making it ideal for interacting with RESTCONF APIs. Before you can use RESTCONF on a Cisco IOS XE device, ensure it is properly configured. This typically involves enabling AAA, configuring a local user, enabling the secure HTTP server, and enabling RESTCONF itself.
@@ -341,7 +320,7 @@ except json.JSONDecodeError:
 This script first imports necessary libraries, then defines device connection parameters and the specific RESTCONF URI for CPU utilization. It sets the Accept and Content-Type headers to application/yang-data+json to indicate that it expects and sends JSON formatted YANG data. After making a GET request with basic authentication, it parses the JSON response and extracts relevant CPU utilization statistics.
 
 * * *
-7\. Python ncclient for NETCONF on Cisco IOS XE
+6\. Python ncclient for NETCONF on Cisco IOS XE
 -----------------------------------------------
 The ncclient library is a Python client for NETCONF, enabling programmatic interaction with network devices using XML-based RPCs. NETCONF typically runs over SSH on port 830. To enable NETCONF on Cisco IOS XE, you usually need the netconf-yang command in global configuration mode.
 
@@ -412,6 +391,28 @@ except Exception as e:
     print(f"Error connecting or retrieving data via NETCONF: {e}")
 ```
 This script begins by importing manager from ncclient and ElementTree for XML parsing. It then defines connection details and an XML filter to specifically request the oper-status of GigabitEthernet1 from the ietf-interfaces YANG model. A NETCONF session is established, and the m.get() method is used with the XML filter to retrieve the data. The response, which is in XML format, is then parsed using ElementTree to extract the interface's operational status.
+
+* * *
+
+7\. Building a Simple Monitoring Tool with Python Flask
+-------------------------------------------------------
+
+Python Flask is a lightweight web framework. It allows you to create simple web applications that can display data in a web browser. This is perfect for building a basic monitoring dashboard.
+
+How it works:
+
+1.  Flask Application: A Python script that runs a small web server.
+2.  Routes: Define specific URLs (e.g., `/`, `/metrics`) that trigger Python functions.
+3.  Data Retrieval: Inside these functions, you'll use `requests` to query your Cisco IOS XE router's RESTCONF API.
+4.  HTML/JSON Response: Flask sends back either an HTML page (for the dashboard view) or JSON data (for a data API endpoint).
+5.  Web Browser: Users open the Flask app's URL in their browser to see the monitoring data. The browser can periodically refresh the page or fetch new data using JavaScript.
+
+Displaying Data with Other Tools (e.g., Grafana): For more advanced, scalable, and visually rich monitoring, organizations often use dedicated monitoring stacks. Your Python script can be a crucial part of this by acting as a data collector.
+
+*   Data Collection: Your Python script (using `requests` for RESTCONF, or other libraries for NETCONF/gRPC telemetry) fetches metrics.
+*   Data Storage: The collected metrics are then pushed to a time-series database (e.g., Prometheus, InfluxDB). These databases are optimized for storing and querying time-stamped data.
+*   Data Visualization: Tools like Grafana connect to these time-series databases. Grafana allows you to build highly customizable, interactive dashboards with graphs, charts, and alerts. Your Python script feeds the data, and Grafana makes it beautiful and actionable.
+
 
 * * *
 
