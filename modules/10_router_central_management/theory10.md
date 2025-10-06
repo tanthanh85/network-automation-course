@@ -137,6 +137,7 @@ This example provides basic functions for sending notifications. Remember to rep
 
 
 **Send alerts to Zalo**
+
 To send alerts to Zalo, you'll typically use the Zalo Official Account (OA) API. This requires setting up a Zalo Official Account, creating an application on Zalo for Developers, and obtaining an access_token. The process for getting an access_token is an OAuth 2.0 flow and usually involves user interaction to grant permissions to your OA. Once you have the access_token and the user_id of the recipient (who must have interacted with your OA), you can send messages.
 
 Prerequisites for Zalo Integration:
