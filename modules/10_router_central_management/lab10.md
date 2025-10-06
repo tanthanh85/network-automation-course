@@ -22,7 +22,7 @@ This console will allow you to:
 
 **Lab Objectives:**
 *   Set up the Flask project structure.
-*   Implement inventory management (add/list/delete routers) to an SQLite database.
+*   Implement inventory management (add/list/delete routers) to a SQLite database.
 *   Develop backend functions for router operations (reboot, backup, logging, monitoring).
 *   Create Flask routes and HTML templates for the web GUI.
 *   Integrate long-running tasks as background threads.
@@ -34,11 +34,11 @@ This console will allow you to:
 *   An active internet connection.
 *   **Access to a Cisco IOS XE router with SSH and RESTCONF enabled (e.g., Cisco DevNet Sandboxes).** You will need its IP, username, and password.
 
-Let's build a web console!
+Let's build a web console now!
 
 ---
 
-## Lab Setup: Project Structure
+## Lab Setup - Build Project Structure
 
 For this module, we will create a dedicated project structure for our Flask application.
 
@@ -139,7 +139,7 @@ This file will handle all SQLite database operations for the inventory.
 
     DEFAULT_ROUTER_INFO = {
         "device_type": "cisco_ios", # For Netmiko
-        "host": "10.10.200.148", # e.g., 10.10.20.40
+        "host": "10.10.20.48", # e.g., 10.10.20.40
         "username": "developer",
         "password": "abcd",
         "secret": "abcd", # For Netmiko enable mode

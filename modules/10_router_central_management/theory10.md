@@ -57,7 +57,7 @@ Our console for this course will be built using **Python Flask**, a lightweight 
 
 ## 3. Inventory Management
 
-A centralized console needs a robust way to store and manage information about the network devices it controls. In this course, we will be storing the network inventory in SQLite.
+A centralized console needs a robust way to store and manage information about the network devices it controls. Technically, you can use JSON, XML and YAML (which you learned in module 1) to store those inventory information. However, it can be troublesome managing inventory info in text format in a large environment which can contain hundreds or thoundsands of devices. In this module, we will be exploring the option using SQLite to store the network inventory.
 
 *   **Why SQLite?**
     *   **File-based Database:** SQLite is a self-contained, serverless, zero-configuration, transactional SQL database engine. It stores data in a single `.db` file, making it easy to set up and manage for smaller applications.
@@ -75,7 +75,7 @@ A centralized console needs a robust way to store and manage information about t
 
 ## 4. Router Control - Automating Operations
 
-We'll leverage Netmiko (from Module 3) for CLI-based operations.
+We'll leverage Netmiko (from Module 3) for CLI-based operations such as rebooting a router, backup router's configuration and gathering router's loggings.
 
 *   **4.1 Reboot a Router:**
     *   **Netmiko Command:** `net_connect.send_command("reload", expect_string=r"\[confirm\]", strip_prompt=False)` followed by `net_connect.send_command("y", strip_prompt=False)`.
@@ -98,7 +98,7 @@ We'll leverage Netmiko (from Module 3) for CLI-based operations.
 
 ## 5. Monitoring Device Status and Bandwidth Utilization
 
-For monitoring, we'll use RESTCONF (from Module 5) for structured data.
+For monitoring, we'll use RESTCONF (from Module 5) to retrieve structured performance data.
 
 *   **5.1 Bandwidth Utilization:**
     *   **RESTCONF Path:** `ietf-interfaces:interfaces-state/interface=<interface_name>/statistics` (for interface counters).
