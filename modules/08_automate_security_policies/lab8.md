@@ -307,39 +307,38 @@ This file will contain reusable functions for FDM API interactions.
             # and are better done in the main script with specific logic.
             # This standalone test is just for basic connectivity and function calls.
             #4. Test create networks
-        networks=[
-            {"name":"LAN1",
-             "network": "192.168.101.0/24",
-             "type": "NETWORK"},
-             {"name":"LAN2",
-             "network": "192.168.102.0/24",
-             "type": "NETWORK"},
-             {"name":"LAN3",
-             "network": "192.168.103.0/24",
-             "type": "NETWORK"},
-             {"name":"LAN4",
-             "network": "192.168.104.0/24",
-             "type": "NETWORK"},
-             {"name":"LAN5",
-             "network": "192.168.105.0/24",
-             "type": "NETWORK"},
-             {"name":"LAN6",
-             "network": "192.168.106.0/24",
-             "type": "NETWORK"},
-              {"name":"LAN7",
-             "network": "192.168.107.0/24",
-             "type": "NETWORK"},
-             {"name":"LAN8",
-             "network": "192.168.108.0/24",
-             "type": "NETWORK"},
-             {"name":"LAN9",
-             "network": "192.168.109.0/24",
-             "type": "NETWORK"},
-             {"name":"LAN10",
-             "network": "192.168.110.0/24",
-             "type": "NETWORK"}
-
-        ]
+            networks=[
+                {"name":"LAN1",
+                "network": "192.168.101.0/24",
+                "type": "NETWORK"},
+                {"name":"LAN2",
+                "network": "192.168.102.0/24",
+                "type": "NETWORK"},
+                {"name":"LAN3",
+                "network": "192.168.103.0/24",
+                "type": "NETWORK"},
+                {"name":"LAN4",
+                "network": "192.168.104.0/24",
+                "type": "NETWORK"},
+                {"name":"LAN5",
+                "network": "192.168.105.0/24",
+                "type": "NETWORK"},
+                {"name":"LAN6",
+                "network": "192.168.106.0/24",
+                "type": "NETWORK"},
+                {"name":"LAN7",
+                "network": "192.168.107.0/24",
+                "type": "NETWORK"},
+                {"name":"LAN8",
+                "network": "192.168.108.0/24",
+                "type": "NETWORK"},
+                {"name":"LAN9",
+                "network": "192.168.109.0/24",
+                "type": "NETWORK"},
+                {"name":"LAN10",
+                "network": "192.168.110.0/24",
+                "type": "NETWORK"}
+            ]
         for net in networks:
             id=get_network_object_id(name=net['name'])
             if id:
