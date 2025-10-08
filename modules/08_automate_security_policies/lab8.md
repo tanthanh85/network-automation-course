@@ -239,18 +239,19 @@ This file will contain reusable functions for FDM API interactions.
         }
         return make_fdm_api_call('POST', 'object/networks', payload)
 
-    def create_access_rule(policy_uuid, rule_name, source_network_uuid, dest_network_uuid, action="PERMIT", position="FIRST"):
+    def create_access_rule(policy_uuid, rule_name, source_network_uuid, dest_network_uuid, action="PERMIT", position=1):
         """Creates a new access rule within a given policy."""
         print(f"Creating access rule '{rule_name}' in policy {policy_uuid}...")
         payload = {
+            "ruleId":0,
             "name": rule_name,
             "action": action, # "PERMIT", "DENY"
-            "sourceNetworks": [{"id": source_network_uuid, "type": "Network"}], # FDM uses Network type for objects
-            "destinationNetworks": [{"id": dest_network_uuid, "type": "Network"}],
-            "type": "AccessRule",
+            "sourceNetworks": [{"id": source_network_uuid, "type": "networkobject"}], # FDM uses Network type for objects
+            "destinationNetworks": [{"id": dest_network_uuid, "type": "networkobject"}],
+            "type": "accessrule",
             "enabled": True,
             "logTraffic": False, # Set to True for logging
-            "rulePosition": {"action": position} # e.g., "FIRST", "LAST"
+            "rulePosition":  position #e.g 1,2,3...
         }
         return make_fdm_api_call('POST', f'accesspolicies/{policy_uuid}/accessrules', payload)
 
@@ -305,6 +306,50 @@ This file will contain reusable functions for FDM API interactions.
             # Further tests (create, delete rules, deploy) would require careful setup
             # and are better done in the main script with specific logic.
             # This standalone test is just for basic connectivity and function calls.
+            #4. Test create networks
+        networks=[
+            {"name":"LAN1",
+             "network": "192.168.101.0/24",
+             "type": "NETWORK"},
+             {"name":"LAN2",
+             "network": "192.168.102.0/24",
+             "type": "NETWORK"},
+             {"name":"LAN3",
+             "network": "192.168.103.0/24",
+             "type": "NETWORK"},
+             {"name":"LAN4",
+             "network": "192.168.104.0/24",
+             "type": "NETWORK"},
+             {"name":"LAN5",
+             "network": "192.168.105.0/24",
+             "type": "NETWORK"},
+             {"name":"LAN6",
+             "network": "192.168.106.0/24",
+             "type": "NETWORK"},
+              {"name":"LAN7",
+             "network": "192.168.107.0/24",
+             "type": "NETWORK"},
+             {"name":"LAN8",
+             "network": "192.168.108.0/24",
+             "type": "NETWORK"},
+             {"name":"LAN9",
+             "network": "192.168.109.0/24",
+             "type": "NETWORK"},
+             {"name":"LAN10",
+             "network": "192.168.110.0/24",
+             "type": "NETWORK"}
+
+        ]
+        for net in networks:
+            id=get_network_object_id(name=net['name'])
+            if id:
+                print(f"Network object '{net['name']}' already exists with UUID: {id}. Skipping creation.")
+                #create_network=create_network_object(name=net["name"],value=net["network"],obj_type=net["type"])
+            else:
+                create_network=create_network_object(name=net["name"],value=net["network"],obj_type=net["type"])
+        #5. Create access rules
+        create_access_rule(policy_uuid=uuid,rule_name="Allow-LAN1-to-LAN2",source_network_uuid=get_network_object_id(name="LAN1"),dest_network_uuid=get_network_object_id(name="LAN2"),action="PERMIT",position=1)
+        create_access_rule(policy_uuid=uuid,rule_name="Allow-LAN3-to-LAN4",source_network_uuid=get_network_object_id(name="LAN3"),dest_network_uuid=get_network_object_id(name="LAN4"),action="PERMIT",position=2)
         print("\n--- ftd_fdm_api_ops.py Test Complete ---")
     ```
 3.  Save `ftd_fdm_api_ops.py`.
@@ -370,7 +415,7 @@ This is the main script that will orchestrate the security automation tasks.
         logging.info(f"Destination object '{dest_obj_name}' UUID: {dest_network_uuid}")
 
         # 3. Create the Access Rule
-        rule_result = create_access_rule(policy_uuid, rule_name, source_network_uuid, dest_network_uuid, action="PERMIT", position="FIRST")
+        rule_result = create_access_rule(policy_uuid, rule_name, source_network_uuid, dest_network_uuid, action="PERMIT", position=1)
         if rule_result and rule_result.get('id'):
             logging.info(f"Successfully created rule '{rule_name}' with UUID: {rule_result['id']}")
             # Store rule UUID for potential deletion later
