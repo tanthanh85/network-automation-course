@@ -1,15 +1,12 @@
-# Python Basics for Network Automation: Module 1 Lab Guide
+# NASP: Module 1 Lab Guide
 
 ## Your First Steps with Python for Networking - Hands-on Exercises
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 
 ## Introduction
 
-Welcome to Module 1 of the Python Basics for Network Automation Lab Guide! This guide provides hands-on exercises to help you understand the fundamental Python concepts introduced in the "Python Basics for Network Automation: Module 1 Theory Guide."
+Welcome to Module 1 of the NASP Lab Guide! This guide provides hands-on exercises to help you understand the fundamental Python concepts introduced in the  Module 1 Theory Guide.
 
 **Lab Objectives:**
 *   Set up your Python development environment.
@@ -32,7 +29,7 @@ Welcome to Module 1 of the Python Basics for Network Automation Lab Guide! This 
 *   Type out the code yourself; do not just copy-paste. This helps build muscle memory and understanding.
 *   Experiment with the code. Change values, try different conditions, and see what happens.
 *   If you encounter errors, read the error messages carefully. They often provide clues.
-*   Refer back to the "Theory Guide" if you need to review a concept.
+*   Refer back to the "Module 1 Theory Guide" if you need to review a concept.
 
 Let's begin!
 
