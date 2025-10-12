@@ -1,5 +1,4 @@
 # Network Administration Specialist using Python (NASP)
-# DevNet 1: Python Basics for Network Automation
 
 ## Course Overview
 
