@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 6 Lab Guide
+# NASP: Module 6 Lab Guide
 
 ## Infrastructure as Code (IaC) Automation with Python - Hands-on Exercises
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

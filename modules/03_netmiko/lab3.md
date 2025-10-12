@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 3 Lab Guide
+# NASP: Module 3 Lab Guide
 
 ## Programming Automation using Netmiko Library - Hands-on Exercises
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

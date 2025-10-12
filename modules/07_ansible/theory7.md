@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 7 Theory Guide
+# NASP: Module 7 Theory Guide
 
 ## Identification of Workflows Automated using Ansible
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

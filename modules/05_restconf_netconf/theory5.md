@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 5 Theory Guide
+# NASP: Module 5 Theory Guide
 
 ## Using APIs to Retrieve Data on Cisco Network Devices
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 2 Theory Guide
+# NASP: Module 2 Theory Guide
 
 ## Making Your Python Scripts Faster: Data Synchronization and Asynchronous Mechanisms
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

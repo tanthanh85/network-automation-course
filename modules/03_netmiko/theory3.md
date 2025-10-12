@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 3 Theory Guide
+# NASP: Module 3 Theory Guide
 
 ## Programming Automation using Netmiko Library
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

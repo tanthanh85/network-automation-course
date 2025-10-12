@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 6 Theory Guide
+# NASP: Module 6 Theory Guide
 
 ## Infrastructure as Code (IaC) Automation with Python
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

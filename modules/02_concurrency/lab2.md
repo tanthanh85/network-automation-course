@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 2 Lab Guide
+# NASP: Module 2 Lab Guide
 
 ## Making Your Python Scripts Faster: Hands-on Exercises
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

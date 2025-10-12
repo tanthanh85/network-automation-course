@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 1 Theory Guide
+# NASP: Module 1 Theory Guide
 
 ## Your First Steps with Python for Networking
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 
@@ -41,7 +38,7 @@ Before you can write Python code, you need to set up your computer.
         *If `python --version` doesn't work, try `python3 --version` or ensure Python is correctly added to your system's PATH.*
 
 *   **2.2 Code Editor:**
-    *   You can write Python code in any text editor, but a "code editor" makes it much easier. They offer features like:
+    *   You can write Python code in any text editor, but a "code editor" (like VS Code, PyCharm or Jupyter) makes it much easier. They offer features like:
         *   **Syntax Highlighting:** Colors your code to make it readable.
         *   **Auto-completion:** Suggests code as you type.
         *   **Debugging:** Helps you find and fix errors.

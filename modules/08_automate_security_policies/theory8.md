@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 8 Theory Guide
+# NASP: Module 8 Theory Guide
 
 ## Implementation of Security Policies using Python
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

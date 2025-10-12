@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 10 Lab Guide
+# NASP: Module 10 Lab Guide
 
 ## Creating a Centralized Configuration Management Console for Cisco Routers - Hands-on Exercises
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

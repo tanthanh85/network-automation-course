@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 4 Lab Guide
+# NASP: Module 4 Lab Guide
 
 ## Programming Device Automation with Paramiko Library - Hands-on Exercises
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

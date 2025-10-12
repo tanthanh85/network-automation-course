@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 4 Theory Guide
+# NASP: Module 4 Theory Guide
 
 ## Programming Device Automation with Paramiko Library
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

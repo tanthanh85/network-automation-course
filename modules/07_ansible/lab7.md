@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 7 Lab Guide
+# NASP: Module 7 Lab Guide
 
 ## Identification of Workflows Automated using Ansible - Hands-on Exercises
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

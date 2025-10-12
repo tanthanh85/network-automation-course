@@ -1,13 +1,10 @@
-Python Basics for Network Automation: Module 5 Lab Guide
-========================================================
+# NASP: Module 5 Lab Guide
 
-Using APIs to Retrieve Data on Cisco Network Devices - Hands-on Exercises
--------------------------------------------------------------------------
+## Using APIs to Retrieve Data on Cisco Network Devices - Hands-on Exercises
 
-\[Your Organization/Name\] September 01, 2025
+---
 
-Introduction
-------------
+## Introduction
 
 Welcome to Module 5 of the Python Basics for Network Automation Lab Guide! In this module, you will gain hands-on experience with using APIs to retrieve data. We will use a single Cisco IOS XE router to demonstrate how to:
 
@@ -19,8 +16,8 @@ We will then use Python Flask to build a simple web-based monitoring tool that d
 
 It is crucial that you replace the dummy values for your IOS XE router with its actual IP address, username, and password to make the code functional.
 
-Lab Objectives:
----------------
+## Lab Objectives:
+
 
 *   Install the `requests`, `ncclient`, `xmltodict`, and `Flask` libraries.
 *   Discover supported YANG models and capabilities via RESTCONF.
@@ -31,8 +28,7 @@ Lab Objectives:
 *   Query Cisco IOS XE router's GigabitEthernet1 input and output utilization using NETCONF with XML YANG filters.
 *   Build a simple monitoring tool using Python Flask to display this data, demonstrating the use of both RESTCONF and NETCONF for different data points.
 
-Prerequisites:
---------------
+## Prerequisites:
 
 *   Completion of Module 1, Module 2, Module 3, and Module 4 Labs.
 *   Your `na_env` virtual environment activated.
@@ -68,8 +64,7 @@ Prerequisites:
 Let's start exploring APIs and Flask!
 
 
-Lab Setup: Project Structure
-----------------------------
+## Lab Setup: Project Structure
 
 For this module, we will structure our project for better organization.
 

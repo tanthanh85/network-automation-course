@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 8 Lab Guide
+# NASP: Module 8 Lab Guide
 
 ## Implementation of Security Policies using Python - Hands-on Exercises
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 

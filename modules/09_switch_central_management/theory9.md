@@ -1,9 +1,6 @@
-# Python Basics for Network Automation: Module 9 Theory Guide
+# NASP: Module 9 Theory Guide
 
 ## Creating a Management Console for Cisco Switches
-
-**[Your Organization/Name]**
-**September 01, 2025**
 
 ---
 
