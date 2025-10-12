@@ -363,13 +363,13 @@ This is the main script that will orchestrate the security automation tasks.
     # security_automation_main.py
     import logging
     import time
-    from ftd_fdm_api_ops import get_access_policies, create_network_object, create_access_rule, delete_access_rule, get_network_objects, deploy_changes_fdm
+    from ftd_fdm_api_ops import get_access_policies, create_network_object, create_access_rule, delete_access_rule, get_network_object_id, deploy_changes_fdm
     from config import FTD_FDM_API_INFO # For host IP in messages
 
     # Configure logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    def automate_firewall_rule_creation(ftd_host, source_ip, dest_ip, rule_name="Lab_Automated_Rule", policy_name="Default_Access_Policy"):
+    def automate_firewall_rule_creation(ftd_host, source_ip, dest_ip, rule_name="Lab_Automated_Rule", policy_name="NGFW-Access-Policy"):
         """
         Automates the creation of a firewall rule on FDM.
         1. Finds the target Access Policy.
@@ -397,7 +397,7 @@ This is the main script that will orchestrate the security automation tasks.
         # 2. Create Network Objects (if they don't exist)
         # Source object
         src_obj_name = f"Host_{source_ip.replace('.', '_')}"
-        src_obj_data = create_network_object(src_obj_name, source_ip, "Host")
+        src_obj_data = create_network_object(src_obj_name, source_ip, "HOST")
         if not src_obj_data or not src_obj_data.get('id'):
             logging.error(f"Failed to create/get source object for {source_ip}. Aborting.")
             return False
@@ -406,7 +406,7 @@ This is the main script that will orchestrate the security automation tasks.
 
         # Destination object
         dest_obj_name = f"Host_{dest_ip.replace('.', '_')}"
-        dest_obj_data = create_network_object(dest_obj_name, dest_ip, "Host")
+        dest_obj_data = create_network_object(dest_obj_name, dest_ip, "HOST")
         if not dest_obj_data or not dest_obj_data.get('id'):
             logging.error(f"Failed to create/get destination object for {dest_ip}. Aborting.")
             return False
@@ -424,14 +424,14 @@ This is the main script that will orchestrate the security automation tasks.
             return False
 
         # 4. Initiate Deployment (to make changes persistent)
-        deploy_result = deploy_changes_fdm()
-        if deploy_result and deploy_result.get('status') == 'success':
-            logging.info("Deployment initiated successfully on FDM.")
-        else:
-            logging.error("Failed to initiate deployment on FDM.")
+        # deploy_result = deploy_changes_fdm()
+        # if deploy_result and deploy_result.get('status') == 'success':
+        #     logging.info("Deployment initiated successfully on FDM.")
+        # else:
+        #     logging.error("Failed to initiate deployment on FDM.")
 
-        logging.info(f"--- Firewall Rule Automation Complete ---")
-        return True
+        # logging.info(f"--- Firewall Rule Automation Complete ---")
+        # return True
 
     def simulate_unauthorized_device_detection(network_segment="192.168.1.0/24"):
         """
@@ -487,7 +487,19 @@ This is the main script that will orchestrate the security automation tasks.
         )
         
         # Example 2: Detect Unauthorized Devices
-        simulate_unauthorized_device_detection("192.168.1.0/24")
+        # simulate_unauthorized_device_detection("192.168.1.0/24")
+
+
+        # deploy_result = deploy_changes_fdm()
+        # print(deploy_result)
+        # if deploy_result and deploy_result.get('status') == 'success':
+        #     logging.info("Deployment initiated successfully on FDM.")
+        # else:
+        #     logging.error("Failed to initiate deployment on FDM.")
+        # print(deploy_result['links']['self'])
+
+        logging.info(f"--- Firewall Rule Automation Complete ---")
+        # return True
 
         print("\n--- Security Automation Script Complete ---")
     ```
