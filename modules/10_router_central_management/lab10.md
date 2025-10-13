@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to Module 10 of the Python Basics for Network Automation Lab Guide! In this module, you will build a simple, centralized web-based management console for Cisco IOS XE routers using **Python Flask**.
+Welcome to Module 10 of the NASP Lab Guide! In this module, you will build a simple, centralized web-based management console for Cisco IOS XE routers using **Python Flask**.
 
 This console will allow you to:
 *   Manage a simple inventory of routers using SQLite.

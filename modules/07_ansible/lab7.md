@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to Module 7 of the Python Basics for Network Automation Lab Guide! In this module, you will get hands-on with **Ansible** for network automation. You will learn to use Ansible playbooks for configuration management and see how Python scripts can integrate with Ansible.
+Welcome to Module 7 of the NASP Lab Guide! In this module, you will get hands-on with **Ansible** for network automation. You will learn to use Ansible playbooks for configuration management and see how Python scripts can integrate with Ansible.
 
 **It is crucial that you replace the dummy values for your IOS XE router with its actual IP address, username, and password to make the code functional.**
 

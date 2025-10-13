@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to Module 3 of the Python Basics for Network Automation Lab Guide! In this module, you will gain hands-on experience with the Netmiko library. We will use actual Netmiko library calls in the code. For these labs, you will use **dummy IP addresses and credentials** initially. **It is crucial that you replace these dummy values with the actual IP addresses, usernames, and passwords of your lab equipment (e.g., Cisco IOS XE routers in a sandbox) to make the code functional.**
+Welcome to Module 3 of the Python Basics for Network Automation Lab Guide! In this module, you will gain hands-on experience with the Netmiko library. We will use actual Netmiko library calls in the code. For these labs, you will see **dummy IP addresses and credentials** written in the scripts initially. **It is crucial that you replace these dummy values with the actual IP addresses, usernames, and passwords of your lab equipment (e.g., Cisco IOS XE routers in a sandbox) to make the code functional.**
 
 A key focus of this module is **project organization**. Instead of putting all code in one file, we will separate our code into logical modules, which is a best practice for any automation project.
 
@@ -128,31 +128,6 @@ This file will contain all the reusable Netmiko functions.
     import datetime
     import os
     import time # For ThreadPoolExecutor to see progress
-
-    def get_netmiko_connection(device_info):
-        """
-        Establishes and returns a Netmiko connection object.
-        Handles common connection exceptions.
-        """
-        host = device_info.get("host", "Unknown Host")
-        try:
-            # Use 'with' statement for ConnectHandler to ensure proper closing
-            # However, for ThreadPoolExecutor, we return the object and let the caller manage 'with'
-            # For simplicity here, we'll connect and return, but a real app might pass connection around.
-            # For this lab, we'll connect inside each operation function.
-            pass # We'll connect inside each specific operation function below
-        except NetmikoTimeoutException:
-            print(f"Error: Connection to {host} timed out. Device might be unreachable or SSH is not enabled.")
-            raise # Re-raise to propagate the error
-        except NetmikoAuthenticationException:
-            print(f"Error: Authentication failed for {host}. Check username/password/enable password.")
-            raise
-        except NetmikoBaseException as e:
-            print(f"An Netmiko-specific error occurred connecting to {host}: {e}")
-            raise
-        except Exception as e:
-            print(f"An unexpected error occurred connecting to {host}: {e}")
-            raise
 
     def get_device_info(device_info, command="show version"):
         """

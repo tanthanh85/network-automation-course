@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to Module 9 of the Python Basics for Network Automation Lab Guide! In this module, you will build a simple Python-based management console for Cisco switches. This console will allow an administrator to interactively configure VLANs and assign ports.
+Welcome to Module 9 of the NASP Lab Guide! In this module, you will build a simple Python-based management console for Cisco switches. This console will allow an administrator to interactively configure VLANs and assign ports.
 
 **It is crucial that you replace the dummy values for your Cisco switch with its actual IP address, username, and password to make the code functional.**
 

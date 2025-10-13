@@ -22,7 +22,7 @@ Netmiko is a powerful Python library that makes it easy to connect to network de
 
 ---
 
-## 2. Netmiko Basics: Getting Started
+## 2. Netmiko Basics - Getting Started
 
 Before you can use Netmiko, you need to install it and understand how to tell it about the device you want to connect to.
 
@@ -88,7 +88,7 @@ Before you can use Netmiko, you need to install it and understand how to tell it
 
 ---
 
-## 3. Performing Operations: Commands and Configurations
+## 3. Performing Operations - Commands and Configurations
 
 Once connected, Netmiko provides methods to send commands and push configurations.
 
@@ -151,7 +151,7 @@ Once connected, Netmiko provides methods to send commands and push configuration
         # Accessing structured data is much easier
         print("\n--- Accessing Specific Parsed Data ---")
         for interface_data in parsed_output:
-            print(f"Interface: {interface_data['intf']}, IP Address: {interface_data['ipaddr']}, Status: {interface_data['status']}")
+            print(f"Interface: {interface_data['interface']}, IP Address: {interface_data['ip_address']}, Status: {interface_data['status']}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -174,9 +174,9 @@ Once connected, Netmiko provides methods to send commands and push configuration
 
     --- Parsed Output (TextFSM): show ip interface brief ---
     [
-        {'intf': 'GigabitEthernet0/0', 'ipaddr': '192.168.1.1', 'ok': 'YES', 'method': 'manual', 'status': 'up', 'proto': 'up'},
-        {'intf': 'Loopback0', 'ipaddr': '1.1.1.1', 'ok': 'YES', 'method': 'manual', 'status': 'up', 'proto': 'up'},
-        {'intf': 'Vlan1', 'ipaddr': 'unassigned', 'ok': 'YES', 'method': 'unset', 'status': 'down', 'proto': 'down'}
+        {'interface': 'GigabitEthernet0/0', 'ip_address': '192.168.1.1', 'status': 'up', 'proto': 'up'},
+        {'interface': 'Loopback0', 'ip_address': '1.1.1.1', 'status': 'up', 'proto': 'up'},
+        {'interface': 'Vlan1', 'ip_address': 'unassigned', 'ok': 'YES', 'status': 'down', 'proto': 'down'}
     ]
     Type of parsed_output: <class 'list'>
 
@@ -301,7 +301,7 @@ Connecting to one device is easy, but network automation often involves managing
                 print(res)
         print("All devices processed.")
     ```
-    *Note: For very large-scale automation (hundreds to thousands of devices), `asyncio` (from Module 2) combined with async-compatible network libraries (like `asyncssh` or `httpx` for APIs) often offers even better performance and scalability than `ThreadPoolExecutor` due to its lower overhead.*
+    *Note: For very large-scale automation (hundreds to thousands of devices), `asyncio` (from Module 2) combined with async-compatible network libraries (like `asyncssh` or `httpaio` for APIs) often offers even better performance and scalability than `ThreadPoolExecutor` due to its lower overhead.*
 
 ---
 

@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to Module 6 of the Python Basics for Network Automation Lab Guide! In this module, you will get hands-on with Infrastructure as Code (IaC) principles. You will learn to define network configurations in YAML, generate device commands using Jinja2, and push them via Netmiko. We will then use Git for version control to simulate a full IaC workflow, including a rollback scenario.
+Welcome to Module 6 of the NASP Lab Guide! In this module, you will get hands-on with Infrastructure as Code (IaC) principles. You will learn to define network configurations in YAML, generate device commands using Jinja2, and push them via Netmiko. We will then use Git for version control to simulate a full IaC workflow, including a rollback scenario.
 
 **It is crucial that you replace the dummy values for your IOS XE router with its actual IP address, username, and password to make the code functional.**
 

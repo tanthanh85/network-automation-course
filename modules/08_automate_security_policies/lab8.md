@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to Module 8 of the Python Basics for Network Automation Lab Guide! In this module, you will get hands-on with automating network security policies, specifically focusing on **Cisco Firepower Threat Defense (FTD)** managed directly via its **Firepower Device Manager (FDM) API**.
+Welcome to Module 8 of the NASP Lab Guide! In this module, you will get hands-on with automating network security policies, specifically focusing on **Cisco Firepower Threat Defense (FTD)** managed directly via its **Firepower Device Manager (FDM) API**.
 
 **It is crucial that you replace the dummy values for your FTD device with its actual IP address, username, and password to make the code functional.**
 
