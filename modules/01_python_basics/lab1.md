@@ -73,6 +73,7 @@ It's good practice to create a separate virtual environment for each project.
         ```
     *   **Windows (PowerShell):**
         ```powershell
+        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
         .\na_env\Scripts\Activate.ps1
         ```
     *Expected Observation:* You should see `(na_env)` at the beginning of your terminal prompt, indicating the environment is active.
