@@ -504,7 +504,7 @@ In a real CI/CD pipeline, this merge would trigger automated deployment. Here, w
 
 Imagine `MyRouter2` caused an unexpected issue. We need to revert to `MyRouter1`.
 
-1.  **Find the commit hash** of the commit where you set the hostname to `MyRouter1`.
+1.  **Find the commit hash** of the commit where you set the hostname to `MyRouter2`.
     ```bash
     git log --oneline
     ```
