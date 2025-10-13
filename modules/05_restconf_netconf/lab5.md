@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to Module 5 of the Python Basics for Network Automation Lab Guide! In this module, you will gain hands-on experience with using APIs to retrieve data. We will use a single Cisco IOS XE router to demonstrate how to:
+Welcome to Module 5 of the NASP Lab Guide! In this module, you will gain hands-on experience with using APIs to retrieve data. We will use a single Cisco IOS XE router to demonstrate how to:
 
 *   Discover the YANG models and capabilities supported by the device.
 *   Retrieve CPU and Memory utilization using RESTCONF with JSON YANG payloads.

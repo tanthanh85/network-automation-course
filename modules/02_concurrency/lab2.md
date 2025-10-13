@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to Module 2 of the Python Basics for Network Automation Lab Guide! In this module, you'll get hands-on with concurrency concepts in Python, specifically focusing on data synchronization with `threading` and asynchronous programming with `asyncio`. These skills are vital for writing efficient Python scripts that can handle multiple operations concurrently.
+Welcome to Module 2 of the NASP Lab Guide! In this module, you'll get hands-on with concurrency concepts in Python, specifically focusing on data synchronization with `threading` and asynchronous programming with `asyncio`. These skills are vital for writing efficient Python scripts that can handle multiple operations concurrently.
 
 **Lab Objectives:**
 *   Understand and observe race conditions in multi-threaded programs.

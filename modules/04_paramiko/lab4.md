@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to Module 4 of the Python Basics for Network Automation Lab Guide! In this module, you will gain hands-on experience with the **Paramiko** library. We will focus on its most common use: connecting to a device and executing non-interactive commands.
+Welcome to Module 4 of the NASP Lab Guide! In this module, you will gain hands-on experience with the **Paramiko** library. We will focus on its most common use: connecting to a device and executing non-interactive commands.
 
 For these labs, you will use **dummy IP addresses and credentials** initially. **It is crucial that you replace these dummy values with the actual IP addresses, usernames, and passwords of your lab equipment (e.g., Cisco IOS XE routers in a sandbox) to make the code functional.**
 

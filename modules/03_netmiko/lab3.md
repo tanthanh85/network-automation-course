@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to Module 3 of the Python Basics for Network Automation Lab Guide! In this module, you will gain hands-on experience with the Netmiko library. We will use actual Netmiko library calls in the code. For these labs, you will see **dummy IP addresses and credentials** written in the scripts initially. **It is crucial that you replace these dummy values with the actual IP addresses, usernames, and passwords of your lab equipment (e.g., Cisco IOS XE routers in a sandbox) to make the code functional.**
+Welcome to Module 3 of the NASP Lab Guide! In this module, you will gain hands-on experience with the Netmiko library. We will use actual Netmiko library calls in the code. For these labs, you will see **dummy IP addresses and credentials** written in the scripts initially. **It is crucial that you replace these dummy values with the actual IP addresses, usernames, and passwords of your lab equipment (e.g., Cisco IOS XE routers in a sandbox) to make the code functional.**
 
 A key focus of this module is **project organization**. Instead of putting all code in one file, we will separate our code into logical modules, which is a best practice for any automation project.
 
