@@ -52,7 +52,7 @@ sudo pip install ansible --break-system-packages
 
 ## Lab Setup: Project Structure
 
-For this module, we will create a dedicated project structure.
+For this module,in the Ubuntu VM, we will create a dedicated project structure.
 
 1.  **Navigate** to your main `network_automation_labs` directory.
 2.  **Create a new directory** for this module's labs:
