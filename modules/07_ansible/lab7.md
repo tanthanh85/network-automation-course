@@ -35,7 +35,7 @@ wsl --install -d Ubuntu
 ```
 Please wait for a while your machine to download the Ubuntu image from the internet and start installing it.
 
-You will be prompt for a reboot to complete the installation.
+You will be prompted for a reboot to complete the installation.
 
 After the machine bootup, go to Start Menu and click on Ubuntu VM. You will be asked to create username and password for for Ubuntu VM.
 
