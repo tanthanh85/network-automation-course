@@ -28,6 +28,26 @@ Welcome to Module 7 of the NASP Lab Guide! In this module, you will get hands-on
 Let's automate with Ansible!
 
 ---
+## Install Ubuntu on Windows (if you are using MacOS or Linux, please skip this step)
+As Ansible uses os library which is not available on Windows so if you are using a Windows machine, please install a Ubuntu VM on the Windows itself using the following command.
+```bash
+wsl --install -d Ubuntu"
+```
+Please wait for a while your machine to download the Ubuntu image from the internet and start installing it.
+
+You will be prompt for a reboot to complete the installation.
+
+After the machine bootup, go to Start Menu and click on Ubuntu VM. You will be asked to create username and password for for Ubuntu VM.
+
+After completing username creation, please issue the following commands:
+```bash
+sudo apt update
+sudo apt install python3
+sudo apt install python3-pip
+sudo pip install netmiko
+sudo pip install paramiko
+sudo pip install ansible
+```
 
 ## Lab Setup: Project Structure
 
@@ -140,6 +160,7 @@ For Linux/macOS (Bash/Zsh): Open your terminal and run the following commands. R
 export ANSIBLE_USER="YOUR_IOSXE_USERNAME"
 export ANSIBLE_PASSWORD="YOUR_IOSXE_PASSWORD"
 export ANSIBLE_ENABLE_PASS="YOUR_IOSXE_ENABLE_PASSWORD"
+export ANSIBLE_HOST_KEY_CHECKING=False
 ```
 
 _Note: These variables will only be set for the current terminal session. If you open a new terminal, you will need to set them again. For persistent settings, you can add these lines to your shell's profile file (e.g., `~/.bashrc`, `~/.zshrc`)._
