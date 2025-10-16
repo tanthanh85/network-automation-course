@@ -31,7 +31,7 @@ Let's automate with Ansible!
 ## Install Ubuntu on Windows (if you are using MacOS or Linux, please skip this step)
 As Ansible uses os library which is not available on Windows so if you are using a Windows machine, please install a Ubuntu VM on the Windows itself using the following command.
 ```bash
-wsl --install -d Ubuntu"
+wsl --install -d Ubuntu
 ```
 Please wait for a while your machine to download the Ubuntu image from the internet and start installing it.
 
@@ -44,9 +44,9 @@ After completing username creation, please issue the following commands:
 sudo apt update
 sudo apt install python3
 sudo apt install python3-pip
-sudo pip install netmiko
-sudo pip install paramiko
-sudo pip install ansible
+sudo pip install netmiko --break-system-packages
+sudo pip install paramiko --break-system-packages
+sudo pip install ansible --break-system-packages
 
 ```
 
