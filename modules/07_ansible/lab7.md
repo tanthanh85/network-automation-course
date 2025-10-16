@@ -47,6 +47,7 @@ sudo apt install python3-pip
 sudo pip install netmiko
 sudo pip install paramiko
 sudo pip install ansible
+
 ```
 
 ## Lab Setup: Project Structure
