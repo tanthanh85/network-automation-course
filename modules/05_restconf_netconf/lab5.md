@@ -61,7 +61,7 @@ It is crucial that you replace the dummy values for your IOS XE router with its 
     ```
     *   Optional: Docker installed on your machine if you plan to install Yangsuite locally. Alternatively, access to a Cisco DevNet Sandbox with Yangsuite pre-installed. Note: Cisco Yangsuite can be accessed by reserving the "IOS XE on Cat8kv" sandbox lab on Cisco DevNet. Yangsuite will be accessible from `http://10.10.20.50:8480` within that sandbox environment.
 
-Let's start exploring APIs and Flask!
+Let's start exploring APIs!
 
 
 ## Lab Setup: Project Structure
@@ -178,8 +178,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # --- RESTCONF Base URLs ---
 RESTCONF_BASE_URL = f"https://{IOSXE_DEVICE_INFO['host']}:{IOSXE_DEVICE_INFO['restconf_port']}/restconf/data"
-# This is the well-known URI for RESTCONF capability discovery
-RESTCONF_MONITORING_URL = f"https://{IOSXE_DEVICE_INFO['host']}:{IOSXE_DEVICE_INFO['restconf_port']}/restconf/data/ietf-restconf-monitoring:restconf-state/capabilities"
 
 
 # --- Generic API Helper Functions (used by discovery and data retrieval) ---
@@ -243,37 +241,6 @@ def _make_netconf_get_request(xml_filter):
         return None
 
 
-# --- Capability Discovery Functions ---
-
-def discover_restconf_capabilities():
-    """Discovers and returns supported YANG modules via RESTCONF."""
-    headers = {
-        "Accept": "application/yang-data+json"
-    }
-    try:
-        response = requests.get(
-            RESTCONF_MONITORING_URL,
-            headers=headers,
-            auth=(IOSXE_DEVICE_INFO['username'], IOSXE_DEVICE_INFO['password']),
-            verify=IOSXE_DEVICE_INFO['verify_ssl']
-        )
-        response.raise_for_status()
-        data = response.json()
-        
-        modules = []
-        # The capabilities are usually under 'ietf-restconf-monitoring:capabilities'
-        # and then 'capability' is a list of URIs
-        capabilities_list = data.get('ietf-restconf-monitoring:capabilities', {}).get('capability', [])
-        for cap_uri in capabilities_list:
-            # Extract module name from URI (e.g., urn:ietf:params:xml:ns:yang:ietf-interfaces?module=ietf-interfaces&revision=2018-02-20)
-            if 'module=' in cap_uri:
-                module_name = cap_uri.split('module=')[1].split('&')[0]
-                modules.append(module_name)
-        return sorted(list(set(modules))) # Return unique sorted module names
-    except Exception as e:
-        logging.error(f"Error discovering RESTCONF capabilities: {e}")
-        return []
-
 def discover_netconf_capabilities():
     """Discovers and returns supported YANG modules via NETCONF."""
     host = IOSXE_DEVICE_INFO['host']
@@ -294,8 +261,8 @@ def discover_netconf_capabilities():
             logging.info(f"Successfully connected to {host} for NETCONF capabilities. Retrieving capabilities.")
             
             modules = []
-            # ncclient's manager object holds the connected capabilities
-            for capability in m.connected_capabilities:
+            # ncclient's manager object holds the server capabilities
+            for capability in m.server_capabilities:
                 # Capabilities are typically in the format:
                 # urn:ietf:params:xml:ns:netconf:base:1.0
                 # urn:ietf:params:xml:ns:yang:ietf-interfaces?module=ietf-interfaces&revision=2018-02-20
@@ -387,12 +354,6 @@ def get_gigabitethernet1_utilization_netconf():
 if __name__ == '__main__':
     print("--- Testing iosxe_api_functions.py (Capabilities, RESTCONF & NETCONF) ---")
     print("Note: This will attempt to connect to the IOS XE router defined in config.py.")
-
-    print("\n--- Discovering Capabilities ---")
-    print("RESTCONF Supported Modules:")
-    restconf_caps = discover_restconf_capabilities()
-    for module in restconf_caps:
-        print(f"  - {module}")
     
     print("\nNETCONF Supported Modules:")
     netconf_caps = discover_netconf_capabilities()
@@ -440,18 +401,6 @@ Expected Output (console - partial, focusing on capabilities):
 ```console
 --- Testing iosxe_api_functions.py (Capabilities, RESTCONF & NETCONF) ---
 Note: This will attempt to connect to the IOS XE router defined in config.py.
-
---- Discovering Capabilities ---
-Connecting to YOUR_IOSXE_IP:443 for RESTCONF capabilities discovery...
-RESTCONF Supported Modules:
-- Cisco-IOS-XE-acl
-- Cisco-IOS-XE-aaa
-- Cisco-IOS-XE-process-cpu-oper  # Look for this one!
-- Cisco-IOS-XE-memory-oper     # Look for this one!
-... (many more modules) ...
-- ietf-interfaces              # Look for this one!
-- ietf-restconf-monitoring
-...
 
 Connecting to YOUR_IOSXE_IP:830 for NETCONF capabilities discovery...
 Successfully connected to YOUR_IOSXE_IP for NETCONF capabilities. Retrieving capabilities.
