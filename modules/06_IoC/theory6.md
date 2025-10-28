@@ -9,7 +9,7 @@
 In previous modules, you've learned to automate tasks like sending commands, pushing configurations, and retrieving data from network devices. While effective, these were often direct, one-off operations. **Infrastructure as Code (IaC)** takes automation to the next level.
 
 **What is IaC?**
-IaC is the practice of managing and provisioning infrastructure (like networks, servers, databases) using code and software development techniques, rather than manual processes or interactive configurations. Instead of manually configuring a router via CLI, you write a text file (code) that describes the desired state of that router.
+IaC (infrastruture as code) is the practice of managing and provisioning infrastructure (like networks, servers, databases) using code and software development techniques, rather than manual processes or interactive configurations. Instead of manually configuring a router via CLI, you write a text file (code) that describes the desired state of that router.
 
 **Key Principles of IaC:**
 *   **Declarative:** You describe *what* you want the infrastructure to look like, not *how* to achieve it. (e.g., "Interface GigabitEthernet1 should have IP 10.0.0.1," not "go to config mode, type interface Gi1, type ip address...").
