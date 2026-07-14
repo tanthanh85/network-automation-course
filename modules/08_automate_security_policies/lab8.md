@@ -208,7 +208,7 @@ This file will contain reusable functions for FDM API interactions.
         print("Retrieving Access Policies...")
         return make_fdm_api_call('GET', 'policy/accesspolicies')
 
-    def get_network_objects():
+    def get_network_object_id(name=None):
         """
         Retrieves list of network objects. 
         """

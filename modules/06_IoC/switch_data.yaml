@@ -1,0 +1,78 @@
+switches:
+  - name: SW1
+    ip: 10.10.x.x
+    username: developer
+    password: C1sco12345
+    vlans:
+      - name: default
+        id: 1
+      - name: data
+        id: 10
+      - name: voice
+        id: 20
+      - name: VIP
+        id: 30
+      - name: Guest
+        id: 40
+      - name: Contractors
+        id: 50
+    physical_interfaces:
+      - name: Gi0/1
+        description: "connect to PC1"
+        mode: access
+        data_vlan: 10
+        voice_vlan: 20
+      - name: Gi0/2
+        description: "connect to PC2"
+        mode: access
+        data_vlan: 10
+        voice_vlan: 20
+      - name: Gi0/3
+        description: "connect to PC3"
+        mode: access
+        data_vlan: 10
+        voice_vlan: 20
+      - name: Gi0/4
+        description: "connect to PC4"
+        mode: access
+        data_vlan: 10
+        voice_vlan: 20
+      - name: Te1/1
+        description: "connect to core switch 1"
+        mode: trunk
+        allowed_vlans: 1,10,20,30,40
+    vlan_interfaces:
+      - name: vlan1
+        description: "Management vlan"
+        ip: 10.10.1.254
+        mask: 255.255.255.0
+      - name: vlan10
+        description: "Data vlan"
+        ip: 10.10.10.254
+        mask: 255.255.255.0
+      - name: vlan20
+        description: "Voice vlan"
+        ip: 10.10.20.254
+        mask: 255.255.255.0
+  - name: SW2
+    ip: 10.10.x.x
+    username: developer
+    password: C1sco12345
+    vlans:
+      - name: default
+        id: 1
+      - name: data
+        id: 10
+      - name: VIP
+        id: 30
+      - name: Guest
+        id: 40
+  - name: SW3
+    ip: 10.10.x.x
+    username: developer
+    password: C1sco12345
+    vlans:
+      - name: default
+        id: 1
+      - name: Guest
+        id: 40

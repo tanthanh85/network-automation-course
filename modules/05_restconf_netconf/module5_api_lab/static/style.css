@@ -1,0 +1,75 @@
+body { 
+    font-family: Arial, sans-serif; 
+    margin: 20px; 
+    background-color: #f4f4f4; 
+    color: #333; 
+}
+.container { 
+    background-color: #fff; 
+    padding: 20px; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+    max-width: 900px; /* Slightly wider to accommodate both sections */
+    margin: auto; 
+}
+h1 { 
+    color: #0056b3; 
+    text-align: center;
+}
+h2 {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 5px;
+    margin-top: 20px;
+}
+h3 {
+    color: #007bff;
+    margin-top: 15px;
+}
+.api-section {
+    margin-bottom: 30px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    background-color: #fdfdfd;
+}
+.metric { 
+    margin-bottom: 10px; 
+    padding: 10px; 
+    border: 1px solid #ddd; 
+    border-radius: 4px; 
+}
+.metric strong { 
+    color: #007bff; 
+}
+.alert { 
+    color: red; 
+    font-weight: bold; 
+}
+table { /* Removed table, but keeping styles just in case for future use */
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 15px; 
+}
+th, td { 
+    border: 1px solid #ddd; 
+    padding: 8px; 
+    text-align: left; 
+}
+th { 
+    background-color: #f2f2f2; 
+}
+.status-up { 
+    color: green; 
+    font-weight: bold; 
+}
+.status-down { 
+    color: red; 
+    font-weight: bold; 
+}
+hr {
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+    margin: 40px 0;
+}

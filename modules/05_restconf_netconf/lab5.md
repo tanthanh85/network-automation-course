@@ -147,7 +147,6 @@ Objective: Learn how to programmatically discover the YANG models and capabiliti
 
 Before you can query specific data from a device using YANG-based APIs, you need to know _what_ YANG models the device supports. This process is called "capability discovery."
 
-*   RESTCONF Capability Discovery: RESTCONF exposes its capabilities at a specific well-known URI (`/restconf/data/ietf-restconf-monitoring:restconf-state/capabilities`). This URI points to the `ietf-restconf-monitoring` YANG model, which describes the RESTCONF server's capabilities, including the list of supported YANG modules.
 *   NETCONF Capability Discovery: NETCONF capabilities are exchanged during the initial session establishment phase. When your `ncclient` Python script connects to a NETCONF device, the device advertises its supported capabilities, including the YANG models it implements. `ncclient` automatically captures these in the `manager.connected_capabilities` attribute.
 
 ### Task 0.2: Implement Capability Discovery Functions in `iosxe_api_functions.py`

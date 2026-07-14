@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IOS XE Router Monitor (RESTCONF & NETCONF)</title>
+    <meta http-equiv="refresh" content="5"> <!-- Auto-refresh page every 5 seconds -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Cisco IOS XE Router Monitor</h1>
+        <p>Last updated: {{ current_time }}</p>
+        
+        <div class="api-section">
+            <h2>RESTCONF Data (CPU & Memory)</h2>
+            <div class="metric">
+                <strong>CPU Utilization (5-sec):</strong> <span id="cpu_util_rc">{{ cpu_util_rc }}%</span>
+                {% if cpu_util_rc != 'N/A' and cpu_util_rc|int > 75 %} <span class="alert">(HIGH)</span> {% endif %}
+            </div>
+            
+            <div class="metric">
+                <strong>Memory Used:</strong> <span id="memory_used_rc">{{ memory_used_rc }}</span> bytes
+                <strong>Total Memory:</strong> <span id="memory_total_rc">{{ memory_total_rc }}</span> bytes
+            </div>
+        </div>
+
+        <hr> <!-- Separator between API types -->
+
+        <div class="api-section">
+            <h2>NETCONF Data (GigabitEthernet1 Utilization)</h2>
+            <div class="metric">
+                <strong>GigabitEthernet1 In-Octets:</strong> <span id="gig1_in_octets">{{ gig1_in_octets }}</span>
+            </div>
+            <div class="metric">
+                <strong>GigabitEthernet1 Out-Octets:</strong> <span id="gig1_out_octets">{{ gig1_out_octets }}</span>
+            </div>
+            <div class="metric">
+                <strong>GigabitEthernet1 In-Packets:</strong> <span id="gig1_in_pkts">{{ gig1_in_pkts }}</span>
+            </div>
+            <div class="metric">
+                <strong>GigabitEthernet1 Out-Packets:</strong> <span id="gig1_out_pkts">{{ gig1_out_pkts }}</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

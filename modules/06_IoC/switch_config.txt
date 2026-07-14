@@ -1,0 +1,35 @@
+hostname SW1
+
+vlan 1
+name default
+vlan 10
+name data
+vlan 20
+name voice
+
+
+
+interface Gi0/1
+description "connect to PC1"
+switchport mode access
+switchport access vlan 10
+switchport voice vlan 20
+
+interface Gi0/2
+description "connect to PC2"
+switchport mode access
+switchport access vlan 10
+switchport voice vlan 20
+
+interface vlan 1
+description Management vlan
+ip add 10.10.1.254 255.255.255.0
+
+
+interface vlan 10
+description data vlan
+ip add 10.10.10.254 255.255.255.0
+
+interface vlan 20
+description voice vlan
+ip add 10.10.10.254 255.255.255.0

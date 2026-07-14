@@ -1,0 +1,44 @@
+
+Welcome to the DevNet Sandbox for Cat8000V and IOS XE
+
+The following programmability features are already enabled:
+
+-NETCONF
+-RESTCONF
+
+Thanks for stopping by.
+
+
+
+cat8000v#
+cat8000v#terminal width 511
+cat8000v#terminal length 0
+cat8000v#
+cat8000v#
+cat8000v#
+cat8000v#
+cat8000v#
+cat8000v#show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       10.10.20.48     YES NVRAM  up                    up      
+GigabitEthernet2       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet3       unassigned      YES NVRAM  administratively down down    
+Loopback0              10.0.0.1        YES NVRAM  up                    up      
+Loopback10             unassigned      YES unset  up                    up      
+Loopback109            10.255.255.9    YES NVRAM  up                    up      
+VirtualPortGroup0      192.168.1.1     YES NVRAM  up                    up      
+cat8000v#
+cat8000v#
+cat8000v#
+cat8000v#
+cat8000v#show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       10.10.20.48     YES NVRAM  up                    up      
+GigabitEthernet2       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet3       unassigned      YES NVRAM  administratively down down    
+Loopback0              10.0.0.1        YES NVRAM  up                    up      
+Loopback10             unassigned      YES unset  up                    up      
+Loopback109            10.255.255.9    YES NVRAM  up                    up      
+VirtualPortGroup0      192.168.1.1     YES NVRAM  up                    up      
+cat8000v#
+cat8000v#exit
